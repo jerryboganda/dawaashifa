@@ -32,7 +32,7 @@ impl ColdChainService {
         // 1. Verify branch is cold-chain capable
         let branch =
             sqlx::query("SELECT cold_chain_capable FROM branches WHERE tenant_id = $1 AND id = $2")
-                .bind(ctx.tenant_id.0)
+                .bind(ctx.tenant_id().0)
                 .bind(req.branch_id.0)
                 .fetch_optional(&self.pool)
                 .await?;
@@ -50,13 +50,13 @@ impl ColdChainService {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
         )
         .bind(Uuid::now_v7())
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(req.branch_id.0)
         .bind(req.batch_id.0)
         .bind(req.temperature_c)
         .bind(is_excursion)
         .bind(&req.note)
-        .bind(ctx.user_id.0)
+        .bind(ctx.user_id().0)
         .execute(&self.pool)
         .await?;
 
@@ -67,7 +67,7 @@ impl ColdChainService {
                  SET is_quarantined = true
                  WHERE tenant_id = $1 AND id = $2",
             )
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(req.batch_id.0)
             .execute(&self.pool)
             .await?;
@@ -92,7 +92,7 @@ impl ColdChainService {
              SET is_quarantined = false
              WHERE tenant_id = $1 AND id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(batch_id.0)
         .execute(&self.pool)
         .await?;
@@ -102,8 +102,8 @@ impl ColdChainService {
             "INSERT INTO audit_log (tenant_id, actor_id, actor_type, entity_type, entity_id, action, after, reason)
              VALUES ($1, $2, 'USER', 'BATCH', $3, 'CLEAR_EXCURSION', $4, $5)"
         )
-        .bind(ctx.tenant_id.0)
-        .bind(ctx.user_id.0)
+        .bind(ctx.tenant_id().0)
+        .bind(ctx.user_id().0)
         .bind(batch_id.0)
         .bind(serde_json::json!({"decision": req.decision_note}))
         .bind("Pharmacist cleared temperature excursion")

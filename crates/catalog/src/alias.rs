@@ -36,7 +36,7 @@ pub async fn learn_alias(
         "SELECT product_id, weight FROM product_aliases
          WHERE tenant_id = $1 AND alias = $2",
     )
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(&normalized)
     .fetch_optional(pool)
     .await?;
@@ -55,7 +55,7 @@ pub async fn learn_alias(
                 "UPDATE product_aliases SET hit_count = hit_count + 1
                  WHERE tenant_id = $1 AND alias = $2 AND product_id = $3",
             )
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(&normalized)
             .bind(confirmed_product.0)
             .execute(pool)
@@ -71,7 +71,7 @@ pub async fn learn_alias(
          DO UPDATE SET hit_count = product_aliases.hit_count + 1"
     )
     .bind(Uuid::now_v7())
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(confirmed_product.0)
     .bind(&normalized)
     .bind(source)

@@ -13,6 +13,7 @@ shifa-catalog.workspace = true
 shifa-inventory.workspace = true
 shifa-conversation.workspace = true
 shifa-orders.workspace = true
+shifa-ai.workspace = true
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true

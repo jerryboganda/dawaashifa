@@ -39,6 +39,9 @@ pub enum ApiError {
     #[error("Order error: {0}")]
     Order(#[from] shifa_orders::OrderError),
 
+    #[error("AI error: {0}")]
+    Ai(#[from] shifa_ai::AiError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -51,6 +54,15 @@ impl IntoResponse for ApiError {
             ApiError::NotFound => (StatusCode::NOT_FOUND, "Resource not found".to_string()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            ApiError::Ai(shifa_ai::AiError::CircuitBreakerOpen(task)) => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                format!("AI Circuit breaker open for task {}: work queued for human review", task),
+            ),
+            ApiError::Ai(shifa_ai::AiError::Timeout(ms)) => (
+                StatusCode::GATEWAY_TIMEOUT,
+                format!("AI model request timed out after {} ms", ms),
+            ),
+            ApiError::Ai(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Order(shifa_orders::OrderError::InvalidTransition { from, to }) => (
                 StatusCode::BAD_REQUEST,
                 format!("Invalid order state transition from {} to {}", from, to),

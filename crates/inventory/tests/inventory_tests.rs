@@ -20,12 +20,13 @@ fn create_test_context(tenant_id: TenantId, permissions_list: &[&str]) -> Tenant
         permissions.insert(p.to_string());
     }
 
-    TenantContext::from_claims(
+    TenantContext::from_verified_claims(
         tenant_id,
         UserId::new(),
         vec![],
         permissions,
         vec!["SUPER_ADMIN".to_string()],
+        true,
     )
 }
 

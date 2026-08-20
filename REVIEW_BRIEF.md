@@ -1,58 +1,48 @@
-﻿# REVIEW_BRIEF.md — Spec 10 (Orders, Routing, State Machine, and COD Revenue Loop)
+﻿# REVIEW_BRIEF.md — Spec 08 (AI Orchestration & Language Pipeline)
 
-## Spec Reference
-- **Spec**: `docs/10_ORDERS_AND_ROUTING.md`
-- **Branch**: `feat/10-orders-routing`
+## Specification & Scope
+- **Spec**: `docs/08_AI_ORCHESTRATION.md`
+- **Branch**: `feat/08-ai-orchestration`
+- **Scope**: AI gateway with versioned prompt templates, deterministic Roman Urdu normalizer, script detection, multi-signal confidence gating matrix, voice note transcription escalation, circuit breaker resiliency, invocation cost logging (`ai_invocations`), and feedback loop with dynamic alias learning (`ai_feedback` -> `product_aliases`).
 
 ## Invariants Enforced
-- **Exhaustive State Machine (§4)**: Complete 21-state lifecycle (`Draft`, `CartConfirmed`, `AwaitingRx`, `RxUnderReview`, `RxApproved`, `RxRejected`, `AwaitingPayment`, `PaymentUnderReview`, `PaymentRejected`, `Confirmed`, `Picking`, `Packed`, `Dispatched`, `OutForDelivery`, `Delivered`, `CashReconciled`, `Closed`, `Cancelled`, `FailedDelivery`, `Returned`, `Refunded`) with strict transition validations via `can_transition(from, to)`.
-- **Atomic Transition & Audit (Invariant I-9)**: Every state change updates order status, inserts an `order_events` row, and writes an `audit_log` row within a single database transaction. If the audit log fails, the entire transition rolls back.
-- **Rx Branching (Invariants I-3 & I-6)**: Orders containing any item with `is_prescription_only = true` are forced into `AwaitingRx -> RxUnderReview -> RxApproved`. Direct progression from `Draft` / `CartConfirmed` to `AwaitingPayment` is strictly blocked.
-- **Collision-Free Sequence-Based Order Numbering (§5)**: Format `{BRANCH_CODE}-{YYMMDD}-{SEQ4}` backed by atomic PostgreSQL sequence generation ensuring zero collisions under high concurrency.
-- **Shared Stock Branch Routing Engine (§6)**: Evaluates active candidate branches, cold-chain handling, and stock depth via FEFO. Ranks single branch fulfillment over split fulfillment and supports three policies (`ALLOW_SPLIT`, `PREFER_TRANSFER`, `SINGLE_BRANCH_ONLY`).
-- **Stock Reservations & Idempotent Release (§7)**: Transition to `Confirmed` reserves stock with TTL (2h for COD). Rejection or cancellation triggers idempotent reservation release. Failure to reserve blocks transition to `Confirmed`.
-- **MRP Enforcement & Snapshotting (§8)**: Unit price cannot exceed DRAP MRP (`validate_item_price`). `mrp_at_sale` is snapshotted onto each line item, guaranteeing that future MRP updates do not alter historical orders.
-- **Money Precision (Invariant I-8)**: All financial calculations use exact `rust_decimal::Decimal`. Zero floating-point arithmetic throughout the crate.
-- **Controlled Returns Restocking (§9)**: Restocking of medicines requires explicit pharmacist certification. Cold-chain items that left the cold chain are permanently forbidden from being restocked.
+- **I-6**: AI output never reaches a customer unmodified in Rx flows. Pharmacist approval required at any confidence score (even 0.99).
+- **I-9**: Every AI invocation logs full metadata: tenant_id, conversation_id, message_id, prompt_version, token counts, and execution latency.
+- **I-1**: `tenant_id` enforced on `ai_invocations` and `ai_feedback` tables with Postgres RLS.
 
-## What Was Built
-1. **Order Domain & Service (`crates/orders`)**:
-   - `state_machine.rs`: 21-state enum, parser, and exhaustive `can_transition` matrix.
-   - `numbering.rs`: Concurrency-safe daily branch sequence order numbering.
-   - `pricing.rs`: Exact Decimal line and order total pricing with MRP protection.
-   - `routing.rs`: Multi-branch stock evaluation with split fulfillment policies.
-   - `service.rs`: `OrderService` handling drafts, cart confirmation, atomic transitions, reservations, and returns.
-2. **Axum HTTP API & OpenAPI**:
-   - `GET /api/v1/orders` (list with filters)
-   - `POST /api/v1/orders` (create draft)
-   - `GET /api/v1/orders/:id`
-   - `POST /api/v1/orders/:id/items`
-   - `POST /api/v1/orders/:id/confirm-cart`
-   - `POST /api/v1/orders/:id/transition`
-   - Regenerated `contracts/openapi.json` and generated TypeScript client `@shifa/shared`.
+## Key Changes
+1. **Prompt Versioning**: Versioned templates in `crates/ai/prompts/` (`intent_classify.v3.md`, `reply_generate.v2.md`, `entity_extract.v2.md`, `rx_extract.v4.md`).
+2. **Language Pipeline (`shifa-ai::language`)**:
+   - `detect_script`: Unicode character block detection for Urdu (`\u0600`-\u06FF`, `\u0750`-\u077F`, `\uFB50`-\uFDFF`, `\uFE70`-\uFEFF`), Latin/Roman Urdu, and Code-Mixed.
+   - `normalise_roman_urdu`: Rule-based normalizer converting Eastern Arabic numerals (`٠-٩`, `۰-۹`) to standard digits, mapping 60+ dialect variants (e.g. `mujhe`/`mujay`/`mjhe` -> `muje`, `chahiye`/`chaiye` -> `caye`, `kitne`/`kitnay` -> `kitne`), letter transforms (`kh`->`k`, `ph`->`f`, `gh`->`g`, `th`->`t`, `ee`->`i`, `oo`->`u`), and collapsing doubled consonants without affecting numbers. Runs strictly *before* any model invocation.
+3. **Confidence Gating Matrix (`shifa-ai::gating`)**:
+   - Immediate human escalation for `HumanRequest` and `Complaint` regardless of confidence score.
+   - Automatic pharmacist queue for all prescription (`is_rx_context`) and controlled substances.
+   - Low confidence (< 0.60) human escalation with courteous customer acknowledgment draft.
+   - Auto-send strictly disabled by default; when enabled, forbidden on pricing enquiries and Rx.
+4. **Resilience & Circuit Breaker (`shifa-ai::provider`)**:
+   - Atomic circuit breaker trips after 5 consecutive provider failures with a 30-second half-open cooldown.
+   - Provider failures automatically escalate to human queue without message loss.
+5. **Voice Note Audio Pipeline**:
+   - Transcription with script detection and normalisation.
+   - Forced human escalation for audio > 180s (3 minutes) or transcription confidence < 0.70 with original audio attached.
+6. **Continuous Feedback Loop & Active Learning**:
+   - Human overrides write `ai_feedback` with Levenshtein-based edit distance.
+   - Corrected drug brand/generic names dynamically insert high-confidence alias records into `product_aliases` via `CatalogService::learn_alias`.
+7. **REST Endpoints (`crates/api/src/routes/ai.rs`)**:
+   - `POST /api/v1/ai/analyse`
+   - `POST /api/v1/ai/draft-reply`
+   - `POST /api/v1/ai/transcribe`
+   - `POST /api/v1/ai/feedback`
+   - `GET /api/v1/ai/health`
+8. **API Contracts**: OpenAPI specification updated and TypeScript client regenerated in `@shifa/shared`.
 
-## Acceptance Tests Verification
-- `cargo test --workspace` passed 36 tests with 0 failures:
-  - `test_every_illegal_transition_rejected` -> ok
-  - `test_money_arithmetic_uses_decimal_and_mrp_validation` -> ok
-  - `test_order_lifecycle_routing_and_reservation_suite` -> ok
-  - `test_canned_reply_unresolved_variable_blocks_send` -> ok
-  - `test_sla_timer_pauses_outside_opening_hours_and_two_stage_escalation` -> ok
-  - `test_conversation_lifecycle_routing_and_human_override_suite` -> ok
-  - `test_inventory_ledger_and_fefo_suite` -> ok
-  - `test_concurrent_allocation_does_not_oversell` -> ok
-  - `test_urdu_phonetics_and_normalization_table` -> ok
-  - `test_mrp_hard_block_enforcement` -> ok
-  - `test_catalog_matching_and_substitutions_integration` -> ok
-  - `test_rate_limiter_and_idempotency_prevention` -> ok
-  - `test_choice_rendering_three_tiers` -> ok
-  - `test_unknown_message_type_is_stored_as_unsupported` -> ok
-  - `test_webhook_signature_verification` -> ok
-  - `test_freeform_outside_window_fails_loudly` -> ok
-  - `test_unapproved_template_fails_before_network_call` -> ok
-  - `test_cloud_api_send_success_and_error_handling` -> ok
-  - `test_api_auth_and_session_lifecycle` -> ok
-  - `test_database_migrations_and_rls_suite` -> ok
-- `cargo clippy --workspace --all-targets -- -D warnings` clean.
-- `cargo fmt --all --check` clean.
-- `pnpm check && pnpm lint && pnpm test` clean.
+## Acceptance Verification Results
+- 4 comprehensive integration test suites in `crates/ai/tests/ai_tests.rs`:
+  - `test_script_detection_table`: PASSED
+  - `test_roman_urdu_normaliser_table`: PASSED
+  - `test_confidence_gating_rules`: PASSED
+  - `test_ai_pipeline_voice_notes_and_feedback_integration`: PASSED
+- `cargo fmt --all --check`: CLEAN
+- `cargo clippy --workspace --all-targets -- -D warnings`: CLEAN (0 warnings)
+- `pnpm check`, `pnpm lint`, `pnpm test`: CLEAN

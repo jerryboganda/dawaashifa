@@ -3,13 +3,12 @@ use async_trait::async_trait;
 use shifa_core::context::TenantContext;
 use shifa_core::id::BranchId;
 use sqlx::PgConnection;
-use uuid::Uuid;
 
 /// Base Repository trait for database access in the Shifa platform.
 ///
 /// Invariant I-7: No raw SQL outside repository modules.
 /// Every method takes `&TenantContext`. Implementors MUST filter with
-/// `AND tenant_id = $n` using `ctx.tenant_id()` — unused `ctx` is a review BLOCKER.
+/// `AND tenant_id = $n` using `ctx.tenant_id()` â€” unused `ctx` is a review BLOCKER.
 /// RLS is a second layer, not a substitute for the SQL filter.
 #[async_trait]
 pub trait Repository<T, ID>: Send + Sync {
@@ -24,12 +23,11 @@ pub async fn find_branch_id(
     ctx: &TenantContext,
     id: BranchId,
 ) -> Result<Option<BranchId>, DbError> {
-    let row: Option<(Uuid,)> = sqlx::query_as(
-        "SELECT id FROM branches WHERE id = $1 AND tenant_id = $2",
-    )
-    .bind(id.0)
-    .bind(ctx.tenant_id().0)
-    .fetch_optional(&mut *conn)
-    .await?;
-    Ok(row.map(|(raw)| BranchId::from(raw)))
+    let row: Option<(sqlx::types::Uuid,)> =
+        sqlx::query_as("SELECT id FROM branches WHERE id = $1 AND tenant_id = $2")
+            .bind(id.0)
+            .bind(ctx.tenant_id().0)
+            .fetch_optional(&mut *conn)
+            .await?;
+    Ok(row.map(|raw| BranchId::from(raw.0)))
 }

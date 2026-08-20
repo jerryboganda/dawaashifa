@@ -44,7 +44,7 @@ pub async fn create_user(
     ctx.require("user.create")?;
     let new_user = UserDto {
         id: UserId::new(),
-        tenant_id: ctx.tenant_id,
+        tenant_id: ctx.tenant_id(),
         phone: req.phone,
         email: req.email,
         full_name: req.full_name,

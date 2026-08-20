@@ -21,12 +21,13 @@ fn create_test_context(tenant_id: TenantId, permissions_list: &[&str]) -> Tenant
         permissions.insert(p.to_string());
     }
 
-    TenantContext::from_claims(
+    TenantContext::from_verified_claims(
         tenant_id,
         UserId::new(),
         vec![],
         permissions,
         vec!["SUPER_ADMIN".to_string()],
+        true,
     )
 }
 
@@ -315,7 +316,7 @@ async fn test_conversation_lifecycle_routing_and_human_override_suite() {
         overridden.original_body,
         Some("Automated draft reply".into())
     );
-    assert_eq!(overridden.overridden_by, Some(ctx.user_id));
+    assert_eq!(overridden.overridden_by, Some(ctx.user_id()));
 
     // 10. Acceptance test: bulk_approve_rejected_for_rx_linked_conversation (Invariant I-6)
     sqlx::query("UPDATE conversations SET is_rx_linked = true WHERE tenant_id = $1 AND id = $2")

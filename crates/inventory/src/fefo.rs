@@ -44,7 +44,7 @@ pub async fn allocate_fefo(
          ORDER BY b.expiry_date ASC
          FOR UPDATE OF sc",
     )
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(branch_id.0)
     .bind(product_id.0)
     .bind(shelf_life_floor)

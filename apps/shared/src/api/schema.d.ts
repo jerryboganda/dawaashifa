@@ -4,6 +4,86 @@
  */
 
 export interface paths {
+    "/api/v1/ai/analyse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["analyse_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai/draft-reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["draft_reply_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["feedback_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["health_handler"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai/transcribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transcribe_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -639,6 +719,44 @@ export interface components {
             qty: number;
             unit_price?: components["schemas"]["Money"] | null;
         };
+        AiAnalyseRequest: {
+            contains_controlled_substance: boolean;
+            conversation_id: components["schemas"]["ConversationId"];
+            is_rx_context: boolean;
+            message_id: components["schemas"]["MessageId"];
+            raw_text: string;
+        };
+        AiDraftReplyRequest: {
+            conversation_id: components["schemas"]["ConversationId"];
+            customer_name?: string | null;
+            is_rx_context: boolean;
+            last_inbound_text: string;
+        };
+        AiHealthStatus: {
+            /** Format: int32 */
+            failure_count: number;
+            state: string;
+            task: string;
+        };
+        /** @enum {string} */
+        AiTask: "Intent" | "Reply" | "RxOcr" | "Stt" | "Embed";
+        AiTranscribeRequest: {
+            audio_url: string;
+            /** Format: int32 */
+            duration_seconds: number;
+            locale_hint?: string | null;
+            message_id: components["schemas"]["MessageId"];
+        };
+        AnalysisResult: {
+            /** Format: float */
+            confidence: number;
+            detected_script: components["schemas"]["CustomerScript"];
+            entities: components["schemas"]["ExtractedEntity"][];
+            escalate: boolean;
+            escalation_reason?: string | null;
+            intent: components["schemas"]["IntentType"];
+            normalised_text: string;
+        };
         AssignBranchesRequest: {
             branch_ids: components["schemas"]["BranchId"][];
         };
@@ -803,6 +921,34 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         CustomerId: string;
+        /** @enum {string} */
+        CustomerScript: "Urdu" | "English" | "RomanUrdu" | "CodeMixed";
+        DraftReplyResult: {
+            can_auto_send: boolean;
+            /** Format: float */
+            confidence: number;
+            draft_body: string;
+            escalate: boolean;
+            requires_pharmacist: boolean;
+        };
+        ExtractedEntity: {
+            /** Format: float */
+            confidence: number;
+            entity_type: string;
+            value: string;
+        };
+        FeedbackEventRequest: {
+            ai_output: string;
+            /** Format: float */
+            confidence: number;
+            conversation_id: components["schemas"]["ConversationId"];
+            corrected_alias?: (string)[] | null;
+            human_output: string;
+            intent: string;
+            message_id: components["schemas"]["MessageId"];
+            prompt_version: string;
+            task: string;
+        };
         /**
          * Format: uuid
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
@@ -816,6 +962,8 @@ export interface components {
             msisdn: string;
             text: string;
         };
+        /** @enum {string} */
+        IntentType: "ProductEnquiry" | "PriceEnquiry" | "AvailabilityCheck" | "PlaceOrder" | "OrderStatus" | "CancelOrder" | "PrescriptionUpload" | "DeliveryEnquiry" | "PaymentQuery" | "Complaint" | "Greeting" | "HumanRequest" | "Other";
         LoginRequest: {
             password: string;
             phone_or_email: string;
@@ -1033,6 +1181,16 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         TenantId: string;
+        TranscriptionResult: {
+            /** Format: float */
+            confidence: number;
+            /** Format: int32 */
+            duration_seconds: number;
+            escalate: boolean;
+            escalation_reason?: string | null;
+            normalised_transcript: string;
+            transcript: string;
+        };
         TransferConversationRequest: {
             branch_id: components["schemas"]["BranchId"];
         };
@@ -1119,6 +1277,122 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    analyse_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiAnalyseRequest"];
+            };
+        };
+        responses: {
+            /** @description Message analysis results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisResult"];
+                };
+            };
+        };
+    };
+    draft_reply_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiDraftReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Draft reply generated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftReplyResult"];
+                };
+            };
+        };
+    };
+    feedback_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Feedback recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    health_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Circuit breaker status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiHealthStatus"][];
+                };
+            };
+        };
+    };
+    transcribe_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiTranscribeRequest"];
+            };
+        };
+        responses: {
+            /** @description Audio transcribed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranscriptionResult"];
+                };
+            };
+        };
+    };
     login: {
         parameters: {
             query?: never;

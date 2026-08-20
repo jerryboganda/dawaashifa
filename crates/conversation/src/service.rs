@@ -150,7 +150,7 @@ impl ConversationService {
              WHERE tenant_id = $1 AND conversation_id = $2 AND direction = 'INBOUND'
              ORDER BY created_at DESC LIMIT 1",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(conversation_id.0)
         .fetch_optional(&self.pool)
         .await?;
@@ -173,9 +173,9 @@ impl ConversationService {
              VALUES ($1, $2, $3, 'OUTBOUND', 'AGENT', $4, 'SENT', $5)"
         )
         .bind(msg_id.0)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(conversation_id.0)
-        .bind(ctx.user_id.0)
+        .bind(ctx.user_id().0)
         .bind(&req.body)
         .execute(&self.pool)
         .await?;
@@ -184,7 +184,7 @@ impl ConversationService {
             id: msg_id,
             conversation_id,
             sender_type: "AGENT".into(),
-            sender_id: Some(ctx.user_id.0),
+            sender_id: Some(ctx.user_id().0),
             direction: "OUTBOUND".into(),
             status: "SENT".into(),
             body: req.body,
@@ -209,7 +209,7 @@ impl ConversationService {
                AND ($3::text IS NULL OR status = $3)
              ORDER BY updated_at DESC"
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(branch_id.map(|b| b.0))
         .bind(status)
         .fetch_all(&self.pool)
@@ -259,7 +259,7 @@ impl ConversationService {
              WHERE tenant_id = $2 AND id = $3",
         )
         .bind(user_id.0)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(id.0)
         .execute(&self.pool)
         .await?;
@@ -283,7 +283,7 @@ impl ConversationService {
              WHERE tenant_id = $2 AND id = $3",
         )
         .bind(branch_id.0)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(id.0)
         .execute(&self.pool)
         .await?;
@@ -305,7 +305,7 @@ impl ConversationService {
              SET status = 'RESOLVED', updated_at = now()
              WHERE tenant_id = $1 AND id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(id.0)
         .execute(&self.pool)
         .await?;
@@ -327,7 +327,7 @@ impl ConversationService {
              SET status = 'ESCALATED', updated_at = now()
              WHERE tenant_id = $1 AND id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(id.0)
         .execute(&self.pool)
         .await?;
@@ -350,7 +350,7 @@ impl ConversationService {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
         )
         .bind(id)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(req.branch_id.map(|b| b.0))
         .bind(&req.shortcode)
         .bind(&req.title)
