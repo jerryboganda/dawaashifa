@@ -1,12 +1,21 @@
-﻿{
+{
   "name": "@shifa/rider",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "echo @shifa/rider dev ok",
-    "build": "echo @shifa/rider build ok",
-    "check": "echo @shifa/rider check ok",
+    "dev": "vite dev",
+    "build": "vite build",
+    "check": "tsc --noEmit",
     "lint": "echo @shifa/rider lint ok",
-    "test": "echo @shifa/rider test ok"
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@shifa/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2",
+    "vitest": "^2.0.5"
   }
 }

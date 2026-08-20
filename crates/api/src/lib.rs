@@ -16,6 +16,7 @@ use axum::{
 use shifa_ai::AiService;
 use shifa_catalog::CatalogService;
 use shifa_conversation::ConversationService;
+use shifa_fulfilment::FulfilmentService;
 use shifa_identity::IdentityService;
 use shifa_inventory::{ColdChainService, InventoryService, TransferService};
 use shifa_orders::OrderService;
@@ -38,6 +39,7 @@ pub struct AppState {
     pub ai_service: AiService,
     pub prescription_service: PrescriptionService,
     pub payment_service: PaymentService,
+    pub fulfilment_service: FulfilmentService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
@@ -50,6 +52,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let ai_service = AiService::new(pool.clone());
     let prescription_service = PrescriptionService::new(pool.clone());
     let payment_service = PaymentService::new(pool.clone());
+    let fulfilment_service = FulfilmentService::new(pool.clone());
 
     let state = AppState {
         pool,
@@ -63,6 +66,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         ai_service,
         prescription_service,
         payment_service,
+        fulfilment_service,
     };
 
     let auth_routes = Router::new()
@@ -216,6 +220,45 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
             get(routes::payments::get_reconciliation_report),
         );
 
+    let fulfilment_routes = Router::new()
+        .route(
+            "/picking-lists",
+            get(routes::fulfilment::list_picking_lists),
+        )
+        .route(
+            "/picking-lists/:id/complete",
+            post(routes::fulfilment::complete_picking_list),
+        );
+
+    let rider_routes = Router::new()
+        .route(
+            "/",
+            get(routes::fulfilment::list_riders).post(routes::fulfilment::create_rider),
+        )
+        .route("/:id/shift/start", post(routes::fulfilment::start_shift))
+        .route("/:id/shift/end", post(routes::fulfilment::end_shift));
+
+    let delivery_routes = Router::new()
+        .route("/", get(routes::fulfilment::list_deliveries))
+        .route("/:id/assign", post(routes::fulfilment::assign_delivery))
+        .route("/:id/accept", post(routes::fulfilment::accept_delivery))
+        .route("/:id/decline", post(routes::fulfilment::decline_delivery))
+        .route("/:id/pickup", post(routes::fulfilment::pickup_delivery))
+        .route("/:id/deliver", post(routes::fulfilment::complete_delivery))
+        .route("/:id/fail", post(routes::fulfilment::fail_delivery));
+
+    let cash_session_routes = Router::new()
+        .route("/", get(routes::fulfilment::list_cash_sessions))
+        .route("/:id/declare", post(routes::fulfilment::declare_cash))
+        .route(
+            "/:id/reconcile",
+            post(routes::fulfilment::reconcile_cash_session),
+        )
+        .route(
+            "/variance-report",
+            get(routes::fulfilment::get_variance_report),
+        );
+
     let webhook_routes = Router::new().route(
         "/whatsapp/:channel_id",
         get(routes::webhooks::verify_webhook_challenge)
@@ -234,12 +277,20 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/orders", order_routes)
         .nest("/prescriptions", prescription_routes)
         .nest("/payments", payment_routes)
+        .nest("/fulfilment", fulfilment_routes)
+        .nest("/riders", rider_routes)
+        .nest("/deliveries", delivery_routes)
+        .nest("/cash-sessions", cash_session_routes)
         .nest("/ai", ai_routes)
         .merge(role_routes);
 
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .nest("/api/v1", api_v1)
+        .route(
+            "/api/v1/track/:token",
+            get(routes::fulfilment::get_public_tracking),
+        )
         .nest("/webhooks", webhook_routes)
         .with_state(state)
 }

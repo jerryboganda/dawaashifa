@@ -9,6 +9,7 @@ use shifa_catalog::models::*;
 use shifa_conversation::models::*;
 use shifa_core::id::*;
 use shifa_core::money::Money;
+use shifa_fulfilment::models::*;
 use shifa_identity::models::*;
 use shifa_inventory::models::*;
 use shifa_orders::models::*;
@@ -89,6 +90,24 @@ use shifa_prescription::models::*;
         payments::refund_payment,
         payments::list_payments,
         payments::get_reconciliation_report,
+        fulfilment::list_picking_lists,
+        fulfilment::complete_picking_list,
+        fulfilment::list_riders,
+        fulfilment::create_rider,
+        fulfilment::start_shift,
+        fulfilment::end_shift,
+        fulfilment::list_deliveries,
+        fulfilment::assign_delivery,
+        fulfilment::accept_delivery,
+        fulfilment::decline_delivery,
+        fulfilment::pickup_delivery,
+        fulfilment::complete_delivery,
+        fulfilment::fail_delivery,
+        fulfilment::list_cash_sessions,
+        fulfilment::declare_cash,
+        fulfilment::reconcile_cash_session,
+        fulfilment::get_variance_report,
+        fulfilment::get_public_tracking,
     ),
     components(
         schemas(
@@ -198,6 +217,28 @@ use shifa_prescription::models::*;
             RefundResult,
             ReconciliationDiscrepancy,
             ReconciliationReportDto,
+            RiderId,
+            DeliveryId,
+            PickingListId,
+            RiderCashSessionId,
+            DeliveryStatus,
+            RiderStatus,
+            CashSessionStatus,
+            PickingListStatus,
+            RiderDto,
+            DeliveryDto,
+            RiderCashSessionDto,
+            PickingListDto,
+            PublicTrackingDto,
+            CreateRiderRequest,
+            AssignDeliveryRequest,
+            DeclineDeliveryRequest,
+            DeliverRequest,
+            FailDeliveryRequest,
+            DeclareCashRequest,
+            ReconcileCashSessionRequest,
+            VarianceReportItem,
+            VarianceReportDto,
         )
     ),
     modifiers(&SecurityAddon),
@@ -213,6 +254,7 @@ use shifa_prescription::models::*;
         (name = "Prescriptions", description = "Prescription intake, OCR extraction, and licensed pharmacist approval gate"),
         (name = "AI", description = "AI gateway, intent classification, voice transcription, and confidence gating"),
         (name = "Payments", description = "Payment gateways, screenshot fraud engine, TID ledger, COD, and reconciliation"),
+        (name = "Fulfilment", description = "Rider management, picking lists, delivery dispatch, POD, and cash reconciliation"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

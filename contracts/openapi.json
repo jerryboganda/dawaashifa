@@ -469,6 +469,215 @@
         ]
       }
     },
+    "/api/v1/cash-sessions": {
+      "get": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "list_cash_sessions",
+        "parameters": [
+          {
+            "name": "rider_id",
+            "in": "query",
+            "description": "Filter by rider ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by cash session status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of rider cash sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RiderCashSessionDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/cash-sessions/variance-report": {
+      "get": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "get_variance_report",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Start date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "End date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cash variance report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VarianceReportDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/cash-sessions/{id}/declare": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "declare_cash",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Cash session ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeclareCashRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rider cash declaration recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiderCashSessionDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cash session not found"
+          }
+        }
+      }
+    },
+    "/api/v1/cash-sessions/{id}/reconcile": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "reconcile_cash_session",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Cash session ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconcileCashSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Cash session reconciled and closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiderCashSessionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Variance requires documented note"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
     "/api/v1/conversations": {
       "get": {
         "tags": [
@@ -705,6 +914,414 @@
             "bearer_auth": []
           }
         ]
+      }
+    },
+    "/api/v1/deliveries": {
+      "get": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "list_deliveries",
+        "parameters": [
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "rider_id",
+            "in": "query",
+            "description": "Filter by rider ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by delivery status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Filter by date (YYYY-MM-DD)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of deliveries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeliveryDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/deliveries/{id}/accept": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "accept_delivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Delivery ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delivery accepted by rider",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden for unassigned rider"
+          }
+        }
+      }
+    },
+    "/api/v1/deliveries/{id}/assign": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "assign_delivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Delivery ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignDeliveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery assigned to rider",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cash ceiling exceeded or stale session blocked"
+          },
+          "404": {
+            "description": "Delivery or rider not found"
+          }
+        }
+      }
+    },
+    "/api/v1/deliveries/{id}/decline": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "decline_delivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Delivery ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeclineDeliveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery declined and returned to unassigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden for unassigned rider"
+          }
+        }
+      }
+    },
+    "/api/v1/deliveries/{id}/deliver": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "complete_delivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Delivery ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery completed with proof of delivery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing mandatory POD field or controlled substance requirements"
+          }
+        }
+      }
+    },
+    "/api/v1/deliveries/{id}/fail": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "fail_delivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Delivery ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FailDeliveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery marked failed or returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Delivery not found"
+          }
+        }
+      }
+    },
+    "/api/v1/deliveries/{id}/pickup": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "pickup_delivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Delivery ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delivery picked up from pharmacy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden for unassigned rider"
+          }
+        }
+      }
+    },
+    "/api/v1/fulfilment/picking-lists": {
+      "get": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "list_picking_lists",
+        "parameters": [
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by picking list status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of picking lists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickingListDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/fulfilment/picking-lists/{id}/complete": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "complete_picking_list",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Picking list ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Picking list marked completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickingListDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Picking list not found"
+          }
+        }
       }
     },
     "/api/v1/inventory/adjustments": {
@@ -2379,6 +2996,169 @@
         ]
       }
     },
+    "/api/v1/riders": {
+      "get": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "list_riders",
+        "parameters": [
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by rider status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "on_shift",
+            "in": "query",
+            "description": "Filter by on_shift flag",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of riders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RiderDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden for rider role"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "create_rider",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Rider registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiderDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/riders/{id}/shift/end": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "end_shift",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Rider ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rider shift ended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiderDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rider not found"
+          }
+        }
+      }
+    },
+    "/api/v1/riders/{id}/shift/start": {
+      "post": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "start_shift",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Rider ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rider shift started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiderDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rider not found"
+          }
+        }
+      }
+    },
     "/api/v1/roles": {
       "get": {
         "tags": [
@@ -2408,6 +3188,40 @@
             "bearer_auth": []
           }
         ]
+      }
+    },
+    "/api/v1/track/{token}": {
+      "get": {
+        "tags": [
+          "Fulfilment"
+        ],
+        "operationId": "get_public_tracking",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Public tracking token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer tracking status without PII",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicTrackingDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid or expired tracking token"
+          }
+        }
       }
     },
     "/api/v1/users": {
@@ -3022,6 +3836,17 @@
           }
         }
       },
+      "AssignDeliveryRequest": {
+        "type": "object",
+        "required": [
+          "rider_id"
+        ],
+        "properties": {
+          "rider_id": {
+            "$ref": "#/components/schemas/RiderId"
+          }
+        }
+      },
       "AssignRolesRequest": {
         "type": "object",
         "required": [
@@ -3201,6 +4026,14 @@
             "type": "string"
           }
         }
+      },
+      "CashSessionStatus": {
+        "type": "string",
+        "enum": [
+          "Open",
+          "Declared",
+          "Reconciled"
+        ]
       },
       "CategoryId": {
         "type": "string",
@@ -3608,6 +4441,33 @@
           }
         }
       },
+      "CreateRiderRequest": {
+        "type": "object",
+        "required": [
+          "branch_id",
+          "user_id",
+          "cnic",
+          "licence_no"
+        ],
+        "properties": {
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "cnic": {
+            "type": "string"
+          },
+          "licence_no": {
+            "type": "string"
+          },
+          "user_id": {
+            "$ref": "#/components/schemas/UserId"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "CreateTransferRequest": {
         "type": "object",
         "required": [
@@ -3685,6 +4545,227 @@
           "CodeMixed"
         ]
       },
+      "DeclareCashRequest": {
+        "type": "object",
+        "required": [
+          "collected_amount"
+        ],
+        "properties": {
+          "collected_amount": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "DeclineDeliveryRequest": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "DeliverRequest": {
+        "type": "object",
+        "required": [
+          "pod_image_object_key",
+          "recipient_name"
+        ],
+        "properties": {
+          "cash_collected": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "gps_denied": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "idempotency_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pod_image_object_key": {
+            "type": "string"
+          },
+          "pod_signature_object_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "prescription_collected": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "recipient_cnic_last4": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipient_name": {
+            "type": "string"
+          }
+        }
+      },
+      "DeliveryDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_id",
+          "status",
+          "prescription_collected",
+          "reattempt_count",
+          "tracking_token",
+          "gps_denied_flag",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "accepted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "assigned_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "cash_collected": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decline_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "delivered_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "distance_km": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "failed_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "gps_denied_flag": {
+            "type": "boolean"
+          },
+          "id": {
+            "$ref": "#/components/schemas/DeliveryId"
+          },
+          "in_transit_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "picked_up_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "pod_image_object_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "pod_signature_object_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "prescription_collected": {
+            "type": "boolean"
+          },
+          "reattempt_count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recipient_cnic_last4": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipient_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "rider_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RiderId"
+              }
+            ],
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeliveryStatus"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "tracking_token": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeliveryId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "DeliveryStatus": {
+        "type": "string",
+        "enum": [
+          "Unassigned",
+          "Assigned",
+          "Accepted",
+          "PickedUp",
+          "InTransit",
+          "Delivered",
+          "Failed",
+          "Returned"
+        ]
+      },
       "DraftReplyResult": {
         "type": "object",
         "required": [
@@ -3729,6 +4810,25 @@
             "type": "string"
           },
           "value": {
+            "type": "string"
+          }
+        }
+      },
+      "FailDeliveryRequest": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "photo_object_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
             "type": "string"
           }
         }
@@ -4631,6 +5731,72 @@
           "FAILED"
         ]
       },
+      "PickingListDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "branch_id",
+          "order_id",
+          "status",
+          "items",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "$ref": "#/components/schemas/PickingListId"
+          },
+          "items": {},
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "picked_by": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/PickingListStatus"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PickingListId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "PickingListStatus": {
+        "type": "string",
+        "enum": [
+          "Pending",
+          "InProgress",
+          "Completed",
+          "Cancelled"
+        ]
+      },
       "PrescriptionDto": {
         "type": "object",
         "required": [
@@ -4897,6 +6063,46 @@
           "REJECTED"
         ]
       },
+      "PublicTrackingDto": {
+        "type": "object",
+        "description": "Zero PII Public Customer Tracking Payload (Doc 12 §8, §10)",
+        "required": [
+          "order_ref",
+          "status",
+          "branch_name"
+        ],
+        "properties": {
+          "assigned_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "branch_name": {
+            "type": "string"
+          },
+          "delivered_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "estimated_delivery_time": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "order_ref": {
+            "type": "string"
+          },
+          "picked_up_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeliveryStatus"
+          }
+        }
+      },
       "QueueStatsDto": {
         "type": "object",
         "required": [
@@ -4921,6 +6127,21 @@
           "total_under_review": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "ReconcileCashSessionRequest": {
+        "type": "object",
+        "required": [
+          "deposited_amount"
+        ],
+        "properties": {
+          "deposited_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -5105,6 +6326,162 @@
             "format": "int32"
           }
         }
+      },
+      "RiderCashSessionDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "rider_id",
+          "status",
+          "opened_at",
+          "expected_amount",
+          "collected_amount",
+          "deposited_amount",
+          "variance"
+        ],
+        "properties": {
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "closed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "collected_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "deposited_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "expected_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "id": {
+            "$ref": "#/components/schemas/RiderCashSessionId"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reconciled_by": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "rider_id": {
+            "$ref": "#/components/schemas/RiderId"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CashSessionStatus"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "variance": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "RiderCashSessionId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "RiderDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "branch_id",
+          "user_id",
+          "vehicle_type",
+          "cnic",
+          "licence_no",
+          "status",
+          "on_shift",
+          "decline_count",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "cnic": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decline_count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "$ref": "#/components/schemas/RiderId"
+          },
+          "licence_no": {
+            "type": "string"
+          },
+          "on_shift": {
+            "type": "boolean"
+          },
+          "shift_ended_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "shift_started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/RiderStatus"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_id": {
+            "$ref": "#/components/schemas/UserId"
+          },
+          "vehicle_type": {
+            "type": "string"
+          }
+        }
+      },
+      "RiderId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "RiderStatus": {
+        "type": "string",
+        "enum": [
+          "Available",
+          "Busy",
+          "OffDuty",
+          "Suspended"
+        ]
       },
       "RoleDto": {
         "type": "object",
@@ -5725,6 +7102,81 @@
             "$ref": "#/components/schemas/UserDto"
           }
         }
+      },
+      "VarianceReportDto": {
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "items"
+        ],
+        "properties": {
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "end_date": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VarianceReportItem"
+            }
+          },
+          "start_date": {
+            "type": "string"
+          }
+        }
+      },
+      "VarianceReportItem": {
+        "type": "object",
+        "required": [
+          "rider_id",
+          "rider_name",
+          "branch_id",
+          "total_expected",
+          "total_collected",
+          "total_deposited",
+          "total_variance",
+          "session_count",
+          "unresolved_sessions"
+        ],
+        "properties": {
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "rider_id": {
+            "$ref": "#/components/schemas/RiderId"
+          },
+          "rider_name": {
+            "type": "string"
+          },
+          "session_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_collected": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "total_deposited": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "total_expected": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "total_variance": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "unresolved_sessions": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -5779,6 +7231,10 @@
     {
       "name": "Payments",
       "description": "Payment gateways, screenshot fraud engine, TID ledger, COD, and reconciliation"
+    },
+    {
+      "name": "Fulfilment",
+      "description": "Rider management, picking lists, delivery dispatch, POD, and cash reconciliation"
     },
     {
       "name": "Webhooks",

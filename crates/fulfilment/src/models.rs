@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use shifa_core::id::{BranchId, DeliveryId, OrderId, PickingListId, RiderCashSessionId, RiderId, TenantId, UserId};
+use shifa_core::id::{
+    BranchId, DeliveryId, OrderId, PickingListId, RiderCashSessionId, RiderId, TenantId, UserId,
+};
 use shifa_core::money::Money;
 use std::fmt;
 use std::str::FromStr;

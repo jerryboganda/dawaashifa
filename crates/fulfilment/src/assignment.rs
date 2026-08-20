@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use rust_decimal::Decimal;
 use shifa_core::context::TenantContext;
-use shifa_core::id::{BranchId, RiderCashSessionId, RiderId};
+use shifa_core::id::{BranchId, RiderCashSessionId, RiderId, TenantId, UserId};
 use shifa_core::money::Money;
 use sqlx::{PgPool, Row};
 
@@ -27,7 +27,7 @@ impl AssignmentEngine {
         let stale_row = sqlx::query(
             "SELECT id FROM rider_cash_sessions
              WHERE tenant_id = $1 AND rider_id = $2 AND status != 'RECONCILED' AND opened_at < $3
-             LIMIT 1"
+             LIMIT 1",
         )
         .bind(ctx.tenant_id().0)
         .bind(rider_id.0)
@@ -47,7 +47,7 @@ impl AssignmentEngine {
         let undeposited_dec: Decimal = sqlx::query_scalar(
             "SELECT COALESCE(SUM(expected_amount), 0.0000)
              FROM rider_cash_sessions
-             WHERE tenant_id = $1 AND rider_id = $2 AND status != 'RECONCILED'"
+             WHERE tenant_id = $1 AND rider_id = $2 AND status != 'RECONCILED'",
         )
         .bind(ctx.tenant_id().0)
         .bind(rider_id.0)

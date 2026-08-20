@@ -212,6 +212,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cash-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_cash_sessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-sessions/variance-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_variance_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-sessions/{id}/declare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["declare_cash"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-sessions/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reconcile_cash_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversations": {
         parameters: {
             query?: never;
@@ -302,6 +366,150 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["transfer_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_deliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deliveries/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["accept_delivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deliveries/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assign_delivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deliveries/{id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decline_delivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deliveries/{id}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["complete_delivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deliveries/{id}/fail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["fail_delivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deliveries/{id}/pickup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["pickup_delivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fulfilment/picking-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_picking_lists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fulfilment/picking-lists/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["complete_picking_list"];
         delete?: never;
         options?: never;
         head?: never;
@@ -916,6 +1124,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/riders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_riders"];
+        put?: never;
+        post: operations["create_rider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/riders/{id}/shift/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["end_shift"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/riders/{id}/shift/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["start_shift"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/roles": {
         parameters: {
             query?: never;
@@ -924,6 +1180,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_roles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/track/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_public_tracking"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1086,6 +1358,9 @@ export interface components {
         AssignConversationRequest: {
             user_id: components["schemas"]["UserId"];
         };
+        AssignDeliveryRequest: {
+            rider_id: components["schemas"]["RiderId"];
+        };
         AssignRolesRequest: {
             role_names: string[];
         };
@@ -1143,6 +1418,8 @@ export interface components {
             shortcode: string;
             title: string;
         };
+        /** @enum {string} */
+        CashSessionStatus: "Open" | "Declared" | "Reconciled";
         /**
          * Format: uuid
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
@@ -1250,6 +1527,13 @@ export interface components {
             raw_exif_software?: string | null;
             raw_sender?: string | null;
         };
+        CreateRiderRequest: {
+            branch_id: components["schemas"]["BranchId"];
+            cnic: string;
+            licence_no: string;
+            user_id: components["schemas"]["UserId"];
+            vehicle_type?: string | null;
+        };
         CreateTransferRequest: {
             items: components["schemas"]["TransferItemRequest"][];
             note?: string | null;
@@ -1271,6 +1555,69 @@ export interface components {
         CustomerId: string;
         /** @enum {string} */
         CustomerScript: "Urdu" | "English" | "RomanUrdu" | "CodeMixed";
+        DeclareCashRequest: {
+            collected_amount: components["schemas"]["Money"];
+        };
+        DeclineDeliveryRequest: {
+            reason: string;
+        };
+        DeliverRequest: {
+            cash_collected?: components["schemas"]["Money"] | null;
+            gps_denied?: boolean | null;
+            idempotency_key?: string | null;
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
+            pod_image_object_key: string;
+            pod_signature_object_key?: string | null;
+            prescription_collected?: boolean | null;
+            recipient_cnic_last4?: string | null;
+            recipient_name: string;
+        };
+        DeliveryDto: {
+            /** Format: date-time */
+            accepted_at?: string | null;
+            /** Format: date-time */
+            assigned_at?: string | null;
+            branch_id?: components["schemas"]["BranchId"] | null;
+            cash_collected?: components["schemas"]["Money"] | null;
+            /** Format: date-time */
+            created_at: string;
+            decline_reason?: string | null;
+            /** Format: date-time */
+            delivered_at?: string | null;
+            /** Format: double */
+            distance_km?: number | null;
+            failed_reason?: string | null;
+            gps_denied_flag: boolean;
+            id: components["schemas"]["DeliveryId"];
+            /** Format: date-time */
+            in_transit_at?: string | null;
+            order_id: components["schemas"]["OrderId"];
+            /** Format: date-time */
+            picked_up_at?: string | null;
+            pod_image_object_key?: string | null;
+            pod_signature_object_key?: string | null;
+            prescription_collected: boolean;
+            /** Format: int32 */
+            reattempt_count: number;
+            recipient_cnic_last4?: string | null;
+            recipient_name?: string | null;
+            rider_id?: components["schemas"]["RiderId"] | null;
+            status: components["schemas"]["DeliveryStatus"];
+            tenant_id: components["schemas"]["TenantId"];
+            tracking_token: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        DeliveryId: string;
+        /** @enum {string} */
+        DeliveryStatus: "Unassigned" | "Assigned" | "Accepted" | "PickedUp" | "InTransit" | "Delivered" | "Failed" | "Returned";
         DraftReplyResult: {
             can_auto_send: boolean;
             /** Format: float */
@@ -1284,6 +1631,11 @@ export interface components {
             confidence: number;
             entity_type: string;
             value: string;
+        };
+        FailDeliveryRequest: {
+            idempotency_key?: string | null;
+            photo_object_key?: string | null;
+            reason: string;
         };
         FeedbackEventRequest: {
             ai_output: string;
@@ -1525,6 +1877,28 @@ export interface components {
         };
         /** @enum {string} */
         PaymentStatus: "PENDING" | "AWAITING_PROOF" | "UNDER_REVIEW" | "CONFIRMED" | "REJECTED" | "REFUNDED" | "FAILED";
+        PickingListDto: {
+            branch_id: components["schemas"]["BranchId"];
+            /** Format: date-time */
+            completed_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            id: components["schemas"]["PickingListId"];
+            items: unknown;
+            order_id: components["schemas"]["OrderId"];
+            picked_by?: components["schemas"]["UserId"] | null;
+            status: components["schemas"]["PickingListStatus"];
+            tenant_id: components["schemas"]["TenantId"];
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        PickingListId: string;
+        /** @enum {string} */
+        PickingListStatus: "Pending" | "InProgress" | "Completed" | "Cancelled";
         PrescriptionDto: {
             assigned_to?: components["schemas"]["UserId"] | null;
             branch_id?: components["schemas"]["BranchId"] | null;
@@ -1602,6 +1976,20 @@ export interface components {
         ProofId: string;
         /** @enum {string} */
         ProofReviewStatus: "PENDING" | "APPROVED" | "REJECTED";
+        /** @description Zero PII Public Customer Tracking Payload (Doc 12 §8, §10) */
+        PublicTrackingDto: {
+            /** Format: date-time */
+            assigned_at?: string | null;
+            branch_name: string;
+            /** Format: date-time */
+            delivered_at?: string | null;
+            /** Format: date-time */
+            estimated_delivery_time?: string | null;
+            order_ref: string;
+            /** Format: date-time */
+            picked_up_at?: string | null;
+            status: components["schemas"]["DeliveryStatus"];
+        };
         QueueStatsDto: {
             /** Format: int64 */
             oldest_waiting_seconds?: number | null;
@@ -1611,6 +1999,10 @@ export interface components {
             total_pending: number;
             /** Format: int64 */
             total_under_review: number;
+        };
+        ReconcileCashSessionRequest: {
+            deposited_amount: components["schemas"]["Money"];
+            note?: string | null;
         };
         ReconciliationDiscrepancy: {
             description: string;
@@ -1660,6 +2052,56 @@ export interface components {
             /** Format: int32 */
             qty: number;
         };
+        RiderCashSessionDto: {
+            branch_id?: components["schemas"]["BranchId"] | null;
+            /** Format: date-time */
+            closed_at?: string | null;
+            collected_amount: components["schemas"]["Money"];
+            deposited_amount: components["schemas"]["Money"];
+            expected_amount: components["schemas"]["Money"];
+            id: components["schemas"]["RiderCashSessionId"];
+            note?: string | null;
+            /** Format: date-time */
+            opened_at: string;
+            reconciled_by?: components["schemas"]["UserId"] | null;
+            rider_id: components["schemas"]["RiderId"];
+            status: components["schemas"]["CashSessionStatus"];
+            tenant_id: components["schemas"]["TenantId"];
+            variance: components["schemas"]["Money"];
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        RiderCashSessionId: string;
+        RiderDto: {
+            branch_id: components["schemas"]["BranchId"];
+            cnic: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: int32 */
+            decline_count: number;
+            id: components["schemas"]["RiderId"];
+            licence_no: string;
+            on_shift: boolean;
+            /** Format: date-time */
+            shift_ended_at?: string | null;
+            /** Format: date-time */
+            shift_started_at?: string | null;
+            status: components["schemas"]["RiderStatus"];
+            tenant_id: components["schemas"]["TenantId"];
+            /** Format: date-time */
+            updated_at: string;
+            user_id: components["schemas"]["UserId"];
+            vehicle_type: string;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        RiderId: string;
+        /** @enum {string} */
+        RiderStatus: "Available" | "Busy" | "OffDuty" | "Suspended";
         RoleDto: {
             description?: string | null;
             id: components["schemas"]["RoleId"];
@@ -1837,6 +2279,25 @@ export interface components {
         UserProfileResponse: {
             permissions: string[];
             user: components["schemas"]["UserDto"];
+        };
+        VarianceReportDto: {
+            branch_id?: components["schemas"]["BranchId"] | null;
+            end_date: string;
+            items: components["schemas"]["VarianceReportItem"][];
+            start_date: string;
+        };
+        VarianceReportItem: {
+            branch_id: components["schemas"]["BranchId"];
+            rider_id: components["schemas"]["RiderId"];
+            rider_name: string;
+            /** Format: int64 */
+            session_count: number;
+            total_collected: components["schemas"]["Money"];
+            total_deposited: components["schemas"]["Money"];
+            total_expected: components["schemas"]["Money"];
+            total_variance: components["schemas"]["Money"];
+            /** Format: int64 */
+            unresolved_sessions: number;
         };
     };
     responses: never;
@@ -2220,6 +2681,149 @@ export interface operations {
             };
         };
     };
+    list_cash_sessions: {
+        parameters: {
+            query?: {
+                /** @description Filter by rider ID */
+                rider_id?: string | null;
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+                /** @description Filter by cash session status */
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of rider cash sessions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderCashSessionDto"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_variance_report: {
+        parameters: {
+            query: {
+                /** @description Start date (YYYY-MM-DD) */
+                start_date: string;
+                /** @description End date (YYYY-MM-DD) */
+                end_date: string;
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cash variance report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VarianceReportDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    declare_cash: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Cash session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeclareCashRequest"];
+            };
+        };
+        responses: {
+            /** @description Rider cash declaration recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderCashSessionDto"];
+                };
+            };
+            /** @description Cash session not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reconcile_cash_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Cash session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileCashSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Cash session reconciled and closed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderCashSessionDto"];
+                };
+            };
+            /** @description Variance requires documented note */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_conversations: {
         parameters: {
             query?: {
@@ -2360,6 +2964,307 @@ export interface operations {
         responses: {
             /** @description Conversation transferred */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_deliveries: {
+        parameters: {
+            query?: {
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+                /** @description Filter by rider ID */
+                rider_id?: string | null;
+                /** @description Filter by delivery status */
+                status?: string | null;
+                /** @description Filter by date (YYYY-MM-DD) */
+                date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of deliveries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryDto"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    accept_delivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Delivery ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delivery accepted by rider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryDto"];
+                };
+            };
+            /** @description Forbidden for unassigned rider */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    assign_delivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Delivery ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignDeliveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Delivery assigned to rider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryDto"];
+                };
+            };
+            /** @description Cash ceiling exceeded or stale session blocked */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Delivery or rider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    decline_delivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Delivery ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeclineDeliveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Delivery declined and returned to unassigned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryDto"];
+                };
+            };
+            /** @description Forbidden for unassigned rider */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    complete_delivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Delivery ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliverRequest"];
+            };
+        };
+        responses: {
+            /** @description Delivery completed with proof of delivery */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryDto"];
+                };
+            };
+            /** @description Missing mandatory POD field or controlled substance requirements */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    fail_delivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Delivery ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FailDeliveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Delivery marked failed or returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryDto"];
+                };
+            };
+            /** @description Delivery not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pickup_delivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Delivery ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delivery picked up from pharmacy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryDto"];
+                };
+            };
+            /** @description Forbidden for unassigned rider */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_picking_lists: {
+        parameters: {
+            query?: {
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+                /** @description Filter by picking list status */
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of picking lists */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickingListDto"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    complete_picking_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Picking list ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Picking list marked completed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickingListDto"];
+                };
+            };
+            /** @description Picking list not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3514,6 +4419,138 @@ export interface operations {
             };
         };
     };
+    list_riders: {
+        parameters: {
+            query?: {
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+                /** @description Filter by rider status */
+                status?: string | null;
+                /** @description Filter by on_shift flag */
+                on_shift?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of riders */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderDto"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden for rider role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_rider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRiderRequest"];
+            };
+        };
+        responses: {
+            /** @description Rider registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    end_shift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Rider ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rider shift ended */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderDto"];
+                };
+            };
+            /** @description Rider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    start_shift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Rider ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rider shift started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderDto"];
+                };
+            };
+            /** @description Rider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_roles: {
         parameters: {
             query?: never;
@@ -3534,6 +4571,36 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_public_tracking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Public tracking token */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Customer tracking status without PII */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicTrackingDto"];
+                };
+            };
+            /** @description Invalid or expired tracking token */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

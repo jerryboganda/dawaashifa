@@ -2,7 +2,9 @@ use chrono::{DateTime, Duration, NaiveDate, Utc};
 use rust_decimal::Decimal;
 use serde_json::json;
 use shifa_core::context::TenantContext;
-use shifa_core::id::{BranchId, DeliveryId, OrderId, PickingListId, RiderCashSessionId, RiderId, TenantId, UserId};
+use shifa_core::id::{
+    BranchId, DeliveryId, OrderId, PickingListId, RiderCashSessionId, RiderId, TenantId, UserId,
+};
 use shifa_core::money::Money;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -105,8 +107,15 @@ impl FulfilmentService {
         on_shift: Option<bool>,
     ) -> Result<Vec<RiderDto>, FulfilmentError> {
         // Enforce rider token scoping: riders cannot list other riders
-        if ctx.role_names().iter().any(|r| r == "RIDER") && !ctx.role_names().iter().any(|r| r == "SUPER_ADMIN" || r == "BRANCH_MANAGER") {
-            return Err(FulfilmentError::Forbidden("Riders are not permitted to list other riders".into()));
+        if ctx.role_names().iter().any(|r| r == "RIDER")
+            && !ctx
+                .role_names()
+                .iter()
+                .any(|r| r == "SUPER_ADMIN" || r == "BRANCH_MANAGER")
+        {
+            return Err(FulfilmentError::Forbidden(
+                "Riders are not permitted to list other riders".into(),
+            ));
         }
 
         let mut query_builder = sqlx::QueryBuilder::new(
@@ -157,7 +166,7 @@ impl FulfilmentService {
                 status = 'AVAILABLE'::rider_status,
                 shift_started_at = now(),
                 updated_at = now()
-             WHERE tenant_id = $1 AND id = $2"
+             WHERE tenant_id = $1 AND id = $2",
         )
         .bind(ctx.tenant_id().0)
         .bind(rider_id.0)
@@ -180,7 +189,7 @@ impl FulfilmentService {
                 status = 'OFF_DUTY'::rider_status,
                 shift_ended_at = now(),
                 updated_at = now()
-             WHERE tenant_id = $1 AND id = $2"
+             WHERE tenant_id = $1 AND id = $2",
         )
         .bind(ctx.tenant_id().0)
         .bind(rider_id.0)
@@ -205,7 +214,7 @@ impl FulfilmentService {
 
         sqlx::query(
             "INSERT INTO picking_lists (id, tenant_id, branch_id, order_id, status, items)
-             VALUES ($1, $2, $3, $4, 'PENDING', $5)"
+             VALUES ($1, $2, $3, $4, 'PENDING', $5)",
         )
         .bind(id.0)
         .bind(ctx.tenant_id().0)
@@ -283,7 +292,7 @@ impl FulfilmentService {
                 picked_by = $1,
                 completed_at = now(),
                 updated_at = now()
-             WHERE tenant_id = $2 AND id = $3"
+             WHERE tenant_id = $2 AND id = $3",
         )
         .bind(user_id.0)
         .bind(ctx.tenant_id().0)
@@ -309,7 +318,7 @@ impl FulfilmentService {
 
         sqlx::query(
             "INSERT INTO deliveries (id, tenant_id, branch_id, order_id, status, tracking_token)
-             VALUES ($1, $2, $3, $4, 'UNASSIGNED'::delivery_status, $5)"
+             VALUES ($1, $2, $3, $4, 'UNASSIGNED'::delivery_status, $5)",
         )
         .bind(delivery_id.0)
         .bind(ctx.tenant_id().0)
@@ -346,14 +355,23 @@ impl FulfilmentService {
 
         // Enforce rider token scoping (Doc 12 §8, §10):
         // If caller is a rider, they can ONLY read their own assigned deliveries.
-        if ctx.role_names().iter().any(|r| r == "RIDER") && !ctx.role_names().iter().any(|r| r == "SUPER_ADMIN" || r == "BRANCH_MANAGER") {
+        if ctx.role_names().iter().any(|r| r == "RIDER")
+            && !ctx
+                .role_names()
+                .iter()
+                .any(|r| r == "SUPER_ADMIN" || r == "BRANCH_MANAGER")
+        {
             let rider = self.get_rider_by_user_id(ctx, ctx.user_id()).await?;
             if let Some(r) = rider {
                 if dto.rider_id != Some(r.id) {
-                    return Err(FulfilmentError::Forbidden("Rider token cannot read other riders' deliveries".into()));
+                    return Err(FulfilmentError::Forbidden(
+                        "Rider token cannot read other riders' deliveries".into(),
+                    ));
                 }
             } else {
-                return Err(FulfilmentError::Forbidden("Rider record not found for user".into()));
+                return Err(FulfilmentError::Forbidden(
+                    "Rider record not found for user".into(),
+                ));
             }
         }
 
@@ -369,12 +387,19 @@ impl FulfilmentService {
         date: Option<NaiveDate>,
     ) -> Result<Vec<DeliveryDto>, FulfilmentError> {
         // Enforce rider token scoping (Doc 12 §8, §10):
-        let effective_rider_id = if ctx.role_names().iter().any(|r| r == "RIDER") && !ctx.role_names().iter().any(|r| r == "SUPER_ADMIN" || r == "BRANCH_MANAGER") {
+        let effective_rider_id = if ctx.role_names().iter().any(|r| r == "RIDER")
+            && !ctx
+                .role_names()
+                .iter()
+                .any(|r| r == "SUPER_ADMIN" || r == "BRANCH_MANAGER")
+        {
             let rider = self.get_rider_by_user_id(ctx, ctx.user_id()).await?;
             if let Some(r) = rider {
                 Some(r.id)
             } else {
-                return Err(FulfilmentError::Forbidden("Rider record not found for user".into()));
+                return Err(FulfilmentError::Forbidden(
+                    "Rider record not found for user".into(),
+                ));
             }
         } else {
             rider_id
@@ -436,15 +461,20 @@ impl FulfilmentService {
 
         // 1. Fetch order details to check if COD
         let order_row = sqlx::query(
-            "SELECT total_amount, payment_method FROM orders WHERE tenant_id = $1 AND id = $2"
+            "SELECT total_amount, payment_method FROM orders WHERE tenant_id = $1 AND id = $2",
         )
         .bind(ctx.tenant_id().0)
         .bind(delivery.order_id.0)
         .fetch_optional(&self.pool)
         .await?
-        .ok_or(FulfilmentError::NotFound("Associated order not found".into()))?;
+        .ok_or(FulfilmentError::NotFound(
+            "Associated order not found".into(),
+        ))?;
 
-        let is_cod = order_row.get::<Option<String>, _>("payment_method").as_deref() == Some("COD");
+        let is_cod = order_row
+            .get::<Option<String>, _>("payment_method")
+            .as_deref()
+            == Some("COD");
         let total_amount_dec: Decimal = order_row.get("total_amount");
         let order_amount = Money::from_decimal(total_amount_dec);
 
@@ -470,7 +500,7 @@ impl FulfilmentService {
                 status = 'ASSIGNED'::delivery_status,
                 assigned_at = now(),
                 updated_at = now()
-             WHERE tenant_id = $2 AND id = $3"
+             WHERE tenant_id = $2 AND id = $3",
         )
         .bind(rider_id.0)
         .bind(ctx.tenant_id().0)
@@ -496,7 +526,7 @@ impl FulfilmentService {
                 status = 'ACCEPTED'::delivery_status,
                 accepted_at = now(),
                 updated_at = now()
-             WHERE tenant_id = $1 AND id = $2"
+             WHERE tenant_id = $1 AND id = $2",
         )
         .bind(ctx.tenant_id().0)
         .bind(delivery_id.0)
@@ -533,7 +563,7 @@ impl FulfilmentService {
                 status = 'UNASSIGNED'::delivery_status,
                 decline_reason = $1,
                 updated_at = now()
-             WHERE tenant_id = $2 AND id = $3"
+             WHERE tenant_id = $2 AND id = $3",
         )
         .bind(&req.reason)
         .bind(ctx.tenant_id().0)
@@ -567,7 +597,7 @@ impl FulfilmentService {
                 status = 'PICKED_UP'::delivery_status,
                 picked_up_at = now(),
                 updated_at = now()
-             WHERE tenant_id = $1 AND id = $2"
+             WHERE tenant_id = $1 AND id = $2",
         )
         .bind(ctx.tenant_id().0)
         .bind(delivery_id.0)
@@ -592,7 +622,7 @@ impl FulfilmentService {
                 status = 'IN_TRANSIT'::delivery_status,
                 in_transit_at = now(),
                 updated_at = now()
-             WHERE tenant_id = $1 AND id = $2"
+             WHERE tenant_id = $1 AND id = $2",
         )
         .bind(ctx.tenant_id().0)
         .bind(delivery_id.0)
@@ -620,16 +650,22 @@ impl FulfilmentService {
 
         // 1. Mandatory POD Validations (Doc 12 §6, §10):
         if req.pod_image_object_key.trim().is_empty() {
-            return Err(FulfilmentError::PodMissingField("Photo is mandatory for delivery completion".into()));
+            return Err(FulfilmentError::PodMissingField(
+                "Photo is mandatory for delivery completion".into(),
+            ));
         }
 
         if req.recipient_name.trim().is_empty() {
-            return Err(FulfilmentError::PodMissingField("Recipient name is mandatory for delivery completion".into()));
+            return Err(FulfilmentError::PodMissingField(
+                "Recipient name is mandatory for delivery completion".into(),
+            ));
         }
 
         let gps_denied = req.gps_denied.unwrap_or(false);
         if !gps_denied && (req.latitude.is_none() || req.longitude.is_none()) {
-            return Err(FulfilmentError::PodMissingField("GPS coordinates or explicit gps_denied flag is required".into()));
+            return Err(FulfilmentError::PodMissingField(
+                "GPS coordinates or explicit gps_denied flag is required".into(),
+            ));
         }
 
         // 2. Controlled Substance Order Extra Validation (Doc 12 §6, §10):
@@ -649,7 +685,10 @@ impl FulfilmentService {
         if has_controlled {
             let rx_collected = req.prescription_collected.unwrap_or(false);
             let cnic_last4 = req.recipient_cnic_last4.as_deref().unwrap_or("");
-            if !rx_collected || cnic_last4.len() != 4 || !cnic_last4.chars().all(|c| c.is_ascii_digit()) {
+            if !rx_collected
+                || cnic_last4.len() != 4
+                || !cnic_last4.chars().all(|c| c.is_ascii_digit())
+            {
                 return Err(FulfilmentError::ControlledSubstanceRequiresPrescriptionAndCnic);
             }
         }
@@ -658,7 +697,8 @@ impl FulfilmentService {
         let cash_collected_money = req.cash_collected.unwrap_or_else(Money::zero);
         if let Some(rider_id) = delivery.rider_id {
             if cash_collected_money.0 > Decimal::ZERO {
-                self.accumulate_cod_cash(ctx, rider_id, delivery.branch_id, cash_collected_money).await?;
+                self.accumulate_cod_cash(ctx, rider_id, delivery.branch_id, cash_collected_money)
+                    .await?;
             }
         }
 
@@ -676,7 +716,7 @@ impl FulfilmentService {
                 gps_denied_flag = $7,
                 idempotency_key = $8,
                 updated_at = now()
-             WHERE tenant_id = $9 AND id = $10"
+             WHERE tenant_id = $9 AND id = $10",
         )
         .bind(&req.pod_image_object_key)
         .bind(&req.pod_signature_object_key)
@@ -694,7 +734,7 @@ impl FulfilmentService {
         // 5. Advance order status to DELIVERED
         sqlx::query(
             "UPDATE orders SET status = 'DELIVERED'::order_status, updated_at = now()
-             WHERE tenant_id = $1 AND id = $2"
+             WHERE tenant_id = $1 AND id = $2",
         )
         .bind(ctx.tenant_id().0)
         .bind(delivery.order_id.0)
@@ -747,7 +787,7 @@ impl FulfilmentService {
                 reattempt_count = $3,
                 idempotency_key = $4,
                 updated_at = now()
-             WHERE tenant_id = $5 AND id = $6"
+             WHERE tenant_id = $5 AND id = $6",
         )
         .bind(new_status.to_string())
         .bind(&req.reason)
@@ -762,7 +802,7 @@ impl FulfilmentService {
         if new_status == DeliveryStatus::Returned {
             sqlx::query(
                 "UPDATE orders SET status = 'RETURNED'::order_status, updated_at = now()
-                 WHERE tenant_id = $1 AND id = $2"
+                 WHERE tenant_id = $1 AND id = $2",
             )
             .bind(ctx.tenant_id().0)
             .bind(delivery.order_id.0)
@@ -789,7 +829,7 @@ impl FulfilmentService {
         let existing_session = sqlx::query(
             "SELECT id, expected_amount FROM rider_cash_sessions
              WHERE tenant_id = $1 AND rider_id = $2 AND status = 'OPEN'
-             ORDER BY opened_at DESC LIMIT 1"
+             ORDER BY opened_at DESC LIMIT 1",
         )
         .bind(ctx.tenant_id().0)
         .bind(rider_id.0)
@@ -905,7 +945,7 @@ impl FulfilmentService {
             "UPDATE rider_cash_sessions SET
                 status = 'DECLARED',
                 collected_amount = $1
-             WHERE tenant_id = $2 AND id = $3"
+             WHERE tenant_id = $2 AND id = $3",
         )
         .bind(req.collected_amount.0)
         .bind(ctx.tenant_id().0)
@@ -946,7 +986,7 @@ impl FulfilmentService {
                 note = $3,
                 reconciled_by = $4,
                 closed_at = now()
-             WHERE tenant_id = $5 AND id = $6"
+             WHERE tenant_id = $5 AND id = $6",
         )
         .bind(req.deposited_amount.0)
         .bind(variance.0)
@@ -995,7 +1035,7 @@ impl FulfilmentService {
              FROM rider_cash_sessions s
              JOIN riders r ON r.id = s.rider_id AND r.tenant_id = s.tenant_id
              LEFT JOIN users u ON u.id = r.user_id AND u.tenant_id = r.tenant_id
-             WHERE s.tenant_id = "
+             WHERE s.tenant_id = ",
         );
         query_builder.push_bind(ctx.tenant_id().0);
         query_builder.push(" AND s.opened_at::date >= ");
@@ -1008,7 +1048,8 @@ impl FulfilmentService {
             query_builder.push_bind(bid.0);
         }
 
-        query_builder.push(" GROUP BY s.rider_id, u.full_name, s.branch_id ORDER BY total_variance ASC");
+        query_builder
+            .push(" GROUP BY s.rider_id, u.full_name, s.branch_id ORDER BY total_variance ASC");
 
         let rows = query_builder.build().fetch_all(&self.pool).await?;
         let mut items = Vec::new();
@@ -1091,8 +1132,16 @@ impl FulfilmentService {
     // Helpers & Row Mappers
     // --------------------------------------------------------------------------------------------
 
-    async fn verify_rider_or_admin(&self, ctx: &TenantContext, rider_id: RiderId) -> Result<(), FulfilmentError> {
-        if ctx.role_names().iter().any(|r| r == "SUPER_ADMIN" || r == "BRANCH_MANAGER" || r == "SYSTEM") {
+    async fn verify_rider_or_admin(
+        &self,
+        ctx: &TenantContext,
+        rider_id: RiderId,
+    ) -> Result<(), FulfilmentError> {
+        if ctx
+            .role_names()
+            .iter()
+            .any(|r| r == "SUPER_ADMIN" || r == "BRANCH_MANAGER" || r == "SYSTEM")
+        {
             return Ok(());
         }
 
@@ -1103,7 +1152,9 @@ impl FulfilmentService {
             }
         }
 
-        Err(FulfilmentError::Forbidden("Action scoped to assigned rider".into()))
+        Err(FulfilmentError::Forbidden(
+            "Action scoped to assigned rider".into(),
+        ))
     }
 
     fn map_rider_row(&self, row: sqlx::postgres::PgRow) -> Result<RiderDto, FulfilmentError> {
@@ -1203,7 +1254,10 @@ impl FulfilmentService {
         })
     }
 
-    fn map_cash_session_row(&self, row: sqlx::postgres::PgRow) -> Result<RiderCashSessionDto, FulfilmentError> {
+    fn map_cash_session_row(
+        &self,
+        row: sqlx::postgres::PgRow,
+    ) -> Result<RiderCashSessionDto, FulfilmentError> {
         let id: Uuid = row.get("id");
         let tid: Uuid = row.get("tenant_id");
         let rid: Uuid = row.get("rider_id");
@@ -1237,7 +1291,10 @@ impl FulfilmentService {
         })
     }
 
-    fn map_picking_list_row(&self, row: sqlx::postgres::PgRow) -> Result<PickingListDto, FulfilmentError> {
+    fn map_picking_list_row(
+        &self,
+        row: sqlx::postgres::PgRow,
+    ) -> Result<PickingListDto, FulfilmentError> {
         let id: Uuid = row.get("id");
         let tid: Uuid = row.get("tenant_id");
         let bid: Uuid = row.get("branch_id");

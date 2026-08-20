@@ -48,6 +48,9 @@ pub enum ApiError {
     #[error("Payment error: {0}")]
     Payment(#[from] shifa_payments::PaymentError),
 
+    #[error("Fulfilment error: {0}")]
+    Fulfilment(#[from] shifa_fulfilment::FulfilmentError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -219,6 +222,28 @@ impl IntoResponse for ApiError {
                 StatusCode::FORBIDDEN,
                 format!("Access denied to branch: {}", b),
             ),
+            ApiError::Fulfilment(shifa_fulfilment::FulfilmentError::Unauthorized(msg)) => {
+                (StatusCode::UNAUTHORIZED, msg)
+            }
+            ApiError::Fulfilment(shifa_fulfilment::FulfilmentError::Forbidden(msg)) => {
+                (StatusCode::FORBIDDEN, msg)
+            }
+            ApiError::Fulfilment(shifa_fulfilment::FulfilmentError::NotFound(msg)) => {
+                (StatusCode::NOT_FOUND, msg)
+            }
+            ApiError::Fulfilment(shifa_fulfilment::FulfilmentError::DeliveryNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Delivery {} not found", id))
+            }
+            ApiError::Fulfilment(shifa_fulfilment::FulfilmentError::RiderNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Rider {} not found", id))
+            }
+            ApiError::Fulfilment(shifa_fulfilment::FulfilmentError::CashSessionNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Cash session {} not found", id))
+            }
+            ApiError::Fulfilment(shifa_fulfilment::FulfilmentError::PickingListNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Picking list {} not found", id))
+            }
+            ApiError::Fulfilment(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Auth(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Core(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Internal(err) => {

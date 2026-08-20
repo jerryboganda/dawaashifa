@@ -2374,6 +2374,7 @@ dependencies = [
  "shifa-conversation",
  "shifa-core",
  "shifa-db",
+ "shifa-fulfilment",
  "shifa-identity",
  "shifa-inventory",
  "shifa-orders",

@@ -27,14 +27,18 @@ pub enum FulfilmentError {
     #[error("Invalid state transition from {current} to {requested}")]
     InvalidStateTransition { current: String, requested: String },
 
-    #[error("Rider {rider_id} undeposited cash Rs {current_undeposited} exceeds COD ceiling Rs {limit}")]
+    #[error(
+        "Rider {rider_id} undeposited cash Rs {current_undeposited} exceeds COD ceiling Rs {limit}"
+    )]
     CashCeilingExceeded {
         rider_id: RiderId,
         limit: String,
         current_undeposited: String,
     },
 
-    #[error("Rider {rider_id} has stale open cash session {session_id} (>24h) blocking COD assignment")]
+    #[error(
+        "Rider {rider_id} has stale open cash session {session_id} (>24h) blocking COD assignment"
+    )]
     StaleCashSessionBlocked {
         rider_id: RiderId,
         session_id: RiderCashSessionId,

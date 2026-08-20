@@ -2,6 +2,7 @@ pub mod ai;
 pub mod auth;
 pub mod branches;
 pub mod conversations;
+pub mod fulfilment;
 pub mod inventory;
 pub mod orders;
 pub mod payments;

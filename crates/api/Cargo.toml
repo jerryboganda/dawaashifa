@@ -16,6 +16,7 @@ shifa-orders.workspace = true
 shifa-ai.workspace = true
 shifa-prescription.workspace = true
 shifa-payments.workspace = true
+shifa-fulfilment.workspace = true
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true
