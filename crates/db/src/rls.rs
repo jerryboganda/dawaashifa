@@ -1,6 +1,10 @@
 use shifa_core::context::TenantContext;
 use sqlx::{PgConnection, PgPool};
+use std::future::Future;
+use std::pin::Pin;
 use thiserror::Error;
+
+pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
 /// Database error wrapper for Shifa database operations.
 #[derive(Error, Debug)]
@@ -11,11 +15,9 @@ pub enum DbError {
     Migrate(#[from] sqlx::migrate::MigrateError),
 }
 
-/// Sets `app.tenant_id` for the **current transaction** (`is_local = true`).
-///
-/// Must be called only after `BEGIN`. Outside a transaction Postgres ignores
-/// a local GUC and RLS would not apply. Prefer [`with_tenant`].
-pub async fn set_tenant_context(
+/// Sets `app.tenant_id` for the current transaction (`is_local = true`).
+/// Crate-private so callers cannot skip [`with_tenant`].
+pub(crate) async fn set_tenant_context(
     conn: &mut PgConnection,
     ctx: &TenantContext,
 ) -> Result<(), DbError> {
@@ -26,16 +28,24 @@ pub async fn set_tenant_context(
     Ok(())
 }
 
-/// Begin a transaction, set tenant GUC from `ctx`, run `f`, commit.
-/// This is the required RLS entry point â€” do not skip it for tenant queries.
-pub async fn with_tenant<F, Fut, T>(pool: &PgPool, ctx: &TenantContext, f: F) -> Result<T, DbError>
+/// Begin a transaction, set tenant GUC, run `f` on **this** connection, commit.
+///
+/// `f` must use the provided `&mut PgConnection`, not a captured `PgPool`.
+/// Nested `with_tenant` opens a **different** pooled connection.
+pub async fn with_tenant<F, T>(pool: &PgPool, ctx: &TenantContext, f: F) -> Result<T, DbError>
 where
-    F: FnOnce(&mut PgConnection) -> Fut,
-    Fut: std::future::Future<Output = Result<T, DbError>>,
+    F: for<'c> FnOnce(&'c mut PgConnection) -> BoxFuture<'c, Result<T, DbError>>,
 {
     let mut tx = pool.begin().await?;
     set_tenant_context(&mut tx, ctx).await?;
-    let result = f(&mut tx).await?;
-    tx.commit().await?;
-    Ok(result)
+    match f(&mut tx).await {
+        Ok(value) => {
+            tx.commit().await?;
+            Ok(value)
+        }
+        Err(e) => {
+            let _ = tx.rollback().await;
+            Err(e)
+        }
+    }
 }

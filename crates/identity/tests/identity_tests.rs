@@ -93,13 +93,12 @@ fn test_branch_scoped_access_enforcement() {
     let branch_a = BranchId::new();
     let branch_b = BranchId::new();
 
-    let ctx = TenantContext::from_verified_claims(
+    let ctx = TenantContext::from_authenticated_session(
         tenant_id,
         user_id,
         vec![branch_a],
         HashSet::from(["order.view".to_string(), "branch.view".to_string()]),
         vec!["BRANCH_MANAGER".to_string()],
-        false,
     );
 
     assert!(ctx.can_act_on_branch(branch_a));

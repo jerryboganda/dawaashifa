@@ -548,6 +548,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/prescriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_prescriptions"];
+        put?: never;
+        post: operations["create_prescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prescriptions/queue/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_queue_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prescriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_prescription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prescriptions/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approve_prescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prescriptions/{id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_audit_trail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prescriptions/{id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claim_prescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prescriptions/{id}/clarify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["clarify_prescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prescriptions/{id}/extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["extract_prescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prescriptions/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reject_prescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -757,6 +901,22 @@ export interface components {
             intent: components["schemas"]["IntentType"];
             normalised_text: string;
         };
+        ApprovalResult: {
+            /** Format: uuid */
+            approval_id: string;
+            approved_lines_count: number;
+            controlled_substances_dispensed: number;
+            prescription_id: components["schemas"]["PrescriptionId"];
+            rejected_lines_count: number;
+            status: components["schemas"]["PrescriptionStatus"];
+            substitutions_count: number;
+        };
+        ApprovePrescriptionRequest: {
+            client_device?: string | null;
+            client_ip?: string | null;
+            decisions: components["schemas"]["LineDecision"][];
+            note?: string | null;
+        };
         AssignBranchesRequest: {
             branch_ids: components["schemas"]["BranchId"][];
         };
@@ -829,6 +989,11 @@ export interface components {
             current_password: string;
             new_password: string;
         };
+        ClarifyPrescriptionRequest: {
+            client_device?: string | null;
+            client_ip?: string | null;
+            question_to_customer: string;
+        };
         ClearExcursionRequest: {
             decision_note: string;
         };
@@ -885,6 +1050,18 @@ export interface components {
             branch_id?: components["schemas"]["BranchId"] | null;
             customer_id: components["schemas"]["CustomerId"];
             payment_method?: string | null;
+        };
+        CreatePrescriptionRequest: {
+            branch_id?: components["schemas"]["BranchId"] | null;
+            conversation_id?: components["schemas"]["ConversationId"] | null;
+            customer_id: components["schemas"]["CustomerId"];
+            image_bytes_len?: number | null;
+            /** Format: int32 */
+            image_height?: number | null;
+            image_object_key: string;
+            /** Format: int32 */
+            image_width?: number | null;
+            source_channel?: string | null;
         };
         CreateProductRequest: {
             barcode?: string | null;
@@ -964,6 +1141,38 @@ export interface components {
         };
         /** @enum {string} */
         IntentType: "ProductEnquiry" | "PriceEnquiry" | "AvailabilityCheck" | "PlaceOrder" | "OrderStatus" | "CancelOrder" | "PrescriptionUpload" | "DeliveryEnquiry" | "PaymentQuery" | "Complaint" | "Greeting" | "HumanRequest" | "Other";
+        LineAction: {
+            /** @enum {string} */
+            type: "Accept";
+        } | {
+            dosage?: string | null;
+            product_id: components["schemas"]["ProductId"];
+            /** Format: int32 */
+            qty: number;
+            /** @enum {string} */
+            type: "Edit";
+        } | {
+            product_id: components["schemas"]["ProductId"];
+            reason: string;
+            /** @enum {string} */
+            type: "Substitute";
+        } | {
+            reason: string;
+            /** @enum {string} */
+            type: "Reject";
+        } | {
+            dosage?: string | null;
+            product_id: components["schemas"]["ProductId"];
+            /** Format: int32 */
+            qty: number;
+            /** @enum {string} */
+            type: "AddManual";
+        };
+        LineDecision: {
+            action: components["schemas"]["LineAction"];
+            /** Format: int32 */
+            line_no: number;
+        };
         LoginRequest: {
             password: string;
             phone_or_email: string;
@@ -1067,6 +1276,38 @@ export interface components {
         OverrideMessageRequest: {
             new_body: string;
         };
+        PrescriptionDto: {
+            assigned_to?: components["schemas"]["UserId"] | null;
+            branch_id?: components["schemas"]["BranchId"] | null;
+            clarification_notes?: string | null;
+            conversation_id?: components["schemas"]["ConversationId"] | null;
+            /** Format: date-time */
+            created_at: string;
+            customer_id: components["schemas"]["CustomerId"];
+            doctor_name?: string | null;
+            doctor_pmdc_no?: string | null;
+            id: components["schemas"]["PrescriptionId"];
+            image_object_key: string;
+            /** Format: date */
+            issued_date?: string | null;
+            lines: components["schemas"]["RxLineDto"][];
+            patient_name?: string | null;
+            preprocessed_image_key?: string | null;
+            /** Format: date-time */
+            received_at: string;
+            source_channel: string;
+            status: components["schemas"]["PrescriptionStatus"];
+            tenant_id: components["schemas"]["TenantId"];
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        PrescriptionId: string;
+        /** @enum {string} */
+        PrescriptionStatus: "RECEIVED" | "PREPROCESSING" | "EXTRACTING" | "PENDING_REVIEW" | "UNDER_REVIEW" | "APPROVED" | "PARTIALLY_APPROVED" | "REJECTED" | "NEEDS_CLARIFICATION" | "CANCELLED";
         ProductAliasDto: {
             alias: string;
             alias_type: string;
@@ -1105,8 +1346,23 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         ProductId: string;
+        QueueStatsDto: {
+            /** Format: int64 */
+            oldest_waiting_seconds?: number | null;
+            /** Format: int64 */
+            total_needs_clarification: number;
+            /** Format: int64 */
+            total_pending: number;
+            /** Format: int64 */
+            total_under_review: number;
+        };
         RefreshRequest: {
             refresh_token: string;
+        };
+        RejectPrescriptionRequest: {
+            client_device?: string | null;
+            client_ip?: string | null;
+            reason: string;
         };
         ReturnItemRequest: {
             is_safe_to_restock: boolean;
@@ -1130,6 +1386,33 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         RoleId: string;
+        RxAuditEntryDto: {
+            action: string;
+            actor_id?: components["schemas"]["UserId"] | null;
+            details: unknown;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            timestamp: string;
+        };
+        RxLineDto: {
+            dosage_instructions?: string | null;
+            /** Format: uuid */
+            id: string;
+            is_controlled: boolean;
+            /** Format: int32 */
+            line_no: number;
+            /** Format: float */
+            match_confidence?: number | null;
+            match_method?: string | null;
+            matched_brand_name?: string | null;
+            matched_product_id?: components["schemas"]["ProductId"] | null;
+            ocr_text: string;
+            pharmacist_action?: string | null;
+            pharmacist_note?: string | null;
+            /** Format: int32 */
+            qty: number;
+        };
         SendMessageRequest: {
             body: string;
             is_template: boolean;
@@ -2175,6 +2458,299 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_prescriptions: {
+        parameters: {
+            query?: {
+                /** @description Filter by status */
+                status?: string | null;
+                /** @description Limit (default 50) */
+                limit?: number | null;
+                /** @description Offset (default 0) */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of prescriptions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDto"][];
+                };
+            };
+        };
+    };
+    create_prescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePrescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Prescription received and queued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDto"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_queue_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prescription review queue metrics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueStatsDto"];
+                };
+            };
+        };
+    };
+    get_prescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Prescription ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prescription full detail with lines and candidates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDto"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    approve_prescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Prescription ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovePrescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Approval result recorded immutably */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalResult"];
+                };
+            };
+            /** @description Incomplete review / missing decision for line */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden (requires rx.approve permission) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_audit_trail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Prescription ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Full immutable audit trail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RxAuditEntryDto"][];
+                };
+            };
+        };
+    };
+    claim_prescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Prescription ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Claim prescription for review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDto"];
+                };
+            };
+            /** @description Already claimed by another pharmacist */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    clarify_prescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Prescription ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClarifyPrescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Clarification requested */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    extract_prescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Prescription ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Re-run extraction result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDto"];
+                };
+            };
+        };
+    };
+    reject_prescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Prescription ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectPrescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Rejection recorded immutably */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalResult"];
                 };
             };
             /** @description Forbidden */

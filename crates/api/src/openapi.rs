@@ -13,6 +13,7 @@ use shifa_identity::models::*;
 use shifa_inventory::models::*;
 use shifa_orders::models::*;
 use shifa_orders::state_machine::OrderStatus;
+use shifa_prescription::models::*;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -60,6 +61,16 @@ use shifa_orders::state_machine::OrderStatus;
         orders::add_item,
         orders::confirm_cart,
         orders::transition_order,
+        prescriptions::create_prescription,
+        prescriptions::list_prescriptions,
+        prescriptions::get_prescription,
+        prescriptions::extract_prescription,
+        prescriptions::claim_prescription,
+        prescriptions::approve_prescription,
+        prescriptions::reject_prescription,
+        prescriptions::clarify_prescription,
+        prescriptions::get_queue_stats,
+        prescriptions::get_audit_trail,
         ai::analyse_handler,
         ai::draft_reply_handler,
         ai::transcribe_handler,
@@ -82,6 +93,7 @@ use shifa_orders::state_machine::OrderStatus;
             CustomerId,
             MessageId,
             OrderId,
+            PrescriptionId,
             Money,
             AuthTokens,
             LoginRequest,
@@ -132,6 +144,18 @@ use shifa_orders::state_machine::OrderStatus;
             TransitionOrderRequest,
             ReturnItemRequest,
             OrderEventDto,
+            PrescriptionStatus,
+            CreatePrescriptionRequest,
+            ApprovePrescriptionRequest,
+            RejectPrescriptionRequest,
+            ClarifyPrescriptionRequest,
+            ApprovalResult,
+            PrescriptionDto,
+            RxLineDto,
+            QueueStatsDto,
+            RxAuditEntryDto,
+            LineDecision,
+            LineAction,
             AiTask,
             CustomerScript,
             IntentType,
@@ -156,6 +180,7 @@ use shifa_orders::state_machine::OrderStatus;
         (name = "Inventory", description = "Append-only stock ledger, batches, transfers, and cold chain"),
         (name = "Conversations", description = "WhatsApp conversations, routing, human override, and inbox"),
         (name = "Orders", description = "Order state machine, cart, branch routing, and COD"),
+        (name = "Prescriptions", description = "Prescription intake, OCR extraction, and licensed pharmacist approval gate"),
         (name = "AI", description = "AI gateway, intent classification, voice transcription, and confidence gating"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),

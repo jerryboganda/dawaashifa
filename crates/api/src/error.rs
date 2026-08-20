@@ -42,6 +42,9 @@ pub enum ApiError {
     #[error("AI error: {0}")]
     Ai(#[from] shifa_ai::AiError),
 
+    #[error("Prescription error: {0}")]
+    Rx(#[from] shifa_prescription::RxError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -54,6 +57,23 @@ impl IntoResponse for ApiError {
             ApiError::NotFound => (StatusCode::NOT_FOUND, "Resource not found".to_string()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            ApiError::Rx(shifa_prescription::RxError::IncompleteReview(line)) => (
+                StatusCode::BAD_REQUEST,
+                format!("Incomplete review: decision missing for line {} (Invariant I-3)", line),
+            ),
+            ApiError::Rx(shifa_prescription::RxError::AlreadyClaimed) => (
+                StatusCode::CONFLICT,
+                "Prescription is already claimed by another pharmacist".to_string(),
+            ),
+            ApiError::Rx(shifa_prescription::RxError::PrescriptionNotFound(_)) => (
+                StatusCode::NOT_FOUND,
+                "Prescription not found".to_string(),
+            ),
+            ApiError::Rx(shifa_prescription::RxError::Unauthorized(msg)) => (
+                StatusCode::FORBIDDEN,
+                msg,
+            ),
+            ApiError::Rx(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Ai(shifa_ai::AiError::CircuitBreakerOpen(task)) => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 format!("AI Circuit breaker open for task {}: work queued for human review", task),

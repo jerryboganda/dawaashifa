@@ -13,3 +13,4 @@ thiserror.workspace = true
 async-trait = "0.1"
 rust_decimal.workspace = true
 uuid.workspace = true
+futures-util = "0.3"

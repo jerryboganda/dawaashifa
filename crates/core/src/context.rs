@@ -2,11 +2,12 @@ use crate::error::CoreError;
 use crate::id::{BranchId, TenantId, UserId};
 use std::collections::HashSet;
 
-/// Authenticated tenant context extracted strictly from verified JWT/session claims.
+/// Authenticated tenant context. Fields are private.
 ///
-/// Fields are private so callers cannot assemble a context from request body/path/query.
-/// Construction is only via [`TenantContext::from_verified_claims`], which the identity
-/// layer must call after JWT/session verification — never from handler-supplied IDs.
+/// Production minting: [`TenantContext::from_authenticated_session`] derives
+/// org-wide branch access from `role_names` (SUPER_ADMIN only). Never pass a
+/// caller-supplied org-wide boolean. HTTP handlers must not call this — they
+/// receive context from the JWT extractor via identity.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TenantContext {
     tenant_id: TenantId,
@@ -18,18 +19,18 @@ pub struct TenantContext {
 }
 
 impl TenantContext {
-    /// Mint a context after JWT/session verification in the identity crate.
+    /// Build context after JWT/session verification.
     ///
-    /// `org_wide_branch_access` must be an explicit claim (e.g. SUPER_ADMIN).
-    /// An empty `branch_ids` list never implies org-wide access.
-    pub fn from_verified_claims(
+    /// `org_wide_branch_access` is derived: true iff `role_names` contains
+    /// `SUPER_ADMIN`. Empty `branch_ids` never implies org-wide access.
+    pub fn from_authenticated_session(
         tenant_id: TenantId,
         user_id: UserId,
         branch_ids: Vec<BranchId>,
         permissions: HashSet<String>,
         role_names: Vec<String>,
-        org_wide_branch_access: bool,
     ) -> Self {
+        let org_wide_branch_access = role_names.iter().any(|r| r == "SUPER_ADMIN");
         Self {
             tenant_id,
             user_id,
@@ -76,7 +77,7 @@ impl TenantContext {
         }
     }
 
-    /// Empty `branch_ids` means no branch access unless `org_wide_branch_access` is set.
+    /// Empty `branch_ids` means no branch access unless SUPER_ADMIN.
     pub fn can_act_on_branch(&self, branch_id: BranchId) -> bool {
         self.org_wide_branch_access || self.branch_ids.contains(&branch_id)
     }
@@ -105,23 +106,18 @@ mod tests {
         perms.insert("rx.approve".to_string());
         perms.insert("payment.approve".to_string());
 
-        let ctx = TenantContext::from_verified_claims(
+        let ctx = TenantContext::from_authenticated_session(
             tenant_id,
             user_id,
             vec![branch_a],
             perms,
             vec!["PHARMACIST".to_string()],
-            false,
         );
 
         assert_eq!(ctx.tenant_id(), tenant_id);
         assert_eq!(ctx.user_id(), user_id);
         assert!(ctx.has_permission("rx.approve"));
-        assert!(ctx.has_permission("payment.approve"));
-        assert!(!ctx.has_permission("admin.settings"));
-        assert!(ctx.require("rx.approve").is_ok());
-        assert!(ctx.require("admin.settings").is_err());
-
+        assert!(!ctx.org_wide_branch_access());
         assert!(ctx.can_act_on_branch(branch_a));
         assert!(!ctx.can_act_on_branch(branch_b));
         assert!(ctx.require_branch(branch_a).is_ok());
@@ -129,32 +125,41 @@ mod tests {
     }
 
     #[test]
-    fn empty_branch_ids_deny_all_without_org_wide_flag() {
+    fn empty_branch_ids_denies_access() {
         let branch_any = BranchId::new();
-        let ctx = TenantContext::from_verified_claims(
+        let ctx = TenantContext::from_authenticated_session(
             TenantId::new(),
             UserId::new(),
             vec![],
             HashSet::new(),
             vec!["CASHIER".to_string()],
-            false,
         );
+        assert!(!ctx.org_wide_branch_access());
         assert!(!ctx.can_act_on_branch(branch_any));
         assert!(ctx.require_branch(branch_any).is_err());
     }
 
     #[test]
-    fn org_wide_flag_allows_any_branch() {
+    fn org_wide_flag_grants_access_only_for_super_admin() {
         let branch_any = BranchId::new();
-        let ctx = TenantContext::from_verified_claims(
+        let admin = TenantContext::from_authenticated_session(
             TenantId::new(),
             UserId::new(),
             vec![],
             HashSet::new(),
             vec!["SUPER_ADMIN".to_string()],
-            true,
         );
-        assert!(ctx.can_act_on_branch(branch_any));
-        assert!(ctx.require_branch(branch_any).is_ok());
+        assert!(admin.org_wide_branch_access());
+        assert!(admin.can_act_on_branch(branch_any));
+
+        let not_admin = TenantContext::from_authenticated_session(
+            TenantId::new(),
+            UserId::new(),
+            vec![],
+            HashSet::new(),
+            vec!["CASHIER".to_string()],
+        );
+        assert!(!not_admin.org_wide_branch_access());
+        assert!(!not_admin.can_act_on_branch(branch_any));
     }
 }

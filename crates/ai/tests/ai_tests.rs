@@ -13,13 +13,12 @@ fn create_test_context(tenant_id: TenantId) -> TenantContext {
     permissions.insert("report.view".to_string());
     permissions.insert("product.create".to_string());
 
-    TenantContext::from_verified_claims(
+    TenantContext::from_authenticated_session(
         tenant_id,
         UserId::new(),
         vec![],
         permissions,
         vec!["SUPER_ADMIN".to_string()],
-        true,
     )
 }
 

@@ -42,6 +42,18 @@ jobs:
       - name: Cargo clippy check
         run: cargo clippy --workspace --all-targets -- -D warnings
 
+      - name: Repository SQL must mention tenant_id
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r -d '' f; do
+            if grep -q 'sqlx::query' "$f" && ! grep -q 'tenant_id' "$f"; then
+              echo "::error file=$f::repository query missing tenant_id filter"
+              fail=1
+            fi
+          done < <(find crates -type f -name '*repository*.rs' -print0)
+          exit "$fail"
+
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile=false
 
