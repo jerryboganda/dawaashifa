@@ -1,0 +1,13 @@
+﻿[package]
+name = "dawaa-db"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dawaa-core.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
