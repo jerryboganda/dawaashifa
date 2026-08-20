@@ -1,4 +1,4 @@
-﻿use shifa_core::id::TenantId;
+use shifa_core::id::TenantId;
 use sqlx::PgConnection;
 use thiserror::Error;
 
@@ -25,4 +25,3 @@ pub async fn set_tenant_context(
         .await?;
     Ok(())
 }
-

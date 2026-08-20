@@ -1,4 +1,4 @@
-﻿use thiserror::Error;
+use thiserror::Error;
 
 /// Core domain error primitives for the Shifa platform.
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
@@ -18,4 +18,3 @@ pub enum CoreError {
     #[error("Validation error: {0}")]
     ValidationError(String),
 }
-
