@@ -1,0 +1,203 @@
+# Authoritative full-stack verification. Everything that needs a container
+# runtime runs HERE, not on a developer machine. Local Windows development
+# uses scripts/dev-stack.ps1 and needs no Docker.
+name: verify
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/shifa_test
+
+jobs:
+  # ---------------------------------------------------------------- lint ---
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: clippy, rustfmt }
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Reject UTF-8 BOMs
+        run: |
+          found=$(find . -type f \( -name '*.sql' -o -name '*.rs' -o -name '*.toml' \) \
+            -not -path './target/*' -not -path './node_modules/*' \
+            -exec sh -c 'head -c3 "$1" | od -An -tx1 | grep -q "ef bb bf" && echo "$1"' _ {} \; || true)
+          if [ -n "$found" ]; then
+            echo "::error::UTF-8 BOM found. Windows PowerShell '>' redirection adds these."
+            echo "$found"
+            exit 1
+          fi
+          echo "No BOMs found."
+
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  # ------------------------------------------------------- test full stack ---
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shifa_test
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+        ports: ["5432:5432"]
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s
+          --health-timeout 5s --health-retries 5
+        ports: ["6379:6379"]
+      nats:
+        image: nats:2-alpine
+        ports: ["4222:4222", "8222:8222"]
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports: ["9000:9000"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres --locked
+
+      - name: Install PostGIS
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+
+      - name: Enable extensions
+        run: |
+          psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+          psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+          psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS vector;"
+        env:
+          PGPASSWORD: postgres
+
+      - name: Run migrations
+        run: sqlx migrate run
+
+      - name: Verify sqlx offline cache is current
+        run: cargo sqlx prepare --workspace --check
+
+      - name: Test
+        run: cargo test --workspace -- --nocapture
+
+      # Structural assertions that catch what unit tests miss
+      - name: Assert every tenant table has RLS
+        env: { PGPASSWORD: postgres }
+        run: |
+          missing=$(psql "$DATABASE_URL" -tAc "
+            SELECT c.relname FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            JOIN information_schema.columns col
+              ON col.table_name = c.relname AND col.column_name = 'tenant_id'
+            WHERE n.nspname='public' AND c.relkind='r' AND NOT c.relrowsecurity;")
+          if [ -n "$missing" ]; then
+            echo "::error::Tables with tenant_id but no RLS:"; echo "$missing"; exit 1
+          fi
+          echo "All tenant-scoped tables have RLS enabled."
+
+      - name: Assert no float money columns
+        env: { PGPASSWORD: postgres }
+        run: |
+          bad=$(psql "$DATABASE_URL" -tAc "
+            SELECT table_name||'.'||column_name FROM information_schema.columns
+            WHERE table_schema='public'
+              AND data_type IN ('real','double precision')
+              AND (column_name ~ 'price|total|amount|fee|cost|mrp|discount|tax');")
+          if [ -n "$bad" ]; then
+            echo "::error::Float columns in money paths:"; echo "$bad"; exit 1
+          fi
+          echo "No float money columns."
+
+      - name: Assert every FK has an index
+        env: { PGPASSWORD: postgres }
+        run: |
+          bad=$(psql "$DATABASE_URL" -tAc "
+            SELECT conrelid::regclass||'('||a.attname||')'
+            FROM pg_constraint c
+            JOIN pg_attribute a ON a.attrelid=c.conrelid AND a.attnum=ANY(c.conkey)
+            WHERE c.contype='f' AND NOT EXISTS (
+              SELECT 1 FROM pg_index i
+              WHERE i.indrelid=c.conrelid AND a.attnum=ANY(i.indkey));")
+          if [ -n "$bad" ]; then
+            echo "::error::Foreign keys without an index:"; echo "$bad"; exit 1
+          fi
+          echo "All foreign keys indexed."
+
+  # ------------------------------------------------------------- frontend ---
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm check
+      - run: pnpm test
+
+  # ------------------------------------------------------- contract drift ---
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+
+      - name: Guard - this job must FAIL, not no-op, once contracts exist
+        run: |
+          if [ -s contracts/openapi.json ]; then
+            echo "openapi.json present - drift check is ACTIVE"
+            echo "ACTIVE=true" >> $GITHUB_ENV
+          else
+            echo "::warning::contracts/openapi.json empty - drift check dormant (expected only before Doc 02)"
+            echo "ACTIVE=false" >> $GITHUB_ENV
+          fi
+
+      - name: Backend spec is current
+        if: env.ACTIVE == 'true'
+        run: |
+          cargo run -p api --bin emit-openapi
+          git diff --exit-code contracts/openapi.json \
+            || { echo "::error::openapi.json stale - run emit-openapi and commit"; exit 1; }
+
+      - name: Generated client is current
+        if: env.ACTIVE == 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm gen:api
+          git diff --exit-code apps/shared/src/api/ \
+            || { echo "::error::Generated client stale - run pnpm gen:api and commit"; exit 1; }
+
+  # ------------------------------------------------------------- security ---
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-audit --locked
+      - run: cargo audit
+      - uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }

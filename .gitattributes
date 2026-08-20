@@ -1,0 +1,9 @@
+# UTF-8 without BOM in the working tree. Git rejects a BOM on add
+# when working-tree-encoding is UTF-8 (not UTF-8-BOM).
+*.sql   text eol=lf working-tree-encoding=UTF-8
+*.rs    text eol=lf working-tree-encoding=UTF-8
+*.toml  text eol=lf working-tree-encoding=UTF-8
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.md    text eol=lf
+*.ps1   text eol=crlf
