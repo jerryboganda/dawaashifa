@@ -26,6 +26,8 @@ use shifa_identity::models::*;
         branches::update_branch,
         roles::list_roles,
         roles::list_permissions,
+        webhooks::verify_webhook_challenge,
+        webhooks::handle_inbound_webhook,
     ),
     components(
         schemas(
@@ -54,7 +56,8 @@ use shifa_identity::models::*;
         (name = "Auth", description = "Authentication and session management"),
         (name = "Users", description = "User management and RBAC assignments"),
         (name = "Branches", description = "Branch store locations and configuration"),
-        (name = "Roles", description = "Roles and permissions directory")
+        (name = "Roles", description = "Roles and permissions directory"),
+        (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(
         title = "Shifa Platform API",

@@ -212,6 +212,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/webhooks/whatsapp/{channel_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["verify_webhook_challenge"];
+        put?: never;
+        post: operations["handle_inbound_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -813,6 +829,75 @@ export interface operations {
                 content?: never;
             };
             /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    verify_webhook_challenge: {
+        parameters: {
+            query?: {
+                /** @description Hub mode */
+                "hub.mode"?: string | null;
+                /** @description Hub verify token */
+                "hub.verify_token"?: string | null;
+                /** @description Hub challenge */
+                "hub.challenge"?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description Channel ID */
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook challenge verified */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Verification token mismatch */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    handle_inbound_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Channel ID */
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Inbound webhook acknowledged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid signature */
             403: {
                 headers: {
                     [name: string]: unknown;

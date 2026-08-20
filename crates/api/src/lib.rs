@@ -58,6 +58,12 @@ pub fn build_app(identity_service: IdentityService) -> Router {
         .route("/roles", get(routes::roles::list_roles))
         .route("/permissions", get(routes::roles::list_permissions));
 
+    let webhook_routes = Router::new().route(
+        "/whatsapp/:channel_id",
+        get(routes::webhooks::verify_webhook_challenge)
+            .post(routes::webhooks::handle_inbound_webhook),
+    );
+
     let api_v1 = Router::new()
         .nest("/auth", auth_routes)
         .nest("/users", user_routes)
@@ -67,5 +73,6 @@ pub fn build_app(identity_service: IdentityService) -> Router {
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .nest("/api/v1", api_v1)
+        .nest("/webhooks", webhook_routes)
         .with_state(state)
 }

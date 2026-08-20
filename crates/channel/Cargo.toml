@@ -6,5 +6,21 @@ license.workspace = true
 
 [dependencies]
 shifa-core.workspace = true
+shifa-db.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+sqlx.workspace = true
 async-trait.workspace = true
+tokio.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+sha2 = "0.10"
+hmac = "0.12"
+hex = "0.4"
+reqwest = { version = "0.12", features = ["json"] }
+utoipa.workspace = true
+uuid.workspace = true
 
+[dev-dependencies]
+wiremock = "0.6"

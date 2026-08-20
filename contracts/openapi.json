@@ -556,6 +556,109 @@
           }
         ]
       }
+    },
+    "/webhooks/whatsapp/{channel_id}": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "operationId": "verify_webhook_challenge",
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "description": "Channel ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "hub.mode",
+            "in": "query",
+            "description": "Hub mode",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "hub.verify_token",
+            "in": "query",
+            "description": "Hub verify token",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "hub.challenge",
+            "in": "query",
+            "description": "Hub challenge",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook challenge verified",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification token mismatch"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "operationId": "handle_inbound_webhook",
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "description": "Channel ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Inbound webhook acknowledged"
+          },
+          "403": {
+            "description": "Invalid signature"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -996,6 +1099,10 @@
     {
       "name": "Roles",
       "description": "Roles and permissions directory"
+    },
+    {
+      "name": "Webhooks",
+      "description": "WhatsApp Meta Cloud API webhooks"
     }
   ]
 }
