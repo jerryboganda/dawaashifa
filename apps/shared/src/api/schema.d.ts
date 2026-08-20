@@ -484,6 +484,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fbr/queue-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_fbr_queue_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/fulfilment/picking-lists": {
         parameters: {
             query?: never;
@@ -622,6 +638,86 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["dispatch_transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_invoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_invoice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{id}/credit-note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_credit_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_invoice_pdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resubmit_invoice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1188,6 +1284,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tax/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_tax_categories"];
+        put?: never;
+        post: operations["create_tax_category"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tax/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["patch_tax_category"];
+        trace?: never;
+    };
+    "/api/v1/tax/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_tax_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/track/{token}": {
         parameters: {
             query?: never;
@@ -1486,6 +1630,9 @@ export interface components {
             shortcode: string;
             title: string;
         };
+        CreateCreditNoteRequest: {
+            reason: string;
+        };
         CreateDraftOrderRequest: {
             branch_id?: components["schemas"]["BranchId"] | null;
             customer_id: components["schemas"]["CustomerId"];
@@ -1533,6 +1680,15 @@ export interface components {
             licence_no: string;
             user_id: components["schemas"]["UserId"];
             vehicle_type?: string | null;
+        };
+        CreateTaxCategoryRequest: {
+            /** Format: date-time */
+            effective_from?: string | null;
+            fbr_code?: string | null;
+            is_exempt?: boolean | null;
+            is_zero_rated?: boolean | null;
+            name: string;
+            rate: string;
         };
         CreateTransferRequest: {
             items: components["schemas"]["TransferItemRequest"][];
@@ -1637,6 +1793,22 @@ export interface components {
             photo_object_key?: string | null;
             reason: string;
         };
+        /** @enum {string} */
+        FbrQueueStatus: "Pending" | "Submitting" | "Accepted" | "Rejected" | "Failed";
+        FbrQueueStatusDto: {
+            /** Format: int64 */
+            accepted_count: number;
+            /** Format: int64 */
+            failed_count: number;
+            /** Format: int64 */
+            pending_count: number;
+            /** Format: int64 */
+            rejected_count: number;
+            /** Format: int64 */
+            stale_pending_count: number;
+            /** Format: int64 */
+            submitting_count: number;
+        };
         FeedbackEventRequest: {
             ai_output: string;
             /** Format: float */
@@ -1677,6 +1849,43 @@ export interface components {
         };
         /** @enum {string} */
         IntentType: "ProductEnquiry" | "PriceEnquiry" | "AvailabilityCheck" | "PlaceOrder" | "OrderStatus" | "CancelOrder" | "PrescriptionUpload" | "DeliveryEnquiry" | "PaymentQuery" | "Complaint" | "Greeting" | "HumanRequest" | "Other";
+        InvoiceDto: {
+            branch_id: components["schemas"]["BranchId"];
+            /** Format: date-time */
+            created_at: string;
+            credit_note_for?: components["schemas"]["InvoiceId"] | null;
+            credit_note_reason?: string | null;
+            fbr_error?: string | null;
+            fbr_qr_payload?: string | null;
+            fbr_queue_status: components["schemas"]["FbrQueueStatus"];
+            fbr_request?: unknown;
+            fbr_response?: unknown;
+            fiscal_invoice_no?: string | null;
+            id: components["schemas"]["InvoiceId"];
+            invoice_no: string;
+            is_provisional: boolean;
+            /** Format: date-time */
+            issued_at: string;
+            lines: components["schemas"]["TaxLine"][];
+            order_id: components["schemas"]["OrderId"];
+            pdf_object_key?: string | null;
+            /** Format: int32 */
+            retry_count: number;
+            status: components["schemas"]["InvoiceStatus"];
+            subtotal: components["schemas"]["Money"];
+            tax_amount: components["schemas"]["Money"];
+            tenant_id: components["schemas"]["TenantId"];
+            total_amount: components["schemas"]["Money"];
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        InvoiceId: string;
+        /** @enum {string} */
+        InvoiceStatus: "Issued" | "Cancelled" | "Refunded";
         LineAction: {
             /** @enum {string} */
             type: "Accept";
@@ -1811,6 +2020,12 @@ export interface components {
         OrderStatus: "Draft" | "CartConfirmed" | "AwaitingRx" | "RxUnderReview" | "RxApproved" | "RxRejected" | "AwaitingPayment" | "PaymentUnderReview" | "PaymentRejected" | "Confirmed" | "Picking" | "Packed" | "Dispatched" | "OutForDelivery" | "Delivered" | "CashReconciled" | "Closed" | "Cancelled" | "FailedDelivery" | "Returned" | "Refunded";
         OverrideMessageRequest: {
             new_body: string;
+        };
+        PatchTaxCategoryRequest: {
+            /** Format: date-time */
+            effective_from?: string | null;
+            fbr_code?: string | null;
+            new_rate: string;
         };
         PaymentDto: {
             amount: components["schemas"]["Money"];
@@ -2187,6 +2402,52 @@ export interface components {
             requires_pharmacist_approval: boolean;
             savings_vs_original: components["schemas"]["Money"];
             strength: string;
+        };
+        TaxCategoryDto: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            effective_from: string;
+            /** Format: date-time */
+            effective_to?: string | null;
+            fbr_code?: string | null;
+            id: components["schemas"]["TaxCategoryId"];
+            is_exempt: boolean;
+            is_zero_rated: boolean;
+            name: string;
+            rate: string;
+            tenant_id: components["schemas"]["TenantId"];
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        TaxCategoryId: string;
+        TaxLine: {
+            category_id: components["schemas"]["TaxCategoryId"];
+            fbr_code?: string | null;
+            is_exempt: boolean;
+            is_zero_rated: boolean;
+            item_name: string;
+            rate: string;
+            tax_amount: components["schemas"]["Money"];
+            taxable_amount: components["schemas"]["Money"];
+        };
+        TaxReportDto: {
+            branch_id?: components["schemas"]["BranchId"] | null;
+            from_date: string;
+            lines: components["schemas"]["TaxLine"][];
+            summary: components["schemas"]["TaxReportSummary"];
+            to_date: string;
+        };
+        TaxReportSummary: {
+            exempt_sales: components["schemas"]["Money"];
+            taxable_sales: components["schemas"]["Money"];
+            /** Format: int64 */
+            total_invoices_count: number;
+            total_sales: components["schemas"]["Money"];
+            total_tax_collected: components["schemas"]["Money"];
+            zero_rated_sales: components["schemas"]["Money"];
         };
         /**
          * Format: uuid
@@ -3210,6 +3471,33 @@ export interface operations {
             };
         };
     };
+    get_fbr_queue_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description FBR submission queue status and health counts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FbrQueueStatusDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_picking_lists: {
         parameters: {
             query?: {
@@ -3434,6 +3722,189 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TransferDto"];
                 };
+            };
+        };
+    };
+    list_invoices: {
+        parameters: {
+            query?: {
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+                /** @description Filter by invoice status (ISSUED, CANCELLED, REFUNDED) */
+                status?: string | null;
+                /** @description Filter by FBR queue status (PENDING, SUBMITTING, ACCEPTED, REJECTED, FAILED) */
+                fbr_status?: string | null;
+                /** @description From date (YYYY-MM-DD) */
+                from?: string | null;
+                /** @description To date (YYYY-MM-DD) */
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of invoices */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDto"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Invoice ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invoice details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDto"];
+                };
+            };
+            /** @description Invoice not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_credit_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Invoice ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCreditNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Credit note issued */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDto"];
+                };
+            };
+            /** @description Credit note already issued */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invoice not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_invoice_pdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Invoice ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invoice PDF URL / payload */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Invoice not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resubmit_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Invoice ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invoice resubmitted to FBR */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invoice not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4571,6 +5042,139 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_tax_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of tax categories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxCategoryDto"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_tax_category: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Tax category created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxCategoryDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    patch_tax_category: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tax category ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchTaxCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Tax category updated with new rate period */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxCategoryDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tax category not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_tax_report: {
+        parameters: {
+            query: {
+                /** @description From date (YYYY-MM-DD) */
+                from: string;
+                /** @description To date (YYYY-MM-DD) */
+                to: string;
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tax report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxReportDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

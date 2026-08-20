@@ -16,6 +16,7 @@ use shifa_orders::models::*;
 use shifa_orders::state_machine::OrderStatus;
 use shifa_payments::models::*;
 use shifa_prescription::models::*;
+use shifa_tax::models::*;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -108,6 +109,16 @@ use shifa_prescription::models::*;
         fulfilment::reconcile_cash_session,
         fulfilment::get_variance_report,
         fulfilment::get_public_tracking,
+        tax::list_invoices,
+        tax::get_invoice,
+        tax::get_invoice_pdf,
+        tax::resubmit_invoice,
+        tax::create_credit_note,
+        tax::list_tax_categories,
+        tax::create_tax_category,
+        tax::patch_tax_category,
+        tax::get_tax_report,
+        tax::get_fbr_queue_status,
     ),
     components(
         schemas(
@@ -239,6 +250,19 @@ use shifa_prescription::models::*;
             ReconcileCashSessionRequest,
             VarianceReportItem,
             VarianceReportDto,
+            TaxCategoryId,
+            InvoiceId,
+            FbrQueueStatus,
+            InvoiceStatus,
+            TaxCategoryDto,
+            CreateTaxCategoryRequest,
+            PatchTaxCategoryRequest,
+            TaxLine,
+            InvoiceDto,
+            CreateCreditNoteRequest,
+            TaxReportSummary,
+            TaxReportDto,
+            FbrQueueStatusDto,
         )
     ),
     modifiers(&SecurityAddon),
@@ -255,6 +279,8 @@ use shifa_prescription::models::*;
         (name = "AI", description = "AI gateway, intent classification, voice transcription, and confidence gating"),
         (name = "Payments", description = "Payment gateways, screenshot fraud engine, TID ledger, COD, and reconciliation"),
         (name = "Fulfilment", description = "Rider management, picking lists, delivery dispatch, POD, and cash reconciliation"),
+        (name = "Invoices", description = "Fiscal invoice generation, PDF receipts, credit notes, and FBR retry queue"),
+        (name = "Tax", description = "Tax categories with versioned rate periods, FBR POS reporting, and tax summaries"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

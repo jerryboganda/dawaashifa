@@ -2380,6 +2380,7 @@ dependencies = [
  "shifa-orders",
  "shifa-payments",
  "shifa-prescription",
+ "shifa-tax",
  "sqlx",
  "thiserror 1.0.69",
  "tokio",
@@ -2614,7 +2615,20 @@ dependencies = [
 name = "shifa-tax"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "chrono",
+ "hex",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
  "shifa-core",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]

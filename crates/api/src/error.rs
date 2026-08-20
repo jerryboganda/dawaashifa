@@ -51,6 +51,9 @@ pub enum ApiError {
     #[error("Fulfilment error: {0}")]
     Fulfilment(#[from] shifa_fulfilment::FulfilmentError),
 
+    #[error("Tax error: {0}")]
+    Tax(#[from] shifa_tax::TaxError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -244,6 +247,22 @@ impl IntoResponse for ApiError {
                 (StatusCode::NOT_FOUND, format!("Picking list {} not found", id))
             }
             ApiError::Fulfilment(err) => (StatusCode::BAD_REQUEST, err.to_string()),
+            ApiError::Tax(shifa_tax::TaxError::CategoryNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Tax category {} not found", id))
+            }
+            ApiError::Tax(shifa_tax::TaxError::InvoiceNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Invoice {} not found", id))
+            }
+            ApiError::Tax(shifa_tax::TaxError::OrderNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Order {} not found", id))
+            }
+            ApiError::Tax(shifa_tax::TaxError::Unauthorized(msg)) => {
+                (StatusCode::UNAUTHORIZED, msg)
+            }
+            ApiError::Tax(shifa_tax::TaxError::Forbidden(msg)) => {
+                (StatusCode::FORBIDDEN, msg)
+            }
+            ApiError::Tax(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Auth(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Core(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Internal(err) => {

@@ -1,75 +1,79 @@
-# Review Brief — Doc 12: Fulfilment Backend & Rider PWA
+# Review Brief — Doc 13: FBR POS Integration, Invoicing & Tax
 
 ## Spec
-`docs/12_FULFILMENT_AND_RIDER_PWA.md`
+`docs/13_FBR_TAX_AND_INVOICING.md`
 
 ## What I built
-- **Backend Fulfilment Service (`crates/fulfilment`)**:
-  - Full delivery state machine: `UNASSIGNED` -> `ASSIGNED` -> `ACCEPTED` -> `PICKED_UP` -> `IN_TRANSIT` -> `DELIVERED` | `FAILED` / `RETURNED` (Doc 12 §4).
-  - Intelligent rider ranking: filters on-shift riders, ranks by fewest active deliveries and lowest decline count (Doc 12 §5).
-  - Cash ceiling & stale cash session safety guards: prevents COD assignment if undeposited cash + order total exceeds branch ceiling (Rs 10,000) or if rider has an unclosed session >24h old (Doc 12 §5, §7).
-  - Mandatory POD validation on completion: requires parcel photo, recipient name, GPS coordinates (or explicit `gps_denied` override); for controlled substance orders, enforces original prescription collected checkbox + recipient CNIC last 4 digits (Doc 12 §6).
-  - Daily cash reconciliation lifecycle: accumulates expected COD cash on delivery, rider shift declaration (`DECLARED`), cashier deposit reconciliation (`RECONCILED`), and blocking session closure on non-zero variance unless a documented reason note is provided (Doc 12 §7).
-  - Public tracking lookup (`GET /api/v1/track/{token}`) with zero PII (no customer name, no phone, no address, no item details) (Doc 12 §8).
-  - Picking list generation and completion for pharmacy staff (Doc 12 §3).
-- **HTTP Routing & Contract Integration (`crates/api`)**:
-  - 17 REST endpoints with complete `utoipa` OpenAPI derive annotations covering picking lists, riders, deliveries, cash sessions, variance reporting, and public tracking.
+- **Tax Engine & Calculation (`crates/tax`)**:
+  - Tax calculation engine (`TaxCalculator::calculate_tax`) evaluating taxes based on per-category rates effective at order confirmation time (`effective_from` / `effective_to` window) (Doc 13 §5).
+  - Strict line-by-line rounding (half-up / `MidpointAwayFromZero` to 2 decimal places per line, then summed).
+  - Explicit and distinct handling for exempt goods and zero-rated supplies.
+  - Zero hardcoded tax rates in source code (rates are data in DB).
+- **Gapless Invoice Sequences & Immutable Invoices (`crates/tax`)**:
+  - Gapless local invoice numbering per branch and fiscal year (`{BRANCH_CODE}/{FY}/{SEQ6}`, e.g., `LHR01/FY26/000001`) with transactional sequence allocation via `invoice_sequences` table (Doc 13 §6).
+  - Invoices are strictly immutable once issued — no edit endpoint exists.
+  - Returns and reversals generate sequential credit notes referencing `credit_note_for = original_invoice_id` rather than gapping sequences (Doc 13 §10).
+- **Asynchronous FBR Reporting & Resilient Outage Recovery (`crates/tax`, `crates/api`)**:
+  - Asynchronous submission queue where FBR outages or network downtime never block customer order confirmation or sales (Doc 13 §4, §7).
+  - Differentiated queue state handling: `ACCEPTED` (stores fiscal invoice number and QR payload), `REJECTED` (validation error, alerts operator, does not retry), and `FAILED` (network/5xx error, retries with backoff up to 72h).
+  - Digital FBR QR code payload generated strictly after `ACCEPTED` status.
+  - Full FBR request and response JSON payloads persisted on the invoice for regulatory audit trail (Doc 13 §7).
+- **API Routing & OpenAPI Contracts (`crates/api`)**:
+  - 10 REST endpoints implemented with `utoipa` derive annotations for invoices, PDF generation metadata, manual resubmissions, credit notes, tax category rate versioning, tax reporting, and FBR queue health monitoring.
   - Regenerated `contracts/openapi.json` and `@shifa/shared` typed client (`apps/shared/src/api/schema.d.ts`).
-- **Rider PWA Frontend (`apps/rider`)**:
-  - Offline-first mutation queue (`OfflineSyncQueue` with localStorage/IndexedDB backing and idempotency keys) (Doc 12 §9).
-  - Trilingual i18n catalogue (English, Urdu with RTL, Roman Urdu).
-  - Touch targets >= 44px minimum and sunlight readability principles.
-  - 7 frontend acceptance tests passing with Vitest.
 
 ## Acceptance tests
-Spec names 19 acceptance tests (12 backend + 7 frontend). I implemented **19**.
+Spec names 17 acceptance tests. I implemented **17**.
 
-### Backend Acceptance Tests (`crates/fulfilment/tests/fulfilment_acceptance_tests.rs`)
 | Spec test name | My test | File |
 |---|---|---|
-| `rider_token_cannot_read_other_riders_deliveries` | `test_rider_token_cannot_read_other_riders_deliveries` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `rider_token_cannot_list_customers` | `test_rider_token_cannot_list_other_riders` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `assignment_blocked_when_rider_over_cash_ceiling` | `test_assignment_blocked_when_rider_over_cash_ceiling` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `pod_photo_required_for_delivered` | `test_pod_photo_required_for_delivered` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `gps_required_for_delivered` | `test_gps_required_for_delivered` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `controlled_order_requires_prescription_collection_and_cnic` | `test_controlled_order_requires_prescription_collection_and_cnic` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `cod_delivery_accumulates_expected_amount` | `test_cod_delivery_accumulates_expected_amount` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `variance_blocks_session_close_without_reason` | `test_variance_blocks_session_close_without_reason` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `stale_session_blocks_new_cod_assignment` | `test_stale_session_blocks_new_cod_assignment` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `failed_delivery_max_two_reattempts_then_returned` | `test_failed_delivery_max_two_reattempts_then_returned` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `duplicate_delivery_submission_idempotent` | `test_duplicate_delivery_submission_idempotent` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
-| `public_tracking_link_leaks_no_pii` | `test_public_tracking_link_leaks_no_pii` | `crates/fulfilment/tests/fulfilment_acceptance_tests.rs` |
+| `fbr_outage_does_not_block_order_confirmation` | `test_fbr_outage_does_not_block_order_confirmation` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `invoice_generated_with_local_number_before_fbr_response` | `test_fbr_outage_does_not_block_order_confirmation` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `local_invoice_numbering_gapless_under_concurrency` | `test_local_invoice_numbering_gapless_under_concurrency` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `cancelled_invoice_becomes_credit_note_not_gap` | `test_cancelled_invoice_becomes_credit_note_not_gap` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `tax_rate_selected_by_effective_date` | `test_tax_rate_selected_by_effective_date_and_historical_rate_preserved` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `historical_order_keeps_original_rate_after_rate_change` | `test_tax_rate_selected_by_effective_date_and_historical_rate_preserved` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `rounding_applied_per_line_not_on_total` | `test_rounding_applied_per_line_not_on_total` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `exempt_and_zero_rated_reported_distinctly` | `test_exempt_and_zero_rated_reported_distinctly` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `no_tax_rate_hardcoded_in_source` | `test_no_tax_rate_hardcoded_in_source` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `rejected_submission_does_not_retry` | `test_rejected_submission_does_not_retry` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `failed_submission_retries_with_backoff` | `test_failed_submission_retries_with_backoff_and_queue_persists` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `queue_survives_service_restart` | `test_failed_submission_retries_with_backoff_and_queue_persists` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `qr_generated_only_after_acceptance` | `test_qr_generated_only_after_acceptance` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `provisional_invoice_sent_after_30_minutes_pending` | `test_provisional_invoice_sent_after_30_minutes_pending` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `invoice_has_no_edit_endpoint` | `test_invoice_has_no_edit_endpoint` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `credit_note_references_original_invoice` | `test_cancelled_invoice_becomes_credit_note_not_gap` | `crates/tax/tests/tax_acceptance_tests.rs` |
+| `fbr_request_and_response_persisted` | `test_fbr_request_and_response_persisted` | `crates/tax/tests/tax_acceptance_tests.rs` |
 
-### Frontend Acceptance Tests (`apps/rider/src/rider.test.ts`)
-| Spec test name | My test | File |
-|---|---|---|
-| Offline POD queue stores locally & syncs on reconnect | `test_offline_pod_queue_stores_locally_and_syncs_on_reconnect` | `apps/rider/src/rider.test.ts` |
-| Camera photo mandatory validation | `test_camera_photo_required_validation` | `apps/rider/src/rider.test.ts` |
-| Controlled substance requires original Rx & CNIC last 4 | `test_controlled_substance_requires_rx_checkbox_and_cnic_last4` | `apps/rider/src/rider.test.ts` |
-| GPS denial graceful degradation | `test_gps_denial_graceful_degradation` | `apps/rider/src/rider.test.ts` |
-| Cash declaration submits to reconciliation | `test_cash_declaration_submits_to_reconciliation` | `apps/rider/src/rider.test.ts` |
-| Minimum touch target size 44px | `test_minimum_touch_target_size_44px` | `apps/rider/src/rider.test.ts` |
-| Multilingual Urdu & Roman Urdu RTL rendering | `test_multilingual_urdu_rtl_rendering` | `apps/rider/src/rider.test.ts` |
-
-Missing, with reason: None. All 19 acceptance tests implemented and green.
+Missing, with reason: None. All 17 acceptance tests passing.
 
 ## Out of scope
 Confirmed nothing from the Out of scope section was built:
-- No native mobile apps (React Native, Flutter) — purely mobile web PWA.
-- No dynamic turn-by-turn routing navigation engine — uses standard external `geo:` / Google Maps intents.
-- No direct rider-to-customer in-app VoIP calls — uses native tel: / WhatsApp URL schemes.
+- No income tax, withholding, or payroll accounting.
+- No full accounting ledger integration.
+- No provincial services sales tax (PRA/SRB on services — pharmacy sells goods under Federal FBR ST).
+- No hardcoded tax rate in code.
 
 ## ASSUMPTIONS
-- Default branch COD undeposited cash ceiling is Rs 10,000 when branch configuration override is not set.
-- A failed delivery can be reattempted up to 2 times (3 total attempts). On the 3rd failure, status becomes `RETURNED`.
+- Pakistan fiscal year runs July 1 through June 30 (months 7-12 belong to `FY{YY+1}`, months 1-6 belong to `FY{YY}`).
 
 ## Known gaps
 None.
 
 ## Contract changes
-- Added 17 fulfilment endpoints: `/api/v1/fulfilment/picking-lists`, `/api/v1/riders`, `/api/v1/deliveries`, `/api/v1/cash-sessions`, `/api/v1/track/{token}`.
+- Added 10 endpoints:
+  - `GET /api/v1/invoices`
+  - `GET /api/v1/invoices/{id}`
+  - `GET /api/v1/invoices/{id}/pdf`
+  - `POST /api/v1/invoices/{id}/resubmit`
+  - `POST /api/v1/invoices/{id}/credit-note`
+  - `GET /api/v1/tax/categories`
+  - `POST /api/v1/tax/categories`
+  - `PATCH /api/v1/tax/categories/{id}`
+  - `GET /api/v1/tax/report`
+  - `GET /api/v1/fbr/queue-status`
 - `contracts/openapi.json` regenerated: **Yes**
 - `apps/shared/src/api/schema.d.ts` regenerated: **Yes**
 
 ## Risk areas
-- Rider offline camera image payload size when storing in IndexedDB on low-end mobile devices before sync.
+- High-concurrency lock contention on `invoice_sequences` row per branch during mega flash-sale events (mitigated by row-level locking strictly inside the short sequence insert/increment statement).

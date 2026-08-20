@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "shifa-tax"
 version.workspace = true
 edition.workspace = true
@@ -6,4 +6,20 @@ license.workspace = true
 
 [dependencies]
 shifa-core.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+rust_decimal.workspace = true
+thiserror.workspace = true
+async-trait.workspace = true
+utoipa.workspace = true
+tracing.workspace = true
+sha2.workspace = true
+hex.workspace = true
 
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+sqlx = { workspace = true, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "rust_decimal", "chrono"] }

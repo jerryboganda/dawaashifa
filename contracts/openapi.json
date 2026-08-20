@@ -1240,6 +1240,29 @@
         }
       }
     },
+    "/api/v1/fbr/queue-status": {
+      "get": {
+        "tags": [
+          "Tax"
+        ],
+        "operationId": "get_fbr_queue_status",
+        "responses": {
+          "200": {
+            "description": "FBR submission queue status and health counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FbrQueueStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
     "/api/v1/fulfilment/picking-lists": {
       "get": {
         "tags": [
@@ -1577,6 +1600,246 @@
             "bearer_auth": []
           }
         ]
+      }
+    },
+    "/api/v1/invoices": {
+      "get": {
+        "tags": [
+          "Invoices"
+        ],
+        "operationId": "list_invoices",
+        "parameters": [
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by invoice status (ISSUED, CANCELLED, REFUNDED)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "fbr_status",
+            "in": "query",
+            "description": "Filter by FBR queue status (PENDING, SUBMITTING, ACCEPTED, REJECTED, FAILED)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "From date (YYYY-MM-DD)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "nullable": true
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "To date (YYYY-MM-DD)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of invoices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InvoiceDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices/{id}": {
+      "get": {
+        "tags": [
+          "Invoices"
+        ],
+        "operationId": "get_invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Invoice ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invoice not found"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices/{id}/credit-note": {
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "operationId": "create_credit_note",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Invoice ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCreditNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Credit note issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Credit note already issued"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Invoice not found"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices/{id}/pdf": {
+      "get": {
+        "tags": [
+          "Invoices"
+        ],
+        "operationId": "get_invoice_pdf",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Invoice ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice PDF URL / payload",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invoice not found"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices/{id}/resubmit": {
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "operationId": "resubmit_invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Invoice ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice resubmitted to FBR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Invoice not found"
+          }
+        }
       }
     },
     "/api/v1/messages/bulk-approve/{conversation_id}": {
@@ -3190,6 +3453,167 @@
         ]
       }
     },
+    "/api/v1/tax/categories": {
+      "get": {
+        "tags": [
+          "Tax"
+        ],
+        "operationId": "list_tax_categories",
+        "responses": {
+          "200": {
+            "description": "List of tax categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaxCategoryDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tax"
+        ],
+        "operationId": "create_tax_category",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaxCategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Tax category created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxCategoryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/tax/categories/{id}": {
+      "patch": {
+        "tags": [
+          "Tax"
+        ],
+        "operationId": "patch_tax_category",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tax category ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchTaxCategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tax category updated with new rate period",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxCategoryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Tax category not found"
+          }
+        }
+      }
+    },
+    "/api/v1/tax/report": {
+      "get": {
+        "tags": [
+          "Tax"
+        ],
+        "operationId": "get_tax_report",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "From date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "To date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tax report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxReportDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
     "/api/v1/track/{token}": {
       "get": {
         "tags": [
@@ -4256,6 +4680,17 @@
           }
         }
       },
+      "CreateCreditNoteRequest": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
       "CreateDraftOrderRequest": {
         "type": "object",
         "required": [
@@ -4465,6 +4900,38 @@
           "vehicle_type": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "CreateTaxCategoryRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "rate"
+        ],
+        "properties": {
+          "effective_from": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "fbr_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_exempt": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "is_zero_rated": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "string"
           }
         }
       },
@@ -4833,6 +5300,53 @@
           }
         }
       },
+      "FbrQueueStatus": {
+        "type": "string",
+        "enum": [
+          "Pending",
+          "Submitting",
+          "Accepted",
+          "Rejected",
+          "Failed"
+        ]
+      },
+      "FbrQueueStatusDto": {
+        "type": "object",
+        "required": [
+          "pending_count",
+          "submitting_count",
+          "accepted_count",
+          "rejected_count",
+          "failed_count",
+          "stale_pending_count"
+        ],
+        "properties": {
+          "accepted_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "failed_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pending_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rejected_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "stale_pending_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "submitting_count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "FeedbackEventRequest": {
         "type": "object",
         "required": [
@@ -4996,6 +5510,131 @@
           "Greeting",
           "HumanRequest",
           "Other"
+        ]
+      },
+      "InvoiceDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "branch_id",
+          "order_id",
+          "invoice_no",
+          "status",
+          "subtotal",
+          "tax_amount",
+          "total_amount",
+          "lines",
+          "fbr_queue_status",
+          "is_provisional",
+          "retry_count",
+          "issued_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "credit_note_for": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InvoiceId"
+              }
+            ],
+            "nullable": true
+          },
+          "credit_note_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fbr_error": {
+            "type": "string",
+            "nullable": true
+          },
+          "fbr_qr_payload": {
+            "type": "string",
+            "nullable": true
+          },
+          "fbr_queue_status": {
+            "$ref": "#/components/schemas/FbrQueueStatus"
+          },
+          "fbr_request": {
+            "nullable": true
+          },
+          "fbr_response": {
+            "nullable": true
+          },
+          "fiscal_invoice_no": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "$ref": "#/components/schemas/InvoiceId"
+          },
+          "invoice_no": {
+            "type": "string"
+          },
+          "is_provisional": {
+            "type": "boolean"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxLine"
+            }
+          },
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "pdf_object_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "retry_count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InvoiceStatus"
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "total_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "InvoiceId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "InvoiceStatus": {
+        "type": "string",
+        "enum": [
+          "Issued",
+          "Cancelled",
+          "Refunded"
         ]
       },
       "LineAction": {
@@ -5485,6 +6124,26 @@
         ],
         "properties": {
           "new_body": {
+            "type": "string"
+          }
+        }
+      },
+      "PatchTaxCategoryRequest": {
+        "type": "object",
+        "required": [
+          "new_rate"
+        ],
+        "properties": {
+          "effective_from": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "fbr_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "new_rate": {
             "type": "string"
           }
         }
@@ -6781,6 +7440,166 @@
           }
         }
       },
+      "TaxCategoryDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "name",
+          "rate",
+          "is_exempt",
+          "is_zero_rated",
+          "effective_from",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effective_to": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "fbr_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "$ref": "#/components/schemas/TaxCategoryId"
+          },
+          "is_exempt": {
+            "type": "boolean"
+          },
+          "is_zero_rated": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          }
+        }
+      },
+      "TaxCategoryId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "TaxLine": {
+        "type": "object",
+        "required": [
+          "item_name",
+          "taxable_amount",
+          "rate",
+          "tax_amount",
+          "category_id",
+          "is_exempt",
+          "is_zero_rated"
+        ],
+        "properties": {
+          "category_id": {
+            "$ref": "#/components/schemas/TaxCategoryId"
+          },
+          "fbr_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_exempt": {
+            "type": "boolean"
+          },
+          "is_zero_rated": {
+            "type": "boolean"
+          },
+          "item_name": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "string"
+          },
+          "tax_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "taxable_amount": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "TaxReportDto": {
+        "type": "object",
+        "required": [
+          "from_date",
+          "to_date",
+          "summary",
+          "lines"
+        ],
+        "properties": {
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "from_date": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxLine"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/TaxReportSummary"
+          },
+          "to_date": {
+            "type": "string"
+          }
+        }
+      },
+      "TaxReportSummary": {
+        "type": "object",
+        "required": [
+          "taxable_sales",
+          "exempt_sales",
+          "zero_rated_sales",
+          "total_sales",
+          "total_tax_collected",
+          "total_invoices_count"
+        ],
+        "properties": {
+          "exempt_sales": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "taxable_sales": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "total_invoices_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_sales": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "total_tax_collected": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "zero_rated_sales": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
       "TenantId": {
         "type": "string",
         "format": "uuid",
@@ -7235,6 +8054,14 @@
     {
       "name": "Fulfilment",
       "description": "Rider management, picking lists, delivery dispatch, POD, and cash reconciliation"
+    },
+    {
+      "name": "Invoices",
+      "description": "Fiscal invoice generation, PDF receipts, credit notes, and FBR retry queue"
+    },
+    {
+      "name": "Tax",
+      "description": "Tax categories with versioned rate periods, FBR POS reporting, and tax summaries"
     },
     {
       "name": "Webhooks",

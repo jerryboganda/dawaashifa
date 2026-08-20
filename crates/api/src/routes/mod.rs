@@ -9,5 +9,6 @@ pub mod payments;
 pub mod prescriptions;
 pub mod products;
 pub mod roles;
+pub mod tax;
 pub mod users;
 pub mod webhooks;

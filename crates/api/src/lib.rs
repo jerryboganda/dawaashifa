@@ -22,6 +22,7 @@ use shifa_inventory::{ColdChainService, InventoryService, TransferService};
 use shifa_orders::OrderService;
 use shifa_payments::PaymentService;
 use shifa_prescription::PrescriptionService;
+use shifa_tax::TaxService;
 use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -40,6 +41,7 @@ pub struct AppState {
     pub prescription_service: PrescriptionService,
     pub payment_service: PaymentService,
     pub fulfilment_service: FulfilmentService,
+    pub tax_service: TaxService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
@@ -53,6 +55,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let prescription_service = PrescriptionService::new(pool.clone());
     let payment_service = PaymentService::new(pool.clone());
     let fulfilment_service = FulfilmentService::new(pool.clone());
+    let tax_service = TaxService::new(pool.clone());
 
     let state = AppState {
         pool,
@@ -67,6 +70,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         prescription_service,
         payment_service,
         fulfilment_service,
+        tax_service,
     };
 
     let auth_routes = Router::new()
@@ -259,6 +263,23 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
             get(routes::fulfilment::get_variance_report),
         );
 
+    let invoice_routes = Router::new()
+        .route("/", get(routes::tax::list_invoices))
+        .route("/:id", get(routes::tax::get_invoice))
+        .route("/:id/pdf", get(routes::tax::get_invoice_pdf))
+        .route("/:id/resubmit", post(routes::tax::resubmit_invoice))
+        .route("/:id/credit-note", post(routes::tax::create_credit_note));
+
+    let tax_routes = Router::new()
+        .route(
+            "/categories",
+            get(routes::tax::list_tax_categories).post(routes::tax::create_tax_category),
+        )
+        .route("/categories/:id", patch(routes::tax::patch_tax_category))
+        .route("/report", get(routes::tax::get_tax_report));
+
+    let fbr_routes = Router::new().route("/queue-status", get(routes::tax::get_fbr_queue_status));
+
     let webhook_routes = Router::new().route(
         "/whatsapp/:channel_id",
         get(routes::webhooks::verify_webhook_challenge)
@@ -281,6 +302,9 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/riders", rider_routes)
         .nest("/deliveries", delivery_routes)
         .nest("/cash-sessions", cash_session_routes)
+        .nest("/invoices", invoice_routes)
+        .nest("/tax", tax_routes)
+        .nest("/fbr", fbr_routes)
         .nest("/ai", ai_routes)
         .merge(role_routes);
 
