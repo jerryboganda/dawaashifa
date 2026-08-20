@@ -15,6 +15,7 @@ use axum::{
 };
 use shifa_catalog::CatalogService;
 use shifa_identity::IdentityService;
+use shifa_inventory::{ColdChainService, InventoryService, TransferService};
 use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -24,14 +25,24 @@ pub struct AppState {
     pub pool: PgPool,
     pub identity_service: IdentityService,
     pub catalog_service: CatalogService,
+    pub inventory_service: InventoryService,
+    pub transfer_service: TransferService,
+    pub cold_chain_service: ColdChainService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let catalog_service = CatalogService::new(pool.clone());
+    let inventory_service = InventoryService::new(pool.clone());
+    let transfer_service = TransferService::new(pool.clone());
+    let cold_chain_service = ColdChainService::new(pool.clone());
+
     let state = AppState {
         pool,
         identity_service,
         catalog_service,
+        inventory_service,
+        transfer_service,
+        cold_chain_service,
     };
 
     let auth_routes = Router::new()
@@ -76,6 +87,21 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .route("/match", post(routes::products::match_products_handler))
         .route("/:id/substitutes", get(routes::products::get_substitutes));
 
+    let inventory_routes = Router::new()
+        .route("/stock", get(routes::inventory::list_stock))
+        .route("/receipts", post(routes::inventory::receive_stock))
+        .route("/adjustments", post(routes::inventory::adjust_stock))
+        .route("/transfers", post(routes::inventory::create_transfer))
+        .route(
+            "/transfers/:id/dispatch",
+            post(routes::inventory::dispatch_transfer),
+        )
+        .route("/cold-chain/logs", post(routes::inventory::log_cold_chain))
+        .route(
+            "/cold-chain/:batch_id/clear-excursion",
+            post(routes::inventory::clear_excursion),
+        );
+
     let webhook_routes = Router::new().route(
         "/whatsapp/:channel_id",
         get(routes::webhooks::verify_webhook_challenge)
@@ -87,6 +113,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/users", user_routes)
         .nest("/branches", branch_routes)
         .nest("/products", product_routes)
+        .nest("/inventory", inventory_routes)
         .merge(role_routes);
 
     Router::new()

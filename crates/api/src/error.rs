@@ -1,4 +1,4 @@
-﻿use axum::http::StatusCode;
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde_json::json;
@@ -30,6 +30,9 @@ pub enum ApiError {
     #[error("Catalog error: {0}")]
     Catalog(#[from] shifa_catalog::CatalogError),
 
+    #[error("Inventory error: {0}")]
+    Inventory(#[from] shifa_inventory::InventoryError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -53,6 +56,21 @@ impl IntoResponse for ApiError {
                 (StatusCode::FORBIDDEN, msg)
             }
             ApiError::Catalog(err) => (StatusCode::BAD_REQUEST, err.to_string()),
+            ApiError::Inventory(shifa_inventory::InventoryError::InsufficientStock {
+                requested,
+                available,
+                ..
+            }) => (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Insufficient stock: requested {}, available {}",
+                    requested, available
+                ),
+            ),
+            ApiError::Inventory(shifa_inventory::InventoryError::Unauthorized(msg)) => {
+                (StatusCode::FORBIDDEN, msg)
+            }
+            ApiError::Inventory(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Auth(shifa_identity::AuthError::InvalidCredentials) => (
                 StatusCode::UNAUTHORIZED,
                 "Invalid phone/email or password".to_string(),

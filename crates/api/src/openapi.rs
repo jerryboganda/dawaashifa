@@ -8,6 +8,7 @@ use shifa_catalog::models::*;
 use shifa_core::id::*;
 use shifa_core::money::Money;
 use shifa_identity::models::*;
+use shifa_inventory::models::*;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -33,6 +34,13 @@ use shifa_identity::models::*;
         products::create_product,
         products::match_products_handler,
         products::get_substitutes,
+        inventory::list_stock,
+        inventory::receive_stock,
+        inventory::adjust_stock,
+        inventory::create_transfer,
+        inventory::dispatch_transfer,
+        inventory::log_cold_chain,
+        inventory::clear_excursion,
         webhooks::verify_webhook_challenge,
         webhooks::handle_inbound_webhook,
     ),
@@ -45,6 +53,7 @@ use shifa_identity::models::*;
             ProductId,
             CategoryId,
             GenericId,
+            BatchId,
             Money,
             AuthTokens,
             LoginRequest,
@@ -68,6 +77,16 @@ use shifa_identity::models::*;
             MatchMethod,
             SubstitutionCandidate,
             ProductAliasDto,
+            StockCurrentDto,
+            BatchAllocation,
+            StockReceiptRequest,
+            StockAdjustmentRequest,
+            CreateTransferRequest,
+            TransferItemRequest,
+            TransferDto,
+            ColdChainLogRequest,
+            ClearExcursionRequest,
+            BranchAvailabilityDto,
         )
     ),
     modifiers(&SecurityAddon),
@@ -77,6 +96,7 @@ use shifa_identity::models::*;
         (name = "Branches", description = "Branch store locations and configuration"),
         (name = "Roles", description = "Roles and permissions directory"),
         (name = "Products", description = "Drug master, catalog, MRP enforcement, and matching"),
+        (name = "Inventory", description = "Append-only stock ledger, batches, transfers, and cold chain"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

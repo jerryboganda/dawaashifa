@@ -265,6 +265,261 @@
         ]
       }
     },
+    "/api/v1/inventory/adjustments": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "adjust_stock",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockAdjustmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Stock adjusted"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/inventory/cold-chain/logs": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "log_cold_chain",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ColdChainLogRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Temperature logged"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/inventory/cold-chain/{batch_id}/clear-excursion": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "clear_excursion",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "description": "Batch ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClearExcursionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Excursion cleared by pharmacist"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/inventory/receipts": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "receive_stock",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockReceiptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Stock received and movement recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchId"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/inventory/stock": {
+      "get": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "list_stock",
+        "parameters": [
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "description": "Filter by product ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current stock list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockCurrentDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/inventory/transfers": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "create_transfer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransferRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Transfer draft created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/inventory/transfers/{id}/dispatch": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "dispatch_transfer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Transfer ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer dispatched",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/api/v1/permissions": {
       "get": {
         "tags": [
@@ -937,6 +1192,60 @@
           }
         }
       },
+      "BatchAllocation": {
+        "type": "object",
+        "required": [
+          "batch_id",
+          "batch_number",
+          "expiry_date",
+          "qty"
+        ],
+        "properties": {
+          "batch_id": {
+            "$ref": "#/components/schemas/BatchId"
+          },
+          "batch_number": {
+            "type": "string"
+          },
+          "expiry_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "BatchId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "BranchAvailabilityDto": {
+        "type": "object",
+        "required": [
+          "branch_id",
+          "branch_name",
+          "can_fulfill_all",
+          "total_available"
+        ],
+        "properties": {
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "branch_name": {
+            "type": "string"
+          },
+          "can_fulfill_all": {
+            "type": "boolean"
+          },
+          "total_available": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "BranchDto": {
         "type": "object",
         "required": [
@@ -1010,6 +1319,41 @@
           },
           "new_password": {
             "type": "string"
+          }
+        }
+      },
+      "ClearExcursionRequest": {
+        "type": "object",
+        "required": [
+          "decision_note"
+        ],
+        "properties": {
+          "decision_note": {
+            "type": "string"
+          }
+        }
+      },
+      "ColdChainLogRequest": {
+        "type": "object",
+        "required": [
+          "branch_id",
+          "batch_id",
+          "temperature_c"
+        ],
+        "properties": {
+          "batch_id": {
+            "$ref": "#/components/schemas/BatchId"
+          },
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "temperature_c": {
+            "type": "number",
+            "format": "double"
           }
         }
       },
@@ -1134,6 +1478,32 @@
               }
             ],
             "nullable": true
+          }
+        }
+      },
+      "CreateTransferRequest": {
+        "type": "object",
+        "required": [
+          "source_branch_id",
+          "target_branch_id",
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransferItemRequest"
+            }
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "source_branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "target_branch_id": {
+            "$ref": "#/components/schemas/BranchId"
           }
         }
       },
@@ -1451,6 +1821,113 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "StockAdjustmentRequest": {
+        "type": "object",
+        "required": [
+          "branch_id",
+          "product_id",
+          "batch_id",
+          "qty_delta",
+          "reason"
+        ],
+        "properties": {
+          "batch_id": {
+            "$ref": "#/components/schemas/BatchId"
+          },
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "qty_delta": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "StockCurrentDto": {
+        "type": "object",
+        "required": [
+          "branch_id",
+          "product_id",
+          "batch_id",
+          "qty",
+          "batch_number",
+          "expiry_date",
+          "is_quarantined"
+        ],
+        "properties": {
+          "batch_id": {
+            "$ref": "#/components/schemas/BatchId"
+          },
+          "batch_number": {
+            "type": "string"
+          },
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "expiry_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "is_quarantined": {
+            "type": "boolean"
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "StockReceiptRequest": {
+        "type": "object",
+        "required": [
+          "branch_id",
+          "product_id",
+          "batch_number",
+          "expiry_date",
+          "qty"
+        ],
+        "properties": {
+          "batch_number": {
+            "type": "string"
+          },
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "cost_price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "expiry_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "supplier_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
       "SubstitutionCandidate": {
         "type": "object",
         "required": [
@@ -1494,6 +1971,59 @@
         "type": "string",
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "TransferDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "source_branch_id",
+          "target_branch_id",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source_branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "status": {
+            "type": "string"
+          },
+          "target_branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          }
+        }
+      },
+      "TransferItemRequest": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "batch_id",
+          "qty"
+        ],
+        "properties": {
+          "batch_id": {
+            "$ref": "#/components/schemas/BatchId"
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "UpdateBranchRequest": {
         "type": "object",
@@ -1729,6 +2259,10 @@
     {
       "name": "Products",
       "description": "Drug master, catalog, MRP enforcement, and matching"
+    },
+    {
+      "name": "Inventory",
+      "description": "Append-only stock ledger, batches, transfers, and cold chain"
     },
     {
       "name": "Webhooks",

@@ -2360,6 +2360,7 @@ dependencies = [
  "shifa-core",
  "shifa-db",
  "shifa-identity",
+ "shifa-inventory",
  "sqlx",
  "thiserror 1.0.69",
  "tokio",
@@ -2487,7 +2488,18 @@ dependencies = [
 name = "shifa-inventory"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "rust_decimal",
+ "serde",
+ "serde_json",
  "shifa-core",
+ "shifa-db",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]

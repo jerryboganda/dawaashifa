@@ -116,6 +116,118 @@ export interface paths {
         patch: operations["update_branch"];
         trace?: never;
     };
+    "/api/v1/inventory/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adjust_stock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/cold-chain/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["log_cold_chain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/cold-chain/{batch_id}/clear-excursion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["clear_excursion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["receive_stock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_stock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/transfers/{id}/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["dispatch_transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permissions": {
         parameters: {
             query?: never;
@@ -309,6 +421,26 @@ export interface components {
             refresh_token: string;
             token_type: string;
         };
+        BatchAllocation: {
+            batch_id: components["schemas"]["BatchId"];
+            batch_number: string;
+            /** Format: date */
+            expiry_date: string;
+            /** Format: int32 */
+            qty: number;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        BatchId: string;
+        BranchAvailabilityDto: {
+            branch_id: components["schemas"]["BranchId"];
+            branch_name: string;
+            can_fulfill_all: boolean;
+            /** Format: int32 */
+            total_available: number;
+        };
         BranchDto: {
             address: string;
             city: string;
@@ -335,6 +467,16 @@ export interface components {
         ChangePasswordRequest: {
             current_password: string;
             new_password: string;
+        };
+        ClearExcursionRequest: {
+            decision_note: string;
+        };
+        ColdChainLogRequest: {
+            batch_id: components["schemas"]["BatchId"];
+            branch_id: components["schemas"]["BranchId"];
+            note?: string | null;
+            /** Format: double */
+            temperature_c: number;
         };
         CreateBranchRequest: {
             address: string;
@@ -365,6 +507,12 @@ export interface components {
             pack_size?: string | null;
             strength?: string | null;
             tp?: components["schemas"]["Money"] | null;
+        };
+        CreateTransferRequest: {
+            items: components["schemas"]["TransferItemRequest"][];
+            note?: string | null;
+            source_branch_id: components["schemas"]["BranchId"];
+            target_branch_id: components["schemas"]["BranchId"];
         };
         CreateUserRequest: {
             branch_ids: components["schemas"]["BranchId"][];
@@ -463,6 +611,37 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         RoleId: string;
+        StockAdjustmentRequest: {
+            batch_id: components["schemas"]["BatchId"];
+            branch_id: components["schemas"]["BranchId"];
+            product_id: components["schemas"]["ProductId"];
+            /** Format: int32 */
+            qty_delta: number;
+            reason: string;
+        };
+        StockCurrentDto: {
+            batch_id: components["schemas"]["BatchId"];
+            batch_number: string;
+            branch_id: components["schemas"]["BranchId"];
+            /** Format: date */
+            expiry_date: string;
+            is_quarantined: boolean;
+            product_id: components["schemas"]["ProductId"];
+            /** Format: int32 */
+            qty: number;
+        };
+        StockReceiptRequest: {
+            batch_number: string;
+            branch_id: components["schemas"]["BranchId"];
+            cost_price?: components["schemas"]["Money"] | null;
+            /** Format: date */
+            expiry_date: string;
+            product_id: components["schemas"]["ProductId"];
+            /** Format: int32 */
+            qty: number;
+            /** Format: uuid */
+            supplier_id?: string | null;
+        };
         SubstitutionCandidate: {
             brand_name: string;
             equivalence_type: string;
@@ -478,6 +657,22 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         TenantId: string;
+        TransferDto: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            source_branch_id: components["schemas"]["BranchId"];
+            status: string;
+            target_branch_id: components["schemas"]["BranchId"];
+            tenant_id: components["schemas"]["TenantId"];
+        };
+        TransferItemRequest: {
+            batch_id: components["schemas"]["BatchId"];
+            product_id: components["schemas"]["ProductId"];
+            /** Format: int32 */
+            qty: number;
+        };
         UpdateBranchRequest: {
             address?: string | null;
             cold_chain_capable?: boolean | null;
@@ -771,6 +966,171 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    adjust_stock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StockAdjustmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Stock adjusted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    log_cold_chain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColdChainLogRequest"];
+            };
+        };
+        responses: {
+            /** @description Temperature logged */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    clear_excursion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Batch ID */
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClearExcursionRequest"];
+            };
+        };
+        responses: {
+            /** @description Excursion cleared by pharmacist */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    receive_stock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StockReceiptRequest"];
+            };
+        };
+        responses: {
+            /** @description Stock received and movement recorded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchId"];
+                };
+            };
+        };
+    };
+    list_stock: {
+        parameters: {
+            query?: {
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+                /** @description Filter by product ID */
+                product_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current stock list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockCurrentDto"][];
+                };
+            };
+        };
+    };
+    create_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description Transfer draft created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferDto"];
+                };
+            };
+        };
+    };
+    dispatch_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Transfer ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transfer dispatched */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferDto"];
+                };
             };
         };
     };

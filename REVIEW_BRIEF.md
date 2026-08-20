@@ -1,41 +1,41 @@
-﻿# REVIEW_BRIEF.md — Spec 05 (Catalog, DRAP MRP Enforcement, and 4-Signal Product Matching)
+﻿# REVIEW_BRIEF.md — Spec 06 (Inventory Ledger, Batches, FEFO, Expiry, and Cold Chain)
 
 ## Spec Reference
-- **Spec**: `docs/05_CATALOG_AND_MATCHING.md`
-- **Branch**: `feat/05-catalog-matching`
+- **Spec**: `docs/06_INVENTORY_LEDGER.md`
+- **Branch**: `feat/06-inventory-ledger`
 
 ## Invariants Enforced
-- **DRAP MRP Hard Enforcement (Invariant & Regulation)**: `validate_sale_price` hard blocks any sale price above the printed MRP. Discounts below MRP are allowed; selling above MRP is impossible.
-- **Substitution Safety**: Substitution candidates are restricted to verified database matches (`generic_equivalents` and same-generic-same-strength). Every candidate unconditionally carries `requires_pharmacist_approval: true`.
-- **Dynamic Alias Learning**: `learn_alias` allows pharmacist OCR/Rx corrections to seed aliases dynamically for instant exact match on next occurrence, while guarding against short inputs (<3 chars), pure numerics, and high-weight conflicts.
-- **Urdu-Tuned Phonetics**: Custom normalization and phonetic engine supporting Pakistan-specific substitution classes (`kh ↔ x ↔ k`, `ph ↔ f`, `gh ↔ g`, `ee ↔ i ↔ y`, `oo ↔ u ↔ w`, `aa ↔ a`, `th ↔ t`, `dh ↔ d`, `ch ↔ c`, `z ↔ j`, collapsing silent trailing h and doubled consonants). Tested across 40+ real-world pharmaceutical brand misspelling variants.
-- **I-1 / I-2 (Tenant Isolation & RLS)**: Catalog queries and alias lookups are tenant-scoped.
-- **I-8 (Money Invariant)**: All prices, MRPs, and savings use exact `Decimal` precision wrapped in `Money`.
+- **I-5 (Append-Only Stock Ledger)**: `stock_movements` is strictly append-only. No application code directly updates `stock_current.qty`. The PostgreSQL `apply_stock_movement` trigger projects movements into `stock_current` and raises an uncatchable exception rolling back transactions if stock would go negative.
+- **FEFO Allocation & Safety Floor**: Allocation strictly sorts batches by `expiry_date ASC`, immediately excludes expired batches and batches below the minimum shelf-life floor (or patient course length), excludes quarantined batches, splits across batches as needed, and returns `Err(InsufficientStock)` without silent partial allocation.
+- **Idempotent Reservations with TTL**: `reserve_stock` creates reservations with negative `RESERVATION` movements and TTL. A scheduled worker `release_expired_reservations` releases expired reservations with compensating `RELEASE` movements idempotently.
+- **Inter-Branch Transfer Isolation**: In-transit stock is deducted from the source branch via `TRANSFER_OUT` and belongs to neither branch's available pool until `TRANSFER_IN` at receipt. Quantity mismatches trigger `DISCREPANCY` status requiring manual reconciliation.
+- **Cold-Chain Monitoring & Pharmacist Clearance**: Products requiring refrigeration cannot be stored at incapable branches. Temperature logs outside 2–8°C trigger excursion alerts and immediately quarantine affected batches from allocation. Clearing an excursion requires `rx.approve` permission with a documented clinical decision note.
+- **Concurrency Safety**: `allocate_fefo` uses PostgreSQL row-level locks (`SELECT ... FOR UPDATE OF sc`) to prevent concurrent overselling under heavy load.
 
 ## What Was Built
-1. **Catalog Domain & Service**:
-   - Product CRUD with automatic base alias seeding.
-   - Bulk CSV import/export.
-2. **Four-Signal Matching Engine**:
-   - Signal 1: Exact alias lookup (score 1.0).
-   - Signal 2: Trigram string similarity (weight 0.40).
-   - Signal 3: Urdu-tuned phonetic equivalence (weight 0.35).
-   - Signal 4: Secondary fuzzy vector fallback (weight 0.25) + log-scaled `hit_count` boost.
-3. **Substitutions Engine**:
-   - Same-generic-same-strength lookups with automatic savings calculation.
-   - Therapeutic equivalence lookups from `generic_equivalents`.
-4. **Axum HTTP API & OpenAPI**:
-   - `/api/v1/products` (list & create).
-   - `/api/v1/products/:id` (details).
-   - `/api/v1/products/match` (multi-signal search).
-   - `/api/v1/products/:id/substitutes` (substitution candidates).
-   - Generated `contracts/openapi.json` and TypeScript client `@shifa/shared`.
+1. **Inventory Domain & Services (`crates/inventory`)**:
+   - `InventoryService`: Stock receipt, adjustment with reason codes, write-offs, and multi-branch availability queries.
+   - `fefo`: Concurrency-safe FEFO allocation with shelf-life floor and multi-batch splitting.
+   - `reservations`: TTL reservations and idempotent release worker with compensating movements.
+   - `transfers`: State machine (`DRAFT -> DISPATCHED -> IN_TRANSIT -> RECEIVED / DISCREPANCY`).
+   - `cold_chain`: Temperature excursion logging, automated quarantine, and audited pharmacist clearance.
+2. **Axum HTTP API & OpenAPI**:
+   - `/api/v1/inventory/stock`
+   - `/api/v1/inventory/receipts`
+   - `/api/v1/inventory/adjustments`
+   - `/api/v1/inventory/transfers`
+   - `/api/v1/inventory/transfers/:id/dispatch`
+   - `/api/v1/inventory/cold-chain/logs`
+   - `/api/v1/inventory/cold-chain/:batch_id/clear-excursion`
+   - Regenerated `contracts/openapi.json` and generated TypeScript client `@shifa/shared`.
 
 ## Acceptance Tests Verification
-- `cargo test --workspace` passed 28 tests with 0 failures:
-  - `test_urdu_phonetics_and_normalization_table` -> ok (40+ variants verified)
-  - `test_mrp_hard_block_enforcement` -> ok (DRAP above-MRP hard block verified)
-  - `test_catalog_matching_and_substitutions_integration` -> ok (exact match, roman urdu fuzzy, learn_alias, substitutes, bulk import)
+- `cargo test --workspace` passed 30 tests with 0 failures:
+  - `test_inventory_ledger_and_fefo_suite` -> ok
+  - `test_concurrent_allocation_does_not_oversell` -> ok
+  - `test_urdu_phonetics_and_normalization_table` -> ok
+  - `test_mrp_hard_block_enforcement` -> ok
+  - `test_catalog_matching_and_substitutions_integration` -> ok
   - `test_rate_limiter_and_idempotency_prevention` -> ok
   - `test_choice_rendering_three_tiers` -> ok
   - `test_unknown_message_type_is_stored_as_unsupported` -> ok
