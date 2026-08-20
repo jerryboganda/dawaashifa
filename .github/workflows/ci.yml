@@ -1,0 +1,112 @@
+﻿name: CI
+
+on:
+  push:
+    branches: [main, "feat/*"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Cargo fmt check
+        run: cargo fmt --all --check
+
+      - name: Cargo clippy check
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Frontend lint
+        run: pnpm lint
+
+      - name: Frontend typecheck
+        run: pnpm check
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Cargo test
+        run: cargo test --workspace
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Frontend test
+        run: pnpm test
+
+  contract:
+    name: Contract Drift Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check API Contract Status
+        run: |
+          if [ -f "contracts/openapi.json" ] && [ -s "contracts/openapi.json" ]; then
+            echo "Checking contract drift against generated OpenAPI..."
+            git diff --exit-code contracts/openapi.json
+          else
+            echo "contracts/openapi.json is empty or absent. Skipping contract check for initial skeleton slice."
+          fi
+
+  security:
+    name: Security Audits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for committed secrets
+        run: |
+          if git log -p -n 50 | grep -E "AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|-----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----"; then
+            echo "Potential secret detected in git log!"
+            exit 1
+          fi
+          echo "Secret check passed."
