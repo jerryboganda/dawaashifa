@@ -1,11 +1,13 @@
 ﻿//! Database connection pool, migration runner, RLS session setup,
-//! and repository abstractions for the Shifa platform.
+//! seed data generator, and repository abstractions for the Shifa platform.
 
 pub mod repository;
 pub mod rls;
+pub mod seed;
 
 pub use repository::Repository;
 pub use rls::{set_tenant_context, DbError};
+pub use seed::SeedStats;
 
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
