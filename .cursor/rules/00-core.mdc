@@ -1,0 +1,16 @@
+---
+description: Dawaa platform core rules
+alwaysApply: true
+---
+
+Read `AGENTS.md` at the repo root — it is the source of truth for this project.
+
+Key invariants:
+- Every table has `tenant_id`; RLS on every tenant-scoped table
+- No prescription auto-approval, no payment screenshot auto-approval, ever
+- Stock is an append-only ledger — insert movements, never update quantities
+- Money is `NUMERIC(14,4)` / `rust_decimal::Decimal` / string over the wire — never a float
+- No raw SQL outside repository modules
+- Never hand-write API types; they are generated from `contracts/openapi.json`
+
+Work comes from numbered specs in `docs/`. One spec, one branch, one PR.

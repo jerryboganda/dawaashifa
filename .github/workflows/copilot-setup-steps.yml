@@ -1,0 +1,54 @@
+# Gives Copilot code review a real toolchain so the reviewer can compile and run
+# tests rather than only reading the diff. Without this the reviewer is a
+# commenter, not a reviewer.
+name: copilot-setup-steps
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dawaa_test
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+        ports: ["5432:5432"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/dawaa_test
+        run: sqlx migrate run
+
+      - name: Warm the build cache
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/dawaa_test
+        run: cargo build --workspace --all-targets
