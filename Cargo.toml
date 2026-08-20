@@ -1,4 +1,4 @@
-﻿[workspace]
+[workspace]
 members = [
     "crates/core",
     "crates/db",
@@ -17,6 +17,7 @@ members = [
     "crates/admin",
     "crates/api",
     "crates/worker",
+    "crates/migration-tool",
 ]
 resolver = "2"
 
@@ -45,6 +46,7 @@ shifa-tax = { path = "crates/tax" }
 shifa-admin = { path = "crates/admin" }
 shifa-api = { path = "crates/api" }
 shifa-worker = { path = "crates/worker" }
+shifa-migration-tool = { path = "crates/migration-tool" }
 
 # External shared dependencies
 rust_decimal = { version = "1.36", features = ["serde"] }

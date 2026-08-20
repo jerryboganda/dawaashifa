@@ -1,0 +1,55 @@
+# Legacy POS Products Mapping Configuration (Doc 15 §5)
+source:
+  kind: csv
+  table: tbl_medicine
+  file_path: samples/legacy_medicines.csv
+target: products
+batch_size: 500
+
+fields:
+  sku:
+    from: med_code
+    required: true
+    transform: trim_upper
+  name_en:
+    from: med_name
+    required: true
+    transform: title_case
+  name_ur:
+    from: med_name_urdu
+  manufacturer:
+    from: company_name
+  strength:
+    from: strength
+    transform: normalize_strength
+  pack_size:
+    from: pack
+    transform: parse_pack_size
+  mrp:
+    from: retail_price
+    required: true
+    transform: parse_decimal
+  is_prescription_only:
+    from: is_rx
+    transform: parse_bool
+    default: false
+  drap_registration_no:
+    from: reg_no
+  requires_cold_chain:
+    from: storage_type
+    transform: cold_chain_from_storage
+
+aliases:
+  generate_from: [med_name, med_name_urdu, short_name, alt_name]
+
+dedupe:
+  strategy: fuzzy
+  match_on: [sku, name_en]
+  threshold: 0.92
+  on_match: skip
+
+validations:
+  - field: mrp
+    rule: greater_than_zero
+  - field: sku
+    rule: unique_within_batch
