@@ -89,11 +89,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check API Contract Status
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Check API Contract Status & Drift
         run: |
           if [ -f "contracts/openapi.json" ] && [ -s "contracts/openapi.json" ]; then
             echo "Checking contract drift against generated OpenAPI..."
-            git diff --exit-code contracts/openapi.json
+            cargo run -p shifa-api --bin emit-openapi
+            if ! git diff --exit-code contracts/openapi.json; then
+              echo "::error::contracts/openapi.json is out of sync with backend DTOs! Run 'cargo run -p shifa-api --bin emit-openapi' and commit the result."
+              exit 1
+            fi
+            pnpm gen:api
+            if ! git diff --exit-code apps/shared/src/api/; then
+              echo "::error::apps/shared/src/api/ is out of sync with contracts/openapi.json! Run 'pnpm gen:api' and commit the result."
+              exit 1
+            fi
           else
             echo "contracts/openapi.json is empty or absent. Skipping contract check for initial skeleton slice."
           fi
