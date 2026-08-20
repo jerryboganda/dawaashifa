@@ -1,0 +1,24 @@
+﻿# Rust build artifacts
+target/
+**/*.rs.bk
+
+# Node / Frontend artifacts
+node_modules/
+dist/
+.svelte-kit/
+.astro/
+build/
+
+# Local Environment & Secrets
+.env
+.env.local
+*.pem
+*.key
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
