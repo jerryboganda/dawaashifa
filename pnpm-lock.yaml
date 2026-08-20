@@ -8,7 +8,21 @@ importers:
 
   .: {}
 
-  apps/console: {}
+  apps/console:
+    dependencies:
+      '@shifa/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.2
+        version: 5.4.21
+      vitest:
+        specifier: ^2.0.5
+        version: 2.1.9
 
   apps/rider:
     dependencies:

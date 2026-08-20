@@ -1,80 +1,81 @@
-# Review Brief — Doc 14: B2B Module: Quotes, Credit & AR Aging
+# Review Brief — Doc 16: Ops Console Specification & Design System
 
 ## Spec
-`docs/14_B2B_QUOTES_AND_CREDIT.md`
+`docs/16_OPS_CONSOLE.md`
 
 ## What I built
-- **Database Schema (`migrations/20260821000007_b2b_schema.sql`)**:
-  - `business_accounts`, `business_contacts`, `price_lists`, `price_list_items`, `quotations`, `quotation_items`, `purchase_orders`, `consignment_locations`, `consignment_stock`, `device_units`.
-  - All tables include `tenant_id UUID NOT NULL` and active Postgres RLS isolation policies (Invariants I-1, I-2).
-- **Business Accounts & Contacts (`crates/b2b/src/service.rs`, `models.rs`)**:
-  - Hospital and clinic business account profile management, credit limits, payment terms, and contacts with approval limit hierarchies (Doc 14 §5).
-- **Quotation Engine (`crates/b2b/src/quotes.rs`)**:
-  - Sequential numbering `Q-{BRANCH}-{YY}-{SEQ5}`.
-  - MRP cap validation: rejects any negotiated price above product MRP (Doc 14 §5).
-  - Versioned revisions: increments version, links `parent_quote_id`, and marks previous version as `REVISED` without mutating history (Doc 14 §6).
-  - Discount approval gates: high discounts require approver with sufficient `approval_limit` (Doc 14 §6).
-  - Expiry enforcement: expired quotations are blocked from acceptance and conversion.
-  - B2B order conversion: accepted quotes directly create B2B orders at `CONFIRMED` status, bypassing retail carts (Doc 14 §4, §6).
-- **Purchase Order Matching & Variance Detection (`crates/b2b/src/po.rs`)**:
-  - Uploads and matches PO against quotation. Variance sets `status = VARIANCE_BLOCKED` and blocks fulfilment until resolved (Doc 14 §7).
-- **Credit Control (`crates/b2b/src/credit.rs`)**:
-  - Verifies credit limits, account hold flags, and 90+ days overdue balances before quote acceptance and before dispatch (Doc 14 §8).
-  - Credit overrides require `b2b.credit` permission and write audited entries to `audit_logs` (Invariant I-9).
-- **Accounts Receivable & Aging (`crates/b2b/src/ar.rs`)**:
-  - Aging buckets: `Current`, `1-30`, `31-60`, `61-90`, `90+` days (Doc 14 §9).
-  - Automatic account lock (`on_hold = true`) when 90+ days overdue balance exists.
-  - FIFO partial payment allocation against oldest outstanding invoices.
-- **Consignment Stock Management (`crates/b2b/src/consignment.rs`)**:
-  - Placement records stock transfer to virtual hospital location, not a sale (Doc 14 §10).
-  - Reconciliation flags discrepancies with audit notes without auto-adjusting system quantities.
-- **Device Traceability & Recall Query (`crates/b2b/src/device.rs`)**:
-  - Unit-level tracking for implants (UDI, lot, serial) with `UNIQUE (tenant_id, serial_no)` invariant (Doc 14 §11).
-  - First-class manufacturer recall query returning all affected units, current locations, and patient references.
-- **API & OpenAPI**:
-  - 12 REST endpoints in `crates/api/src/routes/b2b.rs` matching Doc 14 §12.
-  - Emitted `contracts/openapi.json` and regenerated `@shifa/shared` types.
+- **Shared Design Tokens & Utilities (`apps/shared/src/`)**:
+  - `tokens.ts`: Brand teal scale (50..900), surfaces, semantic status colours, severity levels, spacing scale, and radius tokens (Doc 16 §5).
+  - `money.ts`: Strict PKR money formatting (`Rs 1,250.00`) and decimal validation. Prohibits JavaScript `Number` parsing on money (Invariant I-8).
+  - `i18n.ts`: Multilingual catalogue with 3 locales (`en`, `ur` with RTL, and `ur-Latn`) covering all operations screens.
+- **Ops Console Shell & High-Volume Screens (`apps/console/src/`)**:
+  - **Unified WhatsApp Inbox (`src/routes/inbox/+page.svelte`, `state/inbox.ts`)**:
+    - Three-pane layout: virtualised conversation list, message thread, customer context sidebar (Doc 16 §6).
+    - Inline audio player with speech-to-text transcript rendering.
+    - AI Drafts with confidence badges and 3 explicit actions: **Send · Edit · Discard** (preserving original draft for training loop).
+    - SSE live reconnecting state and event replay on connection drop.
+    - Invariant I-6: Rx-linked conversations excluded from bulk messaging actions.
+    - Keyboard navigation: `j`/`k` navigation, `r` reply, `e` edit draft, `Enter` send.
+  - **Prescription Review Desk (`src/routes/rx-review/+page.svelte`, `state/rx-review.ts`)**:
+    - Split view: prescription image controls (zoom/rotate/contrast) and extracted medicine lines (Doc 16 §7).
+    - Per-line actions: **Accept · Edit · Substitute · Reject** with top alternative candidates and confidence indicators.
+    - Controlled substances warning banner.
+    - Queue depth and oldest waiting prescription in header.
+    - Invariant I-3 & Doc 16 §7: Zero bulk-approve control. Approve button is strictly disabled until all lines have an explicit decision.
+    - Full keyboard navigation flow (`1..N` select line, `A` accept, `X` reject, `Ctrl+Enter` submit approval).
+  - **Payment Proof Review (`src/routes/payments/review/+page.svelte`, `state/payments.ts`)**:
+    - Three-pane review: screenshot proof, fraud & validation flags ranked by severity, matching order summary (Doc 16 §8).
+    - `DUPLICATE_TID` full-width critical warning banner naming the earlier conflicting order.
+    - Side-by-side comparison of order total money vs proof OCR extracted amount.
+    - Invariant I-4: Zero bulk-approve control. Single-order explicit approve/reject decision.
+  - **Order Board Kanban (`src/routes/orders/+page.svelte`, `state/orders.ts`)**:
+    - Multi-column fulfillment Kanban (Confirmed, Allocated, Packed, Dispatched, Delivered).
+    - State transition validation preventing illegal drag-and-drop operations (Doc 16 §9).
+  - **Inventory & Cold Chain (`src/routes/inventory/+page.svelte`, `state/inventory.ts`)**:
+    - Expiry risk dashboard (≤30, 31-60, 61-90 days) with value at risk totals.
+    - Cold chain temperature log with excursion alerts.
+  - **B2B Medical Device Desk (`src/routes/b2b/+page.svelte`, `state/b2b.ts`)**:
+    - Hospital credit limits, current balances, and 90+ days overdue account locks.
+    - Manufacturer device recall inquiry by batch/lot ID.
+  - **Regulatory Audit Explorer (`src/routes/audit/+page.svelte`)**:
+    - DRAP compliance immutable log with state diffs and CSV export.
 
 ## Acceptance tests
-Spec names 17 acceptance tests. I implemented **17** across 12 test functions.
+Spec names 14 acceptance tests. I implemented all **14** in `apps/console/src/console.test.ts` (100% green).
 
 | Spec test name | My test | File |
 |---|---|---|
-| `negotiated_price_above_mrp_rejected` | `test_negotiated_price_above_mrp_rejected` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `quote_revision_creates_new_version_preserving_original` | `test_quote_revision_creates_new_version_preserving_original` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `expired_quote_cannot_convert` | `test_expired_quote_cannot_convert` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `discount_above_threshold_requires_approval` | `test_discount_approval_threshold_and_limits` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `approver_below_limit_cannot_approve` | `test_discount_approval_threshold_and_limits` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `credit_check_blocks_on_limit_exceeded` | `test_credit_control_rules` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `credit_check_blocks_on_90_day_overdue` | `test_credit_control_rules` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `credit_check_runs_again_before_dispatch` | `test_credit_control_rules` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `credit_override_requires_permission_and_audits` | `test_credit_override_requires_permission_and_audits` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `po_variance_blocks_fulfilment` | `test_po_variance_blocks_fulfilment` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `partial_payment_allocates_oldest_first` | `test_partial_payment_allocates_oldest_first` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `ninety_day_overdue_sets_account_on_hold` | `test_ninety_day_overdue_locks_account` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `consignment_placement_is_transfer_not_sale` | `test_consignment_transfer_and_reconciliation` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `consignment_discrepancy_flagged_not_auto_adjusted` | `test_consignment_transfer_and_reconciliation` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `device_serial_unique_per_tenant` | `test_device_serial_uniqueness_and_recall_query` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `recall_query_returns_all_affected_units_with_locations` | `test_device_serial_uniqueness_and_recall_query` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
-| `b2b_order_bypasses_retail_cart_stages` | `test_b2b_order_bypasses_retail_cart_stages` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `no_hand_written_api_types` | `no_hand_written_api_types` | `apps/console/src/console.test.ts` |
+| `no_money_arithmetic_in_browser` | `no_money_arithmetic_in_browser` | `apps/console/src/console.test.ts` |
+| `rx_review_approve_disabled_until_all_lines_decided` | `rx_review_approve_disabled_until_all_lines_decided` | `apps/console/src/console.test.ts` |
+| `no_bulk_approve_control_in_rx_review` | `no_bulk_approve_control_in_rx_review` | `apps/console/src/console.test.ts` |
+| `no_bulk_approve_control_in_payment_review` | `no_bulk_approve_control_in_payment_review` | `apps/console/src/console.test.ts` |
+| `rx_linked_conversation_excluded_from_bulk_send` | `rx_linked_conversation_excluded_from_bulk_send` | `apps/console/src/console.test.ts` |
+| `duplicate_tid_renders_critical_banner` | `duplicate_tid_renders_critical_banner` | `apps/console/src/console.test.ts` |
+| `every_screen_renders_in_urdu_rtl` | `every_screen_renders_in_urdu_rtl` | `apps/console/src/console.test.ts` |
+| `status_colours_consistent_across_screens` | `status_colours_consistent_across_screens` | `apps/console/src/console.test.ts` |
+| `sse_reconnects_and_replays_after_drop` | `sse_reconnects_and_replays_after_drop` | `apps/console/src/console.test.ts` |
+| `virtualised_lists_render_10000_rows_smoothly` | `virtualised_lists_render_10000_rows_smoothly` | `apps/console/src/console.test.ts` |
+| `keyboard_flow_completes_rx_review_without_mouse` | `keyboard_flow_completes_rx_review_without_mouse` | `apps/console/src/console.test.ts` |
+| `order_board_rejects_illegal_transition_drop` | `order_board_rejects_illegal_transition_drop` | `apps/console/src/console.test.ts` |
+| `all_screens_handle_loading_empty_error` | `all_screens_handle_loading_empty_error` | `apps/console/src/console.test.ts` |
 
-Missing, with reason: None. All 17 acceptance assertions passing.
+Missing, with reason: None. All 14 tests passing.
 
 ## Out of scope
-Confirmed nothing from the Out of scope section was built:
-- No public tender or e-procurement integration.
-- No general ledger.
-- No sales commission tracking.
-- No retail order flow modifications.
+Confirmed nothing from Out of scope was built:
+- No rider PWA code (in `apps/rider`).
+- No Astro marketing site code (in `apps/web`).
+- No backend code changes or API monkey-patching.
 
 ## ASSUMPTIONS
-- Orders created from B2B quotes use `CREDIT_TERMS` payment method.
+None.
 
 ## Known gaps
 None.
 
 ## Contract changes
-- Added B2B endpoints (`/api/v1/b2b/*`) and types to `contracts/openapi.json` and `@shifa/shared`.
+- Exported design tokens, money helpers, and i18n from `@shifa/shared`.
 
 ## Risk areas
-- Device serial numbers must be entered accurately during warehouse receipt to guarantee recall query fidelity.
+- High prescription volume operations require pharmacist training on keyboard shortcuts (`1..N`, `A`, `X`, `Ctrl+Enter`) for optimal throughput.

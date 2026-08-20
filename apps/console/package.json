@@ -1,12 +1,21 @@
-﻿{
+{
   "name": "@shifa/console",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "echo @shifa/console dev ok",
-    "build": "echo @shifa/console build ok",
-    "check": "echo @shifa/console check ok",
+    "dev": "vite dev",
+    "build": "vite build",
+    "check": "tsc --noEmit",
     "lint": "echo @shifa/console lint ok",
-    "test": "echo @shifa/console test ok"
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@shifa/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2",
+    "vitest": "^2.0.5"
   }
 }
