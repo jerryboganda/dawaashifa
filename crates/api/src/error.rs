@@ -36,6 +36,9 @@ pub enum ApiError {
     #[error("Conversation error: {0}")]
     Conversation(#[from] shifa_conversation::ConversationError),
 
+    #[error("Order error: {0}")]
+    Order(#[from] shifa_orders::OrderError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -48,6 +51,31 @@ impl IntoResponse for ApiError {
             ApiError::NotFound => (StatusCode::NOT_FOUND, "Resource not found".to_string()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            ApiError::Order(shifa_orders::OrderError::InvalidTransition { from, to }) => (
+                StatusCode::BAD_REQUEST,
+                format!("Invalid order state transition from {} to {}", from, to),
+            ),
+            ApiError::Order(shifa_orders::OrderError::RxItemRequiresReview) => (
+                StatusCode::BAD_REQUEST,
+                "Rx items present in order: must pass through AwaitingRx review (Invariant I-3 / I-6)".to_string(),
+            ),
+            ApiError::Order(shifa_orders::OrderError::AboveMrp { attempted, mrp }) => (
+                StatusCode::BAD_REQUEST,
+                format!("Sale price {} exceeds product MRP {}", attempted, mrp),
+            ),
+            ApiError::Order(shifa_orders::OrderError::ReservationFailed) => (
+                StatusCode::BAD_REQUEST,
+                "Reservation failed: insufficient stock available to confirm order".to_string(),
+            ),
+            ApiError::Order(shifa_orders::OrderError::NotFound(_)) => (
+                StatusCode::NOT_FOUND,
+                "Order not found".to_string(),
+            ),
+            ApiError::Order(shifa_orders::OrderError::Unauthorized(msg)) => (
+                StatusCode::FORBIDDEN,
+                msg,
+            ),
+            ApiError::Order(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Conversation(shifa_conversation::ConversationError::AlreadyClaimed(u)) => (
                 StatusCode::CONFLICT,
                 format!("Conversation already claimed by user {}", u),

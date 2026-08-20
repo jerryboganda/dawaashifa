@@ -870,6 +870,258 @@
         ]
       }
     },
+    "/api/v1/orders": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "list_orders",
+        "parameters": [
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by order status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "create_order",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraftOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Draft order created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "get_order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Order ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/confirm-cart": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "confirm_cart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Order ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cart confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/items": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "add_item",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Order ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddOrderItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Item added to order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/transition": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "transition_order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Order ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Order state transitioned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/api/v1/permissions": {
       "get": {
         "tags": [
@@ -1490,6 +1742,38 @@
   },
   "components": {
     "schemas": {
+      "AddOrderItemRequest": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "qty"
+        ],
+        "properties": {
+          "discount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unit_price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
       "AssignBranchesRequest": {
         "type": "object",
         "required": [
@@ -1897,6 +2181,29 @@
           }
         }
       },
+      "CreateDraftOrderRequest": {
+        "type": "object",
+        "required": [
+          "customer_id"
+        ],
+        "properties": {
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "customer_id": {
+            "$ref": "#/components/schemas/CustomerId"
+          },
+          "payment_method": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "CreateProductRequest": {
         "type": "object",
         "required": [
@@ -2226,6 +2533,206 @@
         "description": "Monetary amount represented with exact precision using Decimal.\nInvariant I-8: All money is rust_decimal::Decimal. Never f64 or f32.\nSerializes over the wire as a quoted decimal string to preserve precision in frontend clients.",
         "example": "1250.00"
       },
+      "OrderDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_no",
+          "customer_id",
+          "status",
+          "is_rx_linked",
+          "subtotal",
+          "discount",
+          "delivery_fee",
+          "tax_amount",
+          "total",
+          "payment_method",
+          "payment_status",
+          "items",
+          "created_at"
+        ],
+        "properties": {
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customer_id": {
+            "$ref": "#/components/schemas/CustomerId"
+          },
+          "delivery_fee": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "discount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "is_rx_linked": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemDto"
+            }
+          },
+          "order_no": {
+            "type": "string"
+          },
+          "payment_method": {
+            "type": "string"
+          },
+          "payment_status": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "OrderEventDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "order_id",
+          "to_status",
+          "created_at"
+        ],
+        "properties": {
+          "actor_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "from_status": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "to_status": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "OrderItemDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "product_id",
+          "product_name",
+          "qty",
+          "unit_price",
+          "mrp_at_sale",
+          "line_discount",
+          "line_total",
+          "is_prescription_only",
+          "is_refrigerated"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "is_prescription_only": {
+            "type": "boolean"
+          },
+          "is_refrigerated": {
+            "type": "boolean"
+          },
+          "line_discount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "line_total": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "mrp_at_sale": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unit_price": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "OrderStatus": {
+        "type": "string",
+        "enum": [
+          "Draft",
+          "CartConfirmed",
+          "AwaitingRx",
+          "RxUnderReview",
+          "RxApproved",
+          "RxRejected",
+          "AwaitingPayment",
+          "PaymentUnderReview",
+          "PaymentRejected",
+          "Confirmed",
+          "Picking",
+          "Packed",
+          "Dispatched",
+          "OutForDelivery",
+          "Delivered",
+          "CashReconciled",
+          "Closed",
+          "Cancelled",
+          "FailedDelivery",
+          "Returned",
+          "Refunded"
+        ]
+      },
       "OverrideMessageRequest": {
         "type": "object",
         "required": [
@@ -2376,6 +2883,35 @@
         "properties": {
           "refresh_token": {
             "type": "string"
+          }
+        }
+      },
+      "ReturnItemRequest": {
+        "type": "object",
+        "required": [
+          "item_id",
+          "qty",
+          "is_safe_to_restock",
+          "pharmacist_certified"
+        ],
+        "properties": {
+          "is_safe_to_restock": {
+            "type": "boolean"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "pharmacist_certified": {
+            "type": "boolean"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -2652,6 +3188,21 @@
           }
         }
       },
+      "TransitionOrderRequest": {
+        "type": "object",
+        "required": [
+          "to_status"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "to_status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          }
+        }
+      },
       "UpdateBranchRequest": {
         "type": "object",
         "properties": {
@@ -2894,6 +3445,10 @@
     {
       "name": "Conversations",
       "description": "WhatsApp conversations, routing, human override, and inbox"
+    },
+    {
+      "name": "Orders",
+      "description": "Order state machine, cart, branch routing, and COD"
     },
     {
       "name": "Webhooks",

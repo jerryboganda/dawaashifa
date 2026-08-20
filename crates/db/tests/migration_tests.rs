@@ -121,7 +121,15 @@ async fn test_database_migrations_and_rls_suite() {
 
     // Query from tenant B context
     let mut tx_b = pool.begin().await.expect("begin tx_b");
-    set_tenant_context(&mut tx_b, tenant_b)
+    let ctx_b = TenantContext::from_verified_claims(
+        tenant_b,
+        UserId::new(),
+        vec![],
+        Default::default(),
+        vec![],
+        false,
+    );
+    set_tenant_context(&mut tx_b, &ctx_b)
         .await
         .expect("set tenant b context");
 

@@ -10,6 +10,8 @@ use shifa_core::id::*;
 use shifa_core::money::Money;
 use shifa_identity::models::*;
 use shifa_inventory::models::*;
+use shifa_orders::models::*;
+use shifa_orders::state_machine::OrderStatus;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -51,6 +53,12 @@ use shifa_inventory::models::*;
         conversations::override_message_handler,
         conversations::bulk_approve_handler,
         conversations::create_canned_reply_handler,
+        orders::list_orders,
+        orders::create_order,
+        orders::get_order,
+        orders::add_item,
+        orders::confirm_cart,
+        orders::transition_order,
         webhooks::verify_webhook_challenge,
         webhooks::handle_inbound_webhook,
     ),
@@ -67,6 +75,7 @@ use shifa_inventory::models::*;
             ConversationId,
             CustomerId,
             MessageId,
+            OrderId,
             Money,
             AuthTokens,
             LoginRequest,
@@ -109,6 +118,14 @@ use shifa_inventory::models::*;
             CreateCannedReplyRequest,
             AssignConversationRequest,
             TransferConversationRequest,
+            OrderStatus,
+            OrderDto,
+            OrderItemDto,
+            CreateDraftOrderRequest,
+            AddOrderItemRequest,
+            TransitionOrderRequest,
+            ReturnItemRequest,
+            OrderEventDto,
         )
     ),
     modifiers(&SecurityAddon),
@@ -120,6 +137,7 @@ use shifa_inventory::models::*;
         (name = "Products", description = "Drug master, catalog, MRP enforcement, and matching"),
         (name = "Inventory", description = "Append-only stock ledger, batches, transfers, and cold chain"),
         (name = "Conversations", description = "WhatsApp conversations, routing, human override, and inbox"),
+        (name = "Orders", description = "Order state machine, cart, branch routing, and COD"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

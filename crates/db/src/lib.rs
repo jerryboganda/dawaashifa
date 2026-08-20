@@ -5,8 +5,8 @@ pub mod repository;
 pub mod rls;
 pub mod seed;
 
-pub use repository::Repository;
-pub use rls::{set_tenant_context, DbError};
+pub use repository::{find_branch_id, Repository};
+pub use rls::{set_tenant_context, with_tenant, DbError};
 pub use seed::SeedStats;
 
 use sqlx::postgres::{PgPool, PgPoolOptions};

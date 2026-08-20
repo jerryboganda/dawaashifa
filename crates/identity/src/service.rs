@@ -363,12 +363,15 @@ impl IdentityService {
             .map(|p| p.get::<String, _>("key"))
             .collect();
 
-        Ok(TenantContext::from_claims(
+        let org_wide_branch_access = claims.roles.iter().any(|r| r == "SUPER_ADMIN");
+
+        Ok(TenantContext::from_verified_claims(
             claims.tid,
             claims.sub,
             branch_ids,
             permissions,
             claims.roles,
+            org_wide_branch_access,
         ))
     }
 

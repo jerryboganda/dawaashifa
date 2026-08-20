@@ -1,47 +1,41 @@
-﻿# REVIEW_BRIEF.md — Spec 07 (Conversation Engine, WhatsApp Threading, Routing, and Human Override)
+﻿# REVIEW_BRIEF.md — Spec 10 (Orders, Routing, State Machine, and COD Revenue Loop)
 
 ## Spec Reference
-- **Spec**: `docs/07_CONVERSATION_ENGINE.md`
-- **Branch**: `feat/07-conversation-engine`
+- **Spec**: `docs/10_ORDERS_AND_ROUTING.md`
+- **Branch**: `feat/10-orders-routing`
 
 ## Invariants Enforced
-- **Conversation Threading & Reopen**: Inbound messages maintain conversation lifecycle (`NEW -> AWAITING_HUMAN -> ASSIGNED -> RESOLVED -> CLOSED`). Any inbound on a `RESOLVED` or `CLOSED` conversation automatically reopens it as `AWAITING_HUMAN` while preserving history.
-- **Race-Safe Customer Auto-Creation**: First inbound auto-creates customer profile using `ON CONFLICT (tenant_id, phone) DO NOTHING` with fallback query retrieval to eliminate concurrent duplicate customer creation bugs.
-- **Silent Storage for Blocked Customers**: Blocked customer messages are persisted to DB for compliance, but receive silence (not routed to agents, no notifications dispatched).
-- **Four-Step Branch Routing Precedence**:
-  1. Explicit branch on number / channel
-  2. Customer's last-ordered branch within 60 days
-  3. Customer's default / nearest branch
-  4. Tenant default active branch
-- **Atomic Claiming**: First writer successfully claims an unassigned conversation; subsequent concurrent claims return 409 Conflict with `AlreadyClaimed`.
-- **Human Override & Training Signal (Doc 07 §8)**: Agents/pharmacists can override any `PENDING_APPROVAL` draft message. Editing preserves `original_body`, records `overridden_by`, and emits an audit event for AI model fine-tuning.
-- **Invariant I-6 (Rx Bulk Approval Protection)**: Bulk approval of pending drafts is strictly rejected for Rx-linked conversations, enforcing individual review per drug order.
-- **Strict Canned Reply Validation**: Unresolved variables (e.g. `{{order_no}}`, `{{customer_name}}`) block transmission with `Err(UnresolvedVariables)`.
-- **SLA Engine & Opening Hours**: Response timers pause outside business hours and trigger 2-stage escalation (`BRANCH_MANAGER` -> `OPERATIONS_HEAD`).
-- **24-Hour WhatsApp Service Window**: Outbound messages sent >24h after customer's last message require pre-approved templates.
+- **Exhaustive State Machine (§4)**: Complete 21-state lifecycle (`Draft`, `CartConfirmed`, `AwaitingRx`, `RxUnderReview`, `RxApproved`, `RxRejected`, `AwaitingPayment`, `PaymentUnderReview`, `PaymentRejected`, `Confirmed`, `Picking`, `Packed`, `Dispatched`, `OutForDelivery`, `Delivered`, `CashReconciled`, `Closed`, `Cancelled`, `FailedDelivery`, `Returned`, `Refunded`) with strict transition validations via `can_transition(from, to)`.
+- **Atomic Transition & Audit (Invariant I-9)**: Every state change updates order status, inserts an `order_events` row, and writes an `audit_log` row within a single database transaction. If the audit log fails, the entire transition rolls back.
+- **Rx Branching (Invariants I-3 & I-6)**: Orders containing any item with `is_prescription_only = true` are forced into `AwaitingRx -> RxUnderReview -> RxApproved`. Direct progression from `Draft` / `CartConfirmed` to `AwaitingPayment` is strictly blocked.
+- **Collision-Free Sequence-Based Order Numbering (§5)**: Format `{BRANCH_CODE}-{YYMMDD}-{SEQ4}` backed by atomic PostgreSQL sequence generation ensuring zero collisions under high concurrency.
+- **Shared Stock Branch Routing Engine (§6)**: Evaluates active candidate branches, cold-chain handling, and stock depth via FEFO. Ranks single branch fulfillment over split fulfillment and supports three policies (`ALLOW_SPLIT`, `PREFER_TRANSFER`, `SINGLE_BRANCH_ONLY`).
+- **Stock Reservations & Idempotent Release (§7)**: Transition to `Confirmed` reserves stock with TTL (2h for COD). Rejection or cancellation triggers idempotent reservation release. Failure to reserve blocks transition to `Confirmed`.
+- **MRP Enforcement & Snapshotting (§8)**: Unit price cannot exceed DRAP MRP (`validate_item_price`). `mrp_at_sale` is snapshotted onto each line item, guaranteeing that future MRP updates do not alter historical orders.
+- **Money Precision (Invariant I-8)**: All financial calculations use exact `rust_decimal::Decimal`. Zero floating-point arithmetic throughout the crate.
+- **Controlled Returns Restocking (§9)**: Restocking of medicines requires explicit pharmacist certification. Cold-chain items that left the cold chain are permanently forbidden from being restocked.
 
 ## What Was Built
-1. **Conversation Domain & Service (`crates/conversation`)**:
-   - Customer auto-creation & resolution (`customer.rs`).
-   - 4-step branch routing (`routing.rs`).
-   - Assignment strategies (Manual, RoundRobin, LeastBusy) & atomic claiming (`assignment.rs`).
-   - Human override engine with Rx bulk protection (`override_engine.rs`).
-   - Canned replies with strict placeholder verification (`canned.rs`).
-   - SLA business hours evaluation & 2-stage escalation (`sla.rs`).
+1. **Order Domain & Service (`crates/orders`)**:
+   - `state_machine.rs`: 21-state enum, parser, and exhaustive `can_transition` matrix.
+   - `numbering.rs`: Concurrency-safe daily branch sequence order numbering.
+   - `pricing.rs`: Exact Decimal line and order total pricing with MRP protection.
+   - `routing.rs`: Multi-branch stock evaluation with split fulfillment policies.
+   - `service.rs`: `OrderService` handling drafts, cart confirmation, atomic transitions, reservations, and returns.
 2. **Axum HTTP API & OpenAPI**:
-   - `/api/v1/conversations` (list)
-   - `/api/v1/conversations/inbound`
-   - `/api/v1/conversations/:id/messages`
-   - `/api/v1/conversations/:id/claim`
-   - `/api/v1/conversations/:id/assign`
-   - `/api/v1/conversations/:id/transfer`
-   - `/api/v1/messages/:id` (override draft)
-   - `/api/v1/messages/bulk-approve/:conversation_id`
-   - `/api/v1/canned-replies`
+   - `GET /api/v1/orders` (list with filters)
+   - `POST /api/v1/orders` (create draft)
+   - `GET /api/v1/orders/:id`
+   - `POST /api/v1/orders/:id/items`
+   - `POST /api/v1/orders/:id/confirm-cart`
+   - `POST /api/v1/orders/:id/transition`
    - Regenerated `contracts/openapi.json` and generated TypeScript client `@shifa/shared`.
 
 ## Acceptance Tests Verification
-- `cargo test --workspace` passed 33 tests with 0 failures:
+- `cargo test --workspace` passed 36 tests with 0 failures:
+  - `test_every_illegal_transition_rejected` -> ok
+  - `test_money_arithmetic_uses_decimal_and_mrp_validation` -> ok
+  - `test_order_lifecycle_routing_and_reservation_suite` -> ok
   - `test_canned_reply_unresolved_variable_blocks_send` -> ok
   - `test_sla_timer_pauses_outside_opening_hours_and_two_stage_escalation` -> ok
   - `test_conversation_lifecycle_routing_and_human_override_suite` -> ok
@@ -59,6 +53,6 @@
   - `test_cloud_api_send_success_and_error_handling` -> ok
   - `test_api_auth_and_session_lifecycle` -> ok
   - `test_database_migrations_and_rls_suite` -> ok
-- `cargo clippy --workspace --all-targets -- -D warnings` passed with 0 warnings.
+- `cargo clippy --workspace --all-targets -- -D warnings` clean.
 - `cargo fmt --all --check` clean.
 - `pnpm check && pnpm lint && pnpm test` clean.

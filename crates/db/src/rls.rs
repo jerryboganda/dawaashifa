@@ -1,5 +1,5 @@
-use shifa_core::id::TenantId;
-use sqlx::PgConnection;
+use shifa_core::context::TenantContext;
+use sqlx::{PgConnection, PgPool};
 use thiserror::Error;
 
 /// Database error wrapper for Shifa database operations.
@@ -11,17 +11,31 @@ pub enum DbError {
     Migrate(#[from] sqlx::migrate::MigrateError),
 }
 
-/// Sets the PostgreSQL session variable `app.tenant_id` within the local transaction scope.
+/// Sets `app.tenant_id` for the **current transaction** (`is_local = true`).
 ///
-/// Invariant I-2: Postgres Row-Level Security is enabled on every tenant-scoped table.
-/// The `true` parameter ensures this setting is scoped strictly to the current transaction.
+/// Must be called only after `BEGIN`. Outside a transaction Postgres ignores
+/// a local GUC and RLS would not apply. Prefer [`with_tenant`].
 pub async fn set_tenant_context(
     conn: &mut PgConnection,
-    tenant_id: TenantId,
+    ctx: &TenantContext,
 ) -> Result<(), DbError> {
     sqlx::query("SELECT set_config('app.tenant_id', $1, true)")
-        .bind(tenant_id.0.to_string())
-        .execute(conn)
+        .bind(ctx.tenant_id().0.to_string())
+        .execute(&mut *conn)
         .await?;
     Ok(())
+}
+
+/// Begin a transaction, set tenant GUC from `ctx`, run `f`, commit.
+/// This is the required RLS entry point — do not skip it for tenant queries.
+pub async fn with_tenant<F, Fut, T>(pool: &PgPool, ctx: &TenantContext, f: F) -> Result<T, DbError>
+where
+    F: FnOnce(&mut PgConnection) -> Fut,
+    Fut: std::future::Future<Output = Result<T, DbError>>,
+{
+    let mut tx = pool.begin().await?;
+    set_tenant_context(&mut tx, ctx).await?;
+    let result = f(&mut tx).await?;
+    tx.commit().await?;
+    Ok(result)
 }

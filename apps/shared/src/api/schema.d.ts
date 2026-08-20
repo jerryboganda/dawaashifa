@@ -372,6 +372,86 @@ export interface paths {
         patch: operations["override_message_handler"];
         trace?: never;
     };
+    "/api/v1/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_orders"];
+        put?: never;
+        post: operations["create_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_order"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{id}/confirm-cart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirm_cart"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["add_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transition_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permissions": {
         parameters: {
             query?: never;
@@ -552,6 +632,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AddOrderItemRequest: {
+            discount?: components["schemas"]["Money"] | null;
+            product_id: components["schemas"]["ProductId"];
+            /** Format: int32 */
+            qty: number;
+            unit_price?: components["schemas"]["Money"] | null;
+        };
         AssignBranchesRequest: {
             branch_ids: components["schemas"]["BranchId"][];
         };
@@ -676,6 +763,11 @@ export interface components {
             shortcode: string;
             title: string;
         };
+        CreateDraftOrderRequest: {
+            branch_id?: components["schemas"]["BranchId"] | null;
+            customer_id: components["schemas"]["CustomerId"];
+            payment_method?: string | null;
+        };
         CreateProductRequest: {
             barcode?: string | null;
             brand_name: string;
@@ -773,6 +865,57 @@ export interface components {
          * @example 1250.00
          */
         Money: string;
+        OrderDto: {
+            branch_id?: components["schemas"]["BranchId"] | null;
+            /** Format: date-time */
+            created_at: string;
+            customer_id: components["schemas"]["CustomerId"];
+            delivery_fee: components["schemas"]["Money"];
+            discount: components["schemas"]["Money"];
+            id: components["schemas"]["OrderId"];
+            is_rx_linked: boolean;
+            items: components["schemas"]["OrderItemDto"][];
+            order_no: string;
+            payment_method: string;
+            payment_status: string;
+            status: components["schemas"]["OrderStatus"];
+            subtotal: components["schemas"]["Money"];
+            tax_amount: components["schemas"]["Money"];
+            tenant_id: components["schemas"]["TenantId"];
+            total: components["schemas"]["Money"];
+        };
+        OrderEventDto: {
+            actor_id?: components["schemas"]["UserId"] | null;
+            /** Format: date-time */
+            created_at: string;
+            from_status?: string | null;
+            /** Format: uuid */
+            id: string;
+            order_id: components["schemas"]["OrderId"];
+            reason?: string | null;
+            to_status: string;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        OrderId: string;
+        OrderItemDto: {
+            /** Format: uuid */
+            id: string;
+            is_prescription_only: boolean;
+            is_refrigerated: boolean;
+            line_discount: components["schemas"]["Money"];
+            line_total: components["schemas"]["Money"];
+            mrp_at_sale: components["schemas"]["Money"];
+            product_id: components["schemas"]["ProductId"];
+            product_name: string;
+            /** Format: int32 */
+            qty: number;
+            unit_price: components["schemas"]["Money"];
+        };
+        /** @enum {string} */
+        OrderStatus: "Draft" | "CartConfirmed" | "AwaitingRx" | "RxUnderReview" | "RxApproved" | "RxRejected" | "AwaitingPayment" | "PaymentUnderReview" | "PaymentRejected" | "Confirmed" | "Picking" | "Packed" | "Dispatched" | "OutForDelivery" | "Delivered" | "CashReconciled" | "Closed" | "Cancelled" | "FailedDelivery" | "Returned" | "Refunded";
         OverrideMessageRequest: {
             new_body: string;
         };
@@ -816,6 +959,15 @@ export interface components {
         ProductId: string;
         RefreshRequest: {
             refresh_token: string;
+        };
+        ReturnItemRequest: {
+            is_safe_to_restock: boolean;
+            /** Format: uuid */
+            item_id: string;
+            note?: string | null;
+            pharmacist_certified: boolean;
+            /** Format: int32 */
+            qty: number;
         };
         RoleDto: {
             description?: string | null;
@@ -899,6 +1051,10 @@ export interface components {
             product_id: components["schemas"]["ProductId"];
             /** Format: int32 */
             qty: number;
+        };
+        TransitionOrderRequest: {
+            reason?: string | null;
+            to_status: components["schemas"]["OrderStatus"];
         };
         UpdateBranchRequest: {
             address?: string | null;
@@ -1576,6 +1732,155 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageDto"];
+                };
+            };
+        };
+    };
+    list_orders: {
+        parameters: {
+            query?: {
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+                /** @description Filter by order status */
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of orders */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDto"][];
+                };
+            };
+        };
+    };
+    create_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Draft order created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDto"];
+                };
+            };
+        };
+    };
+    get_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Order ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Order details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDto"];
+                };
+            };
+        };
+    };
+    confirm_cart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Order ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cart confirmed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDto"];
+                };
+            };
+        };
+    };
+    add_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Order ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddOrderItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Item added to order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDto"];
+                };
+            };
+        };
+    };
+    transition_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Order ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Order state transitioned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDto"];
                 };
             };
         };

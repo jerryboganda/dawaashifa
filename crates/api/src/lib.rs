@@ -17,6 +17,7 @@ use shifa_catalog::CatalogService;
 use shifa_conversation::ConversationService;
 use shifa_identity::IdentityService;
 use shifa_inventory::{ColdChainService, InventoryService, TransferService};
+use shifa_orders::OrderService;
 use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -30,6 +31,7 @@ pub struct AppState {
     pub transfer_service: TransferService,
     pub cold_chain_service: ColdChainService,
     pub conversation_service: ConversationService,
+    pub order_service: OrderService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
@@ -38,6 +40,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let transfer_service = TransferService::new(pool.clone());
     let cold_chain_service = ColdChainService::new(pool.clone());
     let conversation_service = ConversationService::new(pool.clone());
+    let order_service = OrderService::new(pool.clone());
 
     let state = AppState {
         pool,
@@ -47,6 +50,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         transfer_service,
         cold_chain_service,
         conversation_service,
+        order_service,
     };
 
     let auth_routes = Router::new()
@@ -129,6 +133,16 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         post(routes::conversations::create_canned_reply_handler),
     );
 
+    let order_routes = Router::new()
+        .route(
+            "/",
+            get(routes::orders::list_orders).post(routes::orders::create_order),
+        )
+        .route("/:id", get(routes::orders::get_order))
+        .route("/:id/items", post(routes::orders::add_item))
+        .route("/:id/confirm-cart", post(routes::orders::confirm_cart))
+        .route("/:id/transition", post(routes::orders::transition_order));
+
     let webhook_routes = Router::new().route(
         "/whatsapp/:channel_id",
         get(routes::webhooks::verify_webhook_challenge)
@@ -144,6 +158,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/conversations", conversation_routes)
         .nest("/messages", message_routes)
         .nest("/canned-replies", canned_reply_routes)
+        .nest("/orders", order_routes)
         .merge(role_routes);
 
     Router::new()
