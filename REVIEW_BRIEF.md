@@ -1,60 +1,68 @@
-# Review Brief — Doc 15: Data Migration Toolkit
+# Review Brief — Doc 03: Unofficial WhatsApp Adapter Sidecar & Number Pool Manager
 
 ## Spec
-`docs/15_DATA_MIGRATION_TOOLKIT.md`
+`docs/03_UNOFFICIAL_ADAPTER_AND_NUMBER_POOL.md`
 
 ## What I built
-- **Data Migration CLI & Engine (`crates/migration-tool`)**:
-  - `SourceAdapter` trait with `probe()`, `read_records()`, and `count()` implementations for CSV, JSON, and in-memory streams (Doc 15 §4).
-  - YAML declarative mapping parser (`MappingConfig`) enabling source mappings without Rust code modification (Doc 15 §5).
-  - Complete transform library: `trim`, `trim_upper`, `title_case`, `parse_decimal`, `parse_bool`, `parse_date` (multi-format `DD/MM/YYYY`, `YYYY-MM-DD`), `normalize_strength` (`500MG` / `0.5g` -> `500mg`), `parse_pack_size` (`10's` / `10x10` -> `100`), `normalize_phone` (`0300-1234567`, `+92 300 1234567` -> `+923001234567`), `arabic_digits_to_ascii` (`۰۱۲۳۴۵۶۷۸۹` -> `0123456789`), `cold_chain_from_storage` (Doc 15 §6).
-  - Dry run mode default (`--dry-run`), requiring explicit `--commit` for live writes. Full structured dry run report with rejection reasons grouped by rule and sample transformed records (Doc 15 §7).
-  - Staging tables (`import_batches`, `import_staging`) with tenant RLS isolation and foreign key traceability (`import_batch_id` on `products`, `customers`, `orders`) (Doc 15 §8).
-  - Safe rollback (`MigrationEngine::rollback`): deletes unreferenced records, and **refuses rollback** if any imported item has since been referenced in customer orders or inventory movements (Doc 15 §9).
-  - Automatic search alias generator creating base names, transpositions, doubled letters, dropped vowels, and generic names for day-one catalog matching (Doc 15 §10).
-  - Historical orders ingestion: lands in terminal `CLOSED` state, sets `is_historical = true`, produces 0 stock movements, and generates 0 invoices (Doc 15 §11).
-  - Runbook at `docs/runbooks/data-migration.md` (Doc 15 §14).
+- **Unofficial Adapter (`crates/channel/src/unofficial/adapter.rs`)**:
+  - `UnofficialAdapter` implementing the common `ChannelAdapter` trait (Doc 03 §6).
+  - Clean capability degradation: `Choice` renders as numbered plain text with reply instructions; `Confirm` renders as "Reply YES to confirm, NO to cancel"; `Template` renders as plain text parameters.
+  - Zero business logic branching on transport — Invariant I-10 strictly maintained.
+- **Encrypted Session Persistence (`crates/channel/src/unofficial/session.rs`, `migrations/20260821000006_unofficial_channel_pool.sql`)**:
+  - `wa_sessions` database table with tenant RLS isolation.
+  - Sessions survive container restarts without requiring QR rescan.
+  - Session creds and keys encrypted at rest with cluster master key (Doc 03 §5).
+- **Flexible Reply Parsing (`crates/channel/src/unofficial/reply_parser.rs`)**:
+  - Multi-language reply parsing accepting ASCII digits (`1`, `2`), Arabic-Indic / Urdu numerals (`۱`, `۲`, `١`, `٢`), Roman Urdu (`pehla`, `dusra`, `teesra`, `chotha`, `panchwa`), Urdu script (`پہلا`, `دوسرا`), and confirmations in English/Urdu/Roman Urdu (`yes`, `y`, `haan`, `ha`, `ji haan`, `sahi`, `theek`, `no`, `n`, `nahi`, `nahin`, `cancel`, `radd`, `mat karo`) (Doc 03 §6).
+- **Human-Paced Sending (`crates/channel/src/unofficial/pacer.rs`)**:
+  - Simulates composing presence (1-7s) and pauses (300-900ms).
+  - Enforces minimum 2-8s gaps between consecutive sends to different recipients.
+  - Configurable daily caps: 300 msgs/day in `ACTIVE`, 40 msgs/day in `WARMING`, max 25 distinct recipients/day (Doc 03 §7).
+- **Number Pool Manager & Failover (`crates/channel/src/unofficial/pool.rs`)**:
+  - State machine transitions: `PROVISIONING` -> `WARMING` -> `ACTIVE` <-> `DEGRADED` -> `BANNED` -> `RETIRED`.
+  - Dynamic health scoring (0-100) decaying on send failures and recovering on success; score < 40 enters `DEGRADED` (Doc 03 §8).
+  - Automatic ban handling: marks `BANNED`, drains queue, reassigns open conversations to the next active channel in the branch pool, and emits alerting events (Doc 03 §10).
+  - **Mandatory Business Identity Isolation**: strict code-level invariant check ensuring unofficial channels can never join an Official WABA identity (Doc 03 §9).
+- **Baileys Transport Sidecar (`sidecars/wa-unofficial/`)**:
+  - Node 22 + Baileys transport container shim with Postgres session storage and NATS messaging subjects.
+- **Runbook**:
+  - `docs/runbooks/number-ban-response.md` (Doc 03 §12).
 
 ## Acceptance tests
-Spec names 17 acceptance tests. I implemented **17**.
+Spec names 11 acceptance tests. I implemented **11**.
 
 | Spec test name | My test | File |
 |---|---|---|
-| `probe_discovers_columns_from_unknown_source` | `test_probe_discovers_columns_from_unknown_source` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `dry_run_writes_nothing` | `test_dry_run_writes_nothing_and_commit_required_for_writes` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `commit_required_for_writes` | `test_dry_run_writes_nothing_and_commit_required_for_writes` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `fuzzy_dedupe_matches_above_threshold` | `test_fuzzy_dedupe_matches_above_threshold` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `phone_normalisation_collapses_four_formats_to_one_customer` | `test_phone_normalisation_collapses_four_formats_to_one_customer` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `strength_normalisation_table` | `test_strength_normalisation_table` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `pack_size_parsing_table` | `test_pack_size_parsing_table` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `ddmmyyyy_dates_parsed_correctly` | `test_ddmmyyyy_dates_parsed_correctly` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `arabic_digits_converted` | `test_arabic_digits_converted` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `validation_errors_grouped_by_rule_in_report` | `test_validation_errors_grouped_by_rule_in_report` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `rollback_removes_inserted_rows` | `test_rollback_removes_inserted_rows_and_refuses_when_dependent_records_exist` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `rollback_restores_updated_rows` | `test_rollback_removes_inserted_rows_and_refuses_when_dependent_records_exist` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `rollback_refused_when_dependent_records_exist` | `test_rollback_removes_inserted_rows_and_refuses_when_dependent_records_exist` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `aliases_generated_for_every_imported_product` | `test_aliases_generated_for_every_imported_product` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `historical_orders_land_in_terminal_status` | `test_historical_orders_land_in_terminal_status_and_create_no_stock_movements` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `historical_orders_create_no_stock_movements` | `test_historical_orders_land_in_terminal_status_and_create_no_stock_movements` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
-| `import_of_50000_products_completes_under_5_minutes` | `test_import_of_50000_products_completes_under_5_minutes` | `crates/migration-tool/tests/migration_acceptance_tests.rs` |
+| `session_survives_container_restart` | `test_session_survives_container_restart_and_creds_encrypted_at_rest` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `session_creds_encrypted_at_rest` | `test_session_survives_container_restart_and_creds_encrypted_at_rest` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `choice_renders_as_numbered_text` | `test_choice_renders_as_numbered_text` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `reply_parser_accepts_urdu_and_roman_variants` | `test_reply_parser_accepts_urdu_and_roman_variants` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `send_pacing_respects_minimum_gap` | `test_send_pacing_respects_minimum_gap` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `daily_limit_blocks_further_sends` | `test_daily_limit_blocks_further_sends_and_warming_number_uses_reduced_limits` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `warming_number_uses_reduced_limits` | `test_daily_limit_blocks_further_sends_and_warming_number_uses_reduced_limits` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `logged_out_event_marks_banned_and_drains_queue` | `test_logged_out_event_marks_banned_and_failover_reassigns_queue` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `failover_reassigns_queue_to_next_active_channel` | `test_logged_out_event_marks_banned_and_failover_reassigns_queue` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `unofficial_number_cannot_join_official_waba_identity` | `test_unofficial_number_cannot_join_official_waba_identity` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `business_logic_identical_across_transports` | `test_business_logic_identical_across_transports` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
 
-Missing, with reason: None. All 17 acceptance tests passing.
+Missing, with reason: None. All 11 acceptance tests passing.
 
 ## Out of scope
 Confirmed nothing from the Out of scope section was built:
-- No GUI import wizard (pure CLI and transactional engine).
-- No real-time two-way sync with legacy database.
-- No migration of legacy user passwords or authentication hashes.
+- No changes to business logic (Invariant I-10).
+- No bulk or broadcast sending logic.
+- No path letting unofficial numbers join official WABA.
+- No automatic SIM purchasing.
 
 ## ASSUMPTIONS
-- Sample exports for arbitrary third-party POS systems can be mapped via YAML configuration without binary recompilation.
+- Sidecar instances connect to NATS message broker on subjects `wa.unofficial.{channel_id}.*`.
 
 ## Known gaps
 None.
 
 ## Contract changes
-- Extended database schema with `import_batches` and `import_staging` tables.
-- Added `import_batch_id` foreign key and `is_historical` flags to `products`, `customers`, and `orders`.
+- Added `wa_sessions` database table.
+- Extended `channels` table with `health_score`, `warming_started_at`, `daily_sent_count`, `daily_reset_at`, `banned_at`, `business_identity_id`, and `business_identity_kind`.
 
 ## Risk areas
-- High-volume imports (100k+ rows) must be run with `--batch-size 500` to avoid long-running transaction lock escalation.
+- Meta anti-spam heuristics change periodically; human pacing intervals and warming schedules should be tuned via ops configuration.

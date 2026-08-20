@@ -33,6 +33,34 @@ impl Capabilities {
             max_buttons: 3,
         }
     }
+
+    pub fn unofficial_default() -> Self {
+        Self {
+            interactive_buttons: false,
+            list_messages: false,
+            templates: false,
+            outside_window: true,
+            delivery_receipts: true,
+            max_send_rate_per_min: 12,
+            max_buttons: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub enum IdentityKind {
+    UnofficialIsolated,
+    OfficialWaba,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub enum ChannelPoolStatus {
+    Provisioning,
+    Warming,
+    Active,
+    Degraded,
+    Banned,
+    Retired,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

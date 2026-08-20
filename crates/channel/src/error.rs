@@ -1,4 +1,4 @@
-﻿use thiserror::Error;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ChannelError {
@@ -28,6 +28,18 @@ pub enum ChannelError {
 
     #[error("Transport network error: {0}")]
     Network(#[from] reqwest::Error),
+
+    #[error("Identity isolation violation: Unofficial Baileys channel cannot join Official WABA identity")]
+    IdentityIsolationViolation,
+
+    #[error("Channel {0} is banned by WhatsApp and cannot send messages")]
+    ChannelBanned(String),
+
+    #[error("Daily message limit exceeded for channel ({current}/{limit})")]
+    DailyLimitExceeded { current: u32, limit: u32 },
+
+    #[error("Session not found for channel {0}")]
+    SessionNotFound(String),
 
     #[error("Serialization error: {0}")]
     Json(#[from] serde_json::Error),
