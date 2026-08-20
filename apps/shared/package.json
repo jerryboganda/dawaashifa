@@ -1,10 +1,11 @@
 ﻿{
-  "name": "@dawaa/shared",
+  "name": "@shifa/shared",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "echo @dawaa/shared build ok",
-    "lint": "echo @dawaa/shared lint ok",
-    "test": "echo @dawaa/shared test ok"
+    "build": "echo @shifa/shared build ok",
+    "lint": "echo @shifa/shared lint ok",
+    "test": "echo @shifa/shared test ok"
   }
 }
+

@@ -1,12 +1,13 @@
 ﻿{
-  "name": "@dawaa/rider",
+  "name": "@shifa/rider",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "lint": "echo @dawaa/rider lint ok",
-    "test": "echo @dawaa/rider test ok"
+    "lint": "echo @shifa/rider lint ok",
+    "test": "echo @shifa/rider test ok"
   }
 }
+

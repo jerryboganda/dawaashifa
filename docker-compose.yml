@@ -1,25 +1,25 @@
 ﻿services:
   postgres:
     image: pgvector/pgvector:pg18
-    container_name: dawaa-postgres
+    container_name: shifa-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: dawaa
-      POSTGRES_USER: dawaa
-      POSTGRES_PASSWORD: dawaa_password
+      POSTGRES_DB: shifa
+      POSTGRES_USER: shifa
+      POSTGRES_PASSWORD: shifa_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dawaa -d dawaa"]
+      test: ["CMD-SHELL", "pg_isready -U shifa -d shifa"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: dawaa-redis
+    container_name: shifa-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     ports:
@@ -34,7 +34,7 @@
 
   nats:
     image: nats:2.10-alpine
-    container_name: dawaa-nats
+    container_name: shifa-nats
     restart: unless-stopped
     command: ["-js", "-sd", "/data"]
     ports:
@@ -50,7 +50,7 @@
 
   minio:
     image: minio/minio:RELEASE.2024-08-17T01-24-54Z
-    container_name: dawaa-minio
+    container_name: shifa-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -72,4 +72,5 @@ volumes:
   redis_data:
   nats_data:
   minio_data:
+
 

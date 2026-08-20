@@ -1,12 +1,13 @@
 ﻿{
-  "name": "@dawaa/console",
+  "name": "@shifa/console",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "lint": "echo @dawaa/console lint ok",
-    "test": "echo @dawaa/console test ok"
+    "lint": "echo @shifa/console lint ok",
+    "test": "echo @shifa/console test ok"
   }
 }
+

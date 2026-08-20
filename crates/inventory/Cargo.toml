@@ -1,8 +1,9 @@
 ﻿[package]
-name = "dawaa-inventory"
+name = "shifa-inventory"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-dawaa-core.workspace = true
+shifa-core.workspace = true
+

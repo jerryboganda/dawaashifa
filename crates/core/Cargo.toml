@@ -1,5 +1,5 @@
 ﻿[package]
-name = "dawaa-core"
+name = "shifa-core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,3 +10,4 @@ uuid.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+

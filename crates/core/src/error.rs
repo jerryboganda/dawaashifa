@@ -1,6 +1,6 @@
 ﻿use thiserror::Error;
 
-/// Core domain error primitives for the Dawaa platform.
+/// Core domain error primitives for the Shifa platform.
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum CoreError {
     #[error("Invalid money scale: {0}")]
@@ -18,3 +18,4 @@ pub enum CoreError {
     #[error("Validation error: {0}")]
     ValidationError(String),
 }
+

@@ -1,4 +1,4 @@
-use crate::id::{BranchId, TenantId, UserId};
+﻿use crate::id::{BranchId, TenantId, UserId};
 use std::collections::HashSet;
 
 /// Authenticated tenant context extracted strictly from verified JWT/session claims.
@@ -83,3 +83,4 @@ mod tests {
         assert!(ctx.can_access_branch(branch_any));
     }
 }
+

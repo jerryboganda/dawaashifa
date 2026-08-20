@@ -1,5 +1,5 @@
-//! Database connection pool, migration runner, RLS session setup,
-//! and repository abstractions for the Dawaa platform.
+﻿//! Database connection pool, migration runner, RLS session setup,
+//! and repository abstractions for the Shifa platform.
 
 pub mod repository;
 pub mod rls;
@@ -24,3 +24,4 @@ pub async fn run_migrations(pool: &PgPool, migrations_path: &Path) -> Result<(),
     migrator.run(pool).await?;
     Ok(())
 }
+

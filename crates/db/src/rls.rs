@@ -1,8 +1,8 @@
-﻿use dawaa_core::id::TenantId;
+﻿use shifa_core::id::TenantId;
 use sqlx::PgConnection;
 use thiserror::Error;
 
-/// Database error wrapper for Dawaa database operations.
+/// Database error wrapper for Shifa database operations.
 #[derive(Error, Debug)]
 pub enum DbError {
     #[error("Database error: {0}")]
@@ -25,3 +25,4 @@ pub async fn set_tenant_context(
         .await?;
     Ok(())
 }
+

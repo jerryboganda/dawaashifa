@@ -1,4 +1,4 @@
-use crate::error::CoreError;
+﻿use crate::error::CoreError;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
@@ -160,3 +160,4 @@ mod tests {
         assert_eq!(money.format_pkr(), "Rs 1250.00");
     }
 }
+

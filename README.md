@@ -1,4 +1,4 @@
-﻿# Dawaa Platform (دوا)
+﻿# Shifa Platform (دوا)
 
 > WhatsApp-first multi-branch pharmacy and healthcare commerce platform for Pakistan.
 
@@ -96,3 +96,4 @@ pnpm test
 
 - Build tasks are driven by specifications in `docs/`.
 - Review is performed against `docs/19_BUILDER_REVIEWER_PROTOCOL.md` and `.github/instructions/review.instructions.md`.
+

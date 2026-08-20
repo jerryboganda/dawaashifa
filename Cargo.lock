@@ -261,137 +261,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dawaa-admin"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-ai"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-api"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
- "dawaa-db",
-]
-
-[[package]]
-name = "dawaa-b2b"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-catalog"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-channel"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-conversation"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-core"
-version = "0.1.0"
-dependencies = [
- "rust_decimal",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "uuid",
-]
-
-[[package]]
-name = "dawaa-db"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "dawaa-core",
- "sqlx",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "dawaa-fulfilment"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-identity"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-inventory"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-orders"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-payments"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-prescription"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-tax"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
-]
-
-[[package]]
-name = "dawaa-worker"
-version = "0.1.0"
-dependencies = [
- "dawaa-core",
- "dawaa-db",
-]
-
-[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1419,6 +1288,137 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "shifa-admin"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-ai"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-api"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+ "shifa-db",
+]
+
+[[package]]
+name = "shifa-b2b"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-catalog"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-channel"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-conversation"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-core"
+version = "0.1.0"
+dependencies = [
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "uuid",
+]
+
+[[package]]
+name = "shifa-db"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "shifa-core",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "shifa-fulfilment"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-identity"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-inventory"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-orders"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-payments"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-prescription"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-tax"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+]
+
+[[package]]
+name = "shifa-worker"
+version = "0.1.0"
+dependencies = [
+ "shifa-core",
+ "shifa-db",
 ]
 
 [[package]]
