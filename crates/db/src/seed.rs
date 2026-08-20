@@ -1,4 +1,4 @@
-﻿use crate::rls::DbError;
+use crate::rls::DbError;
 use rust_decimal::Decimal;
 use shifa_core::id::*;
 use sqlx::PgPool;
@@ -30,14 +30,78 @@ pub async fn seed_database(pool: &PgPool) -> Result<SeedStats, DbError> {
 
     // 2. Insert 8 Branches
     let branch_names = [
-        ("Clifton Hub", "KHI-01", "Karachi", 24.8138, 67.0299, true, true),
-        ("Gulshan Branch", "KHI-02", "Karachi", 24.9207, 67.0982, false, false),
-        ("DHA Phase 5", "LHR-01", "Lahore", 31.4697, 74.3986, true, true),
-        ("Gulberg Branch", "LHR-02", "Lahore", 31.5204, 74.3587, false, false),
-        ("Blue Area Central", "ISB-01", "Islamabad", 33.7182, 73.0605, true, true),
-        ("Saddar Branch", "RWP-01", "Rawalpindi", 33.5973, 73.0538, false, false),
-        ("D-Ground Branch", "FSD-01", "Faisalabad", 31.4116, 73.0965, false, false),
-        ("Cantt Branch", "MUL-01", "Multan", 30.1984, 71.4687, false, false),
+        (
+            "Clifton Hub",
+            "KHI-01",
+            "Karachi",
+            24.8138,
+            67.0299,
+            true,
+            true,
+        ),
+        (
+            "Gulshan Branch",
+            "KHI-02",
+            "Karachi",
+            24.9207,
+            67.0982,
+            false,
+            false,
+        ),
+        (
+            "DHA Phase 5",
+            "LHR-01",
+            "Lahore",
+            31.4697,
+            74.3986,
+            true,
+            true,
+        ),
+        (
+            "Gulberg Branch",
+            "LHR-02",
+            "Lahore",
+            31.5204,
+            74.3587,
+            false,
+            false,
+        ),
+        (
+            "Blue Area Central",
+            "ISB-01",
+            "Islamabad",
+            33.7182,
+            73.0605,
+            true,
+            true,
+        ),
+        (
+            "Saddar Branch",
+            "RWP-01",
+            "Rawalpindi",
+            33.5973,
+            73.0538,
+            false,
+            false,
+        ),
+        (
+            "D-Ground Branch",
+            "FSD-01",
+            "Faisalabad",
+            31.4116,
+            73.0965,
+            false,
+            false,
+        ),
+        (
+            "Cantt Branch",
+            "MUL-01",
+            "Multan",
+            30.1984,
+            71.4687,
+            false,
+            false,
+        ),
     ];
 
     for (name, code, city, lat, lon, is_hub, cold_chain) in branch_names {
@@ -84,8 +148,23 @@ pub async fn seed_database(pool: &PgPool) -> Result<SeedStats, DbError> {
     }
 
     // 4. Insert 5,000 Products in batches
-    let forms = ["Tablet", "Capsule", "Syrup", "Injection", "Ointment", "Drops", "Inhaler"];
-    let manufacturers = ["Getz Pharma", "GSK Pakistan", "Abbott Laboratories", "Sami Pharmaceuticals", "Searle Company", "Hilton Pharma"];
+    let forms = [
+        "Tablet",
+        "Capsule",
+        "Syrup",
+        "Injection",
+        "Ointment",
+        "Drops",
+        "Inhaler",
+    ];
+    let manufacturers = [
+        "Getz Pharma",
+        "GSK Pakistan",
+        "Abbott Laboratories",
+        "Sami Pharmaceuticals",
+        "Searle Company",
+        "Hilton Pharma",
+    ];
 
     for chunk_start in (1..=5000).step_by(500) {
         let chunk_end = (chunk_start + 499).min(5000);
@@ -104,19 +183,19 @@ pub async fn seed_database(pool: &PgPool) -> Result<SeedStats, DbError> {
             let mrp_val = Decimal::from((i % 500 + 50) * 10);
 
             b.push_bind(pid.0)
-             .push_bind(tenant_id.0)
-             .push_bind(sku)
-             .push_bind(name)
-             .push_bind(form)
-             .push_bind(format!("{}mg", (i % 10 + 1) * 50))
-             .push_bind("Pack of 20")
-             .push_bind(mfg)
-             .push_bind(format!("DRAP-{:06}", i))
-             .push_bind(is_rx)
-             .push_bind(false)
-             .push_bind(cold)
-             .push_bind(mrp_val)
-             .push_bind("ACTIVE");
+                .push_bind(tenant_id.0)
+                .push_bind(sku)
+                .push_bind(name)
+                .push_bind(form)
+                .push_bind(format!("{}mg", (i % 10 + 1) * 50))
+                .push_bind("Pack of 20")
+                .push_bind(mfg)
+                .push_bind(format!("DRAP-{:06}", i))
+                .push_bind(is_rx)
+                .push_bind(false)
+                .push_bind(cold)
+                .push_bind(mrp_val)
+                .push_bind("ACTIVE");
         });
 
         let query = query_builder.build();

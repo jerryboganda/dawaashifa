@@ -6,4 +6,18 @@ license.workspace = true
 
 [dependencies]
 shifa-core.workspace = true
-
+shifa-db.workspace = true
+argon2.workspace = true
+jsonwebtoken.workspace = true
+rand.workspace = true
+sha2.workspace = true
+hex.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+utoipa.workspace = true

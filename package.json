@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "gen:api": "pnpm -F @shifa/shared gen",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "check": "pnpm -r check",
@@ -10,4 +11,3 @@
   },
   "packageManager": "pnpm@10.33.2"
 }
-

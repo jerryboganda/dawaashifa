@@ -2,10 +2,15 @@
   "name": "@shifa/shared",
   "version": "0.1.0",
   "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "scripts": {
+    "gen": "openapi-typescript ../../contracts/openapi.json -o ./src/api/schema.d.ts",
     "build": "echo @shifa/shared build ok",
     "lint": "echo @shifa/shared lint ok",
     "test": "echo @shifa/shared test ok"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.6.1"
   }
 }
-

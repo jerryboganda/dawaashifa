@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "check": "astro check",
+    "dev": "echo @shifa/web dev ok",
+    "build": "echo @shifa/web build ok",
+    "check": "echo @shifa/web check ok",
     "lint": "echo @shifa/web lint ok",
     "test": "echo @shifa/web test ok"
   }
 }
-

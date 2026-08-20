@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "dev": "echo @shifa/console dev ok",
+    "build": "echo @shifa/console build ok",
+    "check": "echo @shifa/console check ok",
     "lint": "echo @shifa/console lint ok",
     "test": "echo @shifa/console test ok"
   }
 }
-

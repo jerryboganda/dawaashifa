@@ -1,4 +1,4 @@
-﻿use shifa_core::id::*;
+use shifa_core::id::*;
 use shifa_db::rls::set_tenant_context;
 use shifa_db::seed::seed_database;
 use sqlx::PgPool;
@@ -50,7 +50,7 @@ async fn test_database_migrations_and_rls_suite() {
            AND c.relkind = 'r'
            AND a.attname = 'tenant_id'
            AND c.relrowsecurity = false
-           AND c.relname NOT LIKE 'pg_%'"
+           AND c.relname NOT LIKE 'pg_%'",
     )
     .fetch_all(&pool)
     .await
@@ -72,7 +72,7 @@ async fn test_database_migrations_and_rls_suite() {
              SELECT 1 FROM pg_index i
              WHERE i.indrelid = c.conrelid
                AND i.indkey[0] = c.conkey[1]
-           )"
+           )",
     )
     .fetch_all(&pool)
     .await
@@ -131,7 +131,10 @@ async fn test_database_migrations_and_rls_suite() {
         .await
         .expect("query branch under tenant B context");
 
-    assert_eq!(count.0, 0, "Tenant B must not see Tenant A branch under RLS");
+    assert_eq!(
+        count.0, 0,
+        "Tenant B must not see Tenant A branch under RLS"
+    );
     tx_b.commit().await.expect("commit tx_b");
 
     // 6. Test seed_generator_runs

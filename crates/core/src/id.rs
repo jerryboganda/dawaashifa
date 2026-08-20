@@ -1,38 +1,31 @@
-use serde::{Deserialize, Serialize};
+﻿use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-/// Macro to generate strongly-typed UUID newtypes to prevent argument-order mistakes.
+/// Macro to generate strongly-typed newtype UUID wrappers.
 macro_rules! id_type {
-    ($name:ident, $doc:expr) => {
-        #[doc = $doc]
-        #[derive(
-            Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
-        )]
+    ($name:ident) => {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, ToSchema)]
+        #[schema(value_type = String, format = "uuid", example = "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a")]
         #[serde(transparent)]
-        #[repr(transparent)]
         pub struct $name(pub Uuid);
 
         impl $name {
-            /// Generate a new UUIDv7 time-ordered identifier.
+            /// Generate a new time-ordered UUIDv7 for this identifier.
             pub fn new() -> Self {
                 Self(Uuid::now_v7())
             }
 
-            /// Wrap an existing UUID into this strongly-typed newtype.
-            pub const fn from_uuid(uuid: Uuid) -> Self {
-                Self(uuid)
+            /// Wrap an existing UUID.
+            pub const fn from_uuid(id: Uuid) -> Self {
+                Self(id)
             }
 
-            /// Extract the inner raw UUID.
+            /// Extract underlying UUID.
             pub const fn into_inner(self) -> Uuid {
                 self.0
-            }
-
-            /// Reference the inner raw UUID.
-            pub const fn as_uuid(&self) -> &Uuid {
-                &self.0
             }
         }
 
@@ -48,16 +41,9 @@ macro_rules! id_type {
             }
         }
 
-        impl FromStr for $name {
-            type Err = uuid::Error;
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
-                Uuid::parse_str(s).map(Self)
-            }
-        }
-
         impl From<Uuid> for $name {
-            fn from(uuid: Uuid) -> Self {
-                Self(uuid)
+            fn from(id: Uuid) -> Self {
+                Self(id)
             }
         }
 
@@ -66,38 +52,50 @@ macro_rules! id_type {
                 id.0
             }
         }
+
+        impl FromStr for $name {
+            type Err = uuid::Error;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                Uuid::parse_str(s).map(Self)
+            }
+        }
     };
 }
 
-id_type!(TenantId, "Unique identifier for a tenant organization");
-id_type!(BranchId, "Unique identifier for a pharmacy branch");
-id_type!(UserId, "Unique identifier for a system user / employee");
-id_type!(ProductId, "Unique identifier for a product / SKU");
-id_type!(BatchId, "Unique identifier for an inventory batch");
-id_type!(OrderId, "Unique identifier for a customer order");
-id_type!(CustomerId, "Unique identifier for a retail or B2B customer");
-id_type!(
-    PrescriptionId,
-    "Unique identifier for an uploaded prescription"
-);
-id_type!(
-    ConversationId,
-    "Unique identifier for a customer conversation thread"
-);
-id_type!(MessageId, "Unique identifier for a WhatsApp message");
-id_type!(RiderId, "Unique identifier for a delivery rider");
-id_type!(ChannelId, "Unique identifier for a communication channel");
-id_type!(
-    PaymentId,
-    "Unique identifier for a payment attempt / record"
-);
-id_type!(DeliveryId, "Unique identifier for a delivery task");
-id_type!(InvoiceId, "Unique identifier for an FBR tax invoice");
-id_type!(TaxCategoryId, "Unique identifier for a tax category");
-id_type!(SupplierId, "Unique identifier for an inventory supplier");
-id_type!(RoleId, "Unique identifier for an RBAC role");
-id_type!(PermissionId, "Unique identifier for an RBAC permission");
-id_type!(SessionId, "Unique identifier for a user session");
+id_type!(TenantId);
+id_type!(BranchId);
+id_type!(UserId);
+id_type!(RoleId);
+id_type!(PermissionId);
+id_type!(SessionId);
+id_type!(CustomerId);
+id_type!(CustomerAddressId);
+id_type!(CategoryId);
+id_type!(GenericId);
+id_type!(ProductId);
+id_type!(ProductAliasId);
+id_type!(SupplierId);
+id_type!(BatchId);
+id_type!(StockMovementId);
+id_type!(BusinessIdentityId);
+id_type!(ChannelId);
+id_type!(ConversationId);
+id_type!(MessageId);
+id_type!(PrescriptionId);
+id_type!(RxLineId);
+id_type!(ApprovalId);
+id_type!(OrderId);
+id_type!(OrderItemId);
+id_type!(OrderEventId);
+id_type!(PaymentId);
+id_type!(ProofId);
+id_type!(RiderId);
+id_type!(DeliveryId);
+id_type!(RiderCashSessionId);
+id_type!(TaxCategoryId);
+id_type!(InvoiceId);
+id_type!(AuditLogId);
 
 #[cfg(test)]
 mod tests {
@@ -105,27 +103,27 @@ mod tests {
 
     #[test]
     fn test_id_creation_and_conversion() {
-        let tid = TenantId::new();
-        let uuid_raw = tid.into_inner();
-        let tid_from = TenantId::from(uuid_raw);
-        assert_eq!(tid, tid_from);
-        assert_eq!(tid.to_string(), uuid_raw.to_string());
-    }
+        let tenant_id = TenantId::new();
+        assert_eq!(tenant_id.0.get_version_num(), 7);
 
-    #[test]
-    fn test_id_serialization_roundtrip() {
-        let uid = UserId::new();
-        let json = serde_json::to_string(&uid).expect("serialize UserId");
-        assert_eq!(json, format!("\"{}\"", uid.into_inner()));
-
-        let deserialized: UserId = serde_json::from_str(&json).expect("deserialize UserId");
-        assert_eq!(uid, deserialized);
+        let uuid = tenant_id.into_inner();
+        let from_uuid = TenantId::from(uuid);
+        assert_eq!(tenant_id, from_uuid);
     }
 
     #[test]
     fn test_id_from_str() {
-        let sample = "550e8400-e29b-41d4-a716-446655440000";
-        let pid = ProductId::from_str(sample).expect("parse ProductId");
-        assert_eq!(pid.to_string(), sample);
+        let tenant_id = TenantId::new();
+        let s = tenant_id.to_string();
+        let parsed = TenantId::from_str(&s).unwrap();
+        assert_eq!(tenant_id, parsed);
+    }
+
+    #[test]
+    fn test_id_serialization_roundtrip() {
+        let tenant_id = TenantId::new();
+        let json = serde_json::to_string(&tenant_id).unwrap();
+        let deserialized: TenantId = serde_json::from_str(&json).unwrap();
+        assert_eq!(tenant_id, deserialized);
     }
 }
