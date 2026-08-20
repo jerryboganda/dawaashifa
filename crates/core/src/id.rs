@@ -1,4 +1,4 @@
-﻿use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 use utoipa::ToSchema;
@@ -92,6 +92,7 @@ id_type!(PaymentId);
 id_type!(ProofId);
 id_type!(RiderId);
 id_type!(DeliveryId);
+id_type!(PickingListId);
 id_type!(RiderCashSessionId);
 id_type!(TaxCategoryId);
 id_type!(InvoiceId);
