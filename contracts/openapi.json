@@ -321,6 +321,455 @@
         }
       }
     },
+    "/api/v1/b2b/accounts": {
+      "get": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "list_accounts",
+        "responses": {
+          "200": {
+            "description": "List business accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusinessAccountDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "create_account",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Business account created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/accounts/{id}/ar-summary": {
+      "get": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "get_ar_summary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Account ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AR Summary and Aging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/accounts/{id}/hold": {
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "set_account_hold",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Account ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountHoldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Account hold status updated"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/consignment/stock": {
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "place_consignment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceConsignmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Consignment stock placed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsignmentStockDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/consignment/{id}/reconcile": {
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "reconcile_consignment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Consignment Stock ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconcileConsignmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Consignment stock reconciled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsignmentStockDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/devices": {
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "register_device",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDeviceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Device unit registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceUnitDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/devices/recall": {
+      "get": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "query_device_recall",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "batch_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device recall query result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecallQueryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/purchase-orders": {
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "ingest_purchase_order",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Purchase order uploaded and matched",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/quotations": {
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "create_quotation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuotationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Quotation created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/quotations/{id}/accept": {
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "accept_quotation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Quotation ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quotation accepted and order created"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/b2b/quotations/{id}/revise": {
+      "post": {
+        "tags": [
+          "B2B"
+        ],
+        "operationId": "revise_quotation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Parent Quotation ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviseQuotationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Quotation revised to new version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/api/v1/branches": {
       "get": {
         "tags": [
@@ -3984,6 +4433,21 @@
   },
   "components": {
     "schemas": {
+      "AccountHoldRequest": {
+        "type": "object",
+        "required": [
+          "on_hold",
+          "reason"
+        ],
+        "properties": {
+          "on_hold": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
       "AddOrderItemRequest": {
         "type": "object",
         "required": [
@@ -4235,6 +4699,92 @@
           }
         }
       },
+      "ArAgingBucketDto": {
+        "type": "object",
+        "required": [
+          "current",
+          "days_1_30",
+          "days_31_60",
+          "days_61_90",
+          "days_90_plus",
+          "total_outstanding"
+        ],
+        "properties": {
+          "current": {
+            "type": "string"
+          },
+          "days_1_30": {
+            "type": "string"
+          },
+          "days_31_60": {
+            "type": "string"
+          },
+          "days_61_90": {
+            "type": "string"
+          },
+          "days_90_plus": {
+            "type": "string"
+          },
+          "total_outstanding": {
+            "type": "string"
+          }
+        }
+      },
+      "ArAgingReportDto": {
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "accounts",
+          "aggregate_aging"
+        ],
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArSummaryDto"
+            }
+          },
+          "aggregate_aging": {
+            "$ref": "#/components/schemas/ArAgingBucketDto"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ArSummaryDto": {
+        "type": "object",
+        "required": [
+          "account_id",
+          "account_name",
+          "credit_limit",
+          "available_credit",
+          "on_hold",
+          "aging"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "account_name": {
+            "type": "string"
+          },
+          "aging": {
+            "$ref": "#/components/schemas/ArAgingBucketDto"
+          },
+          "available_credit": {
+            "type": "string"
+          },
+          "credit_limit": {
+            "type": "string"
+          },
+          "on_hold": {
+            "type": "boolean"
+          }
+        }
+      },
       "AssignBranchesRequest": {
         "type": "object",
         "required": [
@@ -4419,6 +4969,132 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "BusinessAccountDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "name",
+          "account_type",
+          "billing_address",
+          "shipping_addresses",
+          "credit_limit",
+          "payment_terms_days",
+          "status",
+          "on_hold",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "account_type": {
+            "type": "string"
+          },
+          "billing_address": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "credit_limit": {
+            "type": "string"
+          },
+          "hold_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ntn": {
+            "type": "string",
+            "nullable": true
+          },
+          "on_hold": {
+            "type": "boolean"
+          },
+          "payment_terms_days": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "price_list_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "shipping_addresses": {},
+          "status": {
+            "type": "string"
+          },
+          "strn": {
+            "type": "string",
+            "nullable": true
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BusinessContactDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "account_id",
+          "name",
+          "designation",
+          "phone",
+          "can_approve_po",
+          "approval_limit",
+          "created_at"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approval_limit": {
+            "type": "string"
+          },
+          "can_approve_po": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "designation": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "CannedReplyDto": {
         "type": "object",
         "required": [
@@ -4533,6 +5209,134 @@
           }
         }
       },
+      "ConsignmentLocationDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "account_id",
+          "name",
+          "address",
+          "created_at"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "address": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "managed_by": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ConsignmentStockDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "location_id",
+          "product_id",
+          "qty",
+          "placed_at",
+          "discrepancy_flagged",
+          "created_at"
+        ],
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "consumed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "discrepancy_flagged": {
+            "type": "boolean"
+          },
+          "discrepancy_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoiced_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "placed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "serial_no": {
+            "type": "string",
+            "nullable": true
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ConsumeConsignmentRequest": {
+        "type": "object",
+        "required": [
+          "qty_consumed"
+        ],
+        "properties": {
+          "patient_ref": {
+            "type": "string",
+            "nullable": true
+          },
+          "qty_consumed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "surgeon_name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "ConversationDto": {
         "type": "object",
         "required": [
@@ -4595,6 +5399,50 @@
         "type": "string",
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "CreateAccountRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "billing_address"
+        ],
+        "properties": {
+          "account_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "billing_address": {
+            "type": "string"
+          },
+          "credit_limit": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "ntn": {
+            "type": "string",
+            "nullable": true
+          },
+          "payment_terms_days": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "price_list_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "shipping_addresses": {
+            "nullable": true
+          },
+          "strn": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "CreateBranchRequest": {
         "type": "object",
@@ -4676,6 +5524,37 @@
             "type": "string"
           },
           "title": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateContactRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "designation",
+          "phone"
+        ],
+        "properties": {
+          "approval_limit": {
+            "type": "string",
+            "nullable": true
+          },
+          "can_approve_po": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "designation": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
             "type": "string"
           }
         }
@@ -4873,6 +5752,63 @@
           "raw_sender": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "CreatePurchaseOrderRequest": {
+        "type": "object",
+        "required": [
+          "account_id",
+          "po_number",
+          "amount"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "po_document_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "po_number": {
+            "type": "string"
+          },
+          "quotation_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "CreateQuotationRequest": {
+        "type": "object",
+        "required": [
+          "account_id",
+          "valid_until",
+          "items"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuotationItemRequest"
+            }
+          },
+          "terms_text": {
+            "type": "string",
+            "nullable": true
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -5232,6 +6168,77 @@
           "Failed",
           "Returned"
         ]
+      },
+      "DeviceUnitDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "product_id",
+          "serial_no",
+          "status",
+          "location_type",
+          "created_at"
+        ],
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "implanted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "location_type": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "patient_ref": {
+            "type": "string",
+            "nullable": true
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serial_no": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "surgeon_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "udi": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "DraftReplyResult": {
         "type": "object",
@@ -6128,6 +7135,37 @@
           }
         }
       },
+      "PatchAccountRequest": {
+        "type": "object",
+        "properties": {
+          "billing_address": {
+            "type": "string",
+            "nullable": true
+          },
+          "credit_limit": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "payment_terms_days": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "price_list_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "PatchTaxCategoryRequest": {
         "type": "object",
         "required": [
@@ -6456,6 +7494,37 @@
           "Cancelled"
         ]
       },
+      "PlaceConsignmentRequest": {
+        "type": "object",
+        "required": [
+          "location_id",
+          "product_id",
+          "qty"
+        ],
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "serial_no": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "PrescriptionDto": {
         "type": "object",
         "required": [
@@ -6762,6 +7831,72 @@
           }
         }
       },
+      "PurchaseOrderDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "account_id",
+          "po_number",
+          "received_at",
+          "amount",
+          "variance_detected",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "po_document_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "po_number": {
+            "type": "string"
+          },
+          "quotation_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variance_detected": {
+            "type": "boolean"
+          },
+          "variance_notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "verified_by": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
       "QueueStatsDto": {
         "type": "object",
         "required": [
@@ -6789,6 +7924,214 @@
           }
         }
       },
+      "QuotationDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "account_id",
+          "quote_no",
+          "version",
+          "status",
+          "valid_until",
+          "subtotal",
+          "discount",
+          "tax_amount",
+          "total",
+          "prepared_by",
+          "items",
+          "created_at"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approved_by": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "discount": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuotationItemDto"
+            }
+          },
+          "parent_quote_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "prepared_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quote_no": {
+            "type": "string"
+          },
+          "responded_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "subtotal": {
+            "type": "string"
+          },
+          "tax_amount": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "terms_text": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "string"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "QuotationItemDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "quotation_id",
+          "product_id",
+          "qty",
+          "unit_price",
+          "discount",
+          "line_total",
+          "lead_time_days"
+        ],
+        "properties": {
+          "discount": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lead_time_days": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "line_total": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quotation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "unit_price": {
+            "type": "string"
+          }
+        }
+      },
+      "QuotationItemRequest": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "qty",
+          "unit_price"
+        ],
+        "properties": {
+          "discount": {
+            "type": "string",
+            "nullable": true
+          },
+          "lead_time_days": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unit_price": {
+            "type": "string"
+          }
+        }
+      },
+      "RecallQueryResponse": {
+        "type": "object",
+        "required": [
+          "affected_units_count",
+          "units"
+        ],
+        "properties": {
+          "affected_units_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeviceUnitDto"
+            }
+          }
+        }
+      },
       "ReconcileCashSessionRequest": {
         "type": "object",
         "required": [
@@ -6801,6 +8144,22 @@
           "note": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "ReconcileConsignmentRequest": {
+        "type": "object",
+        "required": [
+          "physical_count"
+        ],
+        "properties": {
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "physical_count": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -6927,6 +8286,40 @@
           }
         }
       },
+      "RegisterDeviceRequest": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "serial_no"
+        ],
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "location_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serial_no": {
+            "type": "string"
+          },
+          "udi": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "RejectPrescriptionRequest": {
         "type": "object",
         "required": [
@@ -6983,6 +8376,29 @@
           "qty": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "ReviseQuotationRequest": {
+        "type": "object",
+        "required": [
+          "valid_until",
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuotationItemRequest"
+            }
+          },
+          "terms_text": {
+            "type": "string",
+            "nullable": true
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -8062,6 +9478,10 @@
     {
       "name": "Tax",
       "description": "Tax categories with versioned rate periods, FBR POS reporting, and tax summaries"
+    },
+    {
+      "name": "B2B",
+      "description": "Business accounts, quotations, purchase orders, credit control, AR aging, consignment, and device traceability"
     },
     {
       "name": "Webhooks",

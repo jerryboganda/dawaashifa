@@ -54,6 +54,9 @@ pub enum ApiError {
     #[error("Tax error: {0}")]
     Tax(#[from] shifa_tax::TaxError),
 
+    #[error("B2B error: {0}")]
+    B2b(#[from] shifa_b2b::B2bError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -263,6 +266,19 @@ impl IntoResponse for ApiError {
                 (StatusCode::FORBIDDEN, msg)
             }
             ApiError::Tax(err) => (StatusCode::BAD_REQUEST, err.to_string()),
+            ApiError::B2b(shifa_b2b::B2bError::AccountNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Business account {} not found", id))
+            }
+            ApiError::B2b(shifa_b2b::B2bError::QuoteNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Quotation {} not found", id))
+            }
+            ApiError::B2b(shifa_b2b::B2bError::DeviceNotFound(serial)) => {
+                (StatusCode::NOT_FOUND, format!("Device unit {} not found", serial))
+            }
+            ApiError::B2b(shifa_b2b::B2bError::DeviceSerialDuplicate(serial)) => {
+                (StatusCode::CONFLICT, format!("Device serial {} already exists", serial))
+            }
+            ApiError::B2b(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Auth(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Core(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Internal(err) => {

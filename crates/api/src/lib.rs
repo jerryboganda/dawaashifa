@@ -42,6 +42,7 @@ pub struct AppState {
     pub payment_service: PaymentService,
     pub fulfilment_service: FulfilmentService,
     pub tax_service: TaxService,
+    pub b2b_service: shifa_b2b::B2bService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
@@ -56,6 +57,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let payment_service = PaymentService::new(pool.clone());
     let fulfilment_service = FulfilmentService::new(pool.clone());
     let tax_service = TaxService::new(pool.clone());
+    let b2b_service = shifa_b2b::B2bService::new(pool.clone());
 
     let state = AppState {
         pool,
@@ -71,6 +73,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         payment_service,
         fulfilment_service,
         tax_service,
+        b2b_service,
     };
 
     let auth_routes = Router::new()
@@ -305,6 +308,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/invoices", invoice_routes)
         .nest("/tax", tax_routes)
         .nest("/fbr", fbr_routes)
+        .nest("/b2b", routes::b2b::b2b_routes())
         .nest("/ai", ai_routes)
         .merge(role_routes);
 

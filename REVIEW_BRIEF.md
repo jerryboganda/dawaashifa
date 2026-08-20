@@ -1,68 +1,80 @@
-# Review Brief — Doc 03: Unofficial WhatsApp Adapter Sidecar & Number Pool Manager
+# Review Brief — Doc 14: B2B Module: Quotes, Credit & AR Aging
 
 ## Spec
-`docs/03_UNOFFICIAL_ADAPTER_AND_NUMBER_POOL.md`
+`docs/14_B2B_QUOTES_AND_CREDIT.md`
 
 ## What I built
-- **Unofficial Adapter (`crates/channel/src/unofficial/adapter.rs`)**:
-  - `UnofficialAdapter` implementing the common `ChannelAdapter` trait (Doc 03 §6).
-  - Clean capability degradation: `Choice` renders as numbered plain text with reply instructions; `Confirm` renders as "Reply YES to confirm, NO to cancel"; `Template` renders as plain text parameters.
-  - Zero business logic branching on transport — Invariant I-10 strictly maintained.
-- **Encrypted Session Persistence (`crates/channel/src/unofficial/session.rs`, `migrations/20260821000006_unofficial_channel_pool.sql`)**:
-  - `wa_sessions` database table with tenant RLS isolation.
-  - Sessions survive container restarts without requiring QR rescan.
-  - Session creds and keys encrypted at rest with cluster master key (Doc 03 §5).
-- **Flexible Reply Parsing (`crates/channel/src/unofficial/reply_parser.rs`)**:
-  - Multi-language reply parsing accepting ASCII digits (`1`, `2`), Arabic-Indic / Urdu numerals (`۱`, `۲`, `١`, `٢`), Roman Urdu (`pehla`, `dusra`, `teesra`, `chotha`, `panchwa`), Urdu script (`پہلا`, `دوسرا`), and confirmations in English/Urdu/Roman Urdu (`yes`, `y`, `haan`, `ha`, `ji haan`, `sahi`, `theek`, `no`, `n`, `nahi`, `nahin`, `cancel`, `radd`, `mat karo`) (Doc 03 §6).
-- **Human-Paced Sending (`crates/channel/src/unofficial/pacer.rs`)**:
-  - Simulates composing presence (1-7s) and pauses (300-900ms).
-  - Enforces minimum 2-8s gaps between consecutive sends to different recipients.
-  - Configurable daily caps: 300 msgs/day in `ACTIVE`, 40 msgs/day in `WARMING`, max 25 distinct recipients/day (Doc 03 §7).
-- **Number Pool Manager & Failover (`crates/channel/src/unofficial/pool.rs`)**:
-  - State machine transitions: `PROVISIONING` -> `WARMING` -> `ACTIVE` <-> `DEGRADED` -> `BANNED` -> `RETIRED`.
-  - Dynamic health scoring (0-100) decaying on send failures and recovering on success; score < 40 enters `DEGRADED` (Doc 03 §8).
-  - Automatic ban handling: marks `BANNED`, drains queue, reassigns open conversations to the next active channel in the branch pool, and emits alerting events (Doc 03 §10).
-  - **Mandatory Business Identity Isolation**: strict code-level invariant check ensuring unofficial channels can never join an Official WABA identity (Doc 03 §9).
-- **Baileys Transport Sidecar (`sidecars/wa-unofficial/`)**:
-  - Node 22 + Baileys transport container shim with Postgres session storage and NATS messaging subjects.
-- **Runbook**:
-  - `docs/runbooks/number-ban-response.md` (Doc 03 §12).
+- **Database Schema (`migrations/20260821000007_b2b_schema.sql`)**:
+  - `business_accounts`, `business_contacts`, `price_lists`, `price_list_items`, `quotations`, `quotation_items`, `purchase_orders`, `consignment_locations`, `consignment_stock`, `device_units`.
+  - All tables include `tenant_id UUID NOT NULL` and active Postgres RLS isolation policies (Invariants I-1, I-2).
+- **Business Accounts & Contacts (`crates/b2b/src/service.rs`, `models.rs`)**:
+  - Hospital and clinic business account profile management, credit limits, payment terms, and contacts with approval limit hierarchies (Doc 14 §5).
+- **Quotation Engine (`crates/b2b/src/quotes.rs`)**:
+  - Sequential numbering `Q-{BRANCH}-{YY}-{SEQ5}`.
+  - MRP cap validation: rejects any negotiated price above product MRP (Doc 14 §5).
+  - Versioned revisions: increments version, links `parent_quote_id`, and marks previous version as `REVISED` without mutating history (Doc 14 §6).
+  - Discount approval gates: high discounts require approver with sufficient `approval_limit` (Doc 14 §6).
+  - Expiry enforcement: expired quotations are blocked from acceptance and conversion.
+  - B2B order conversion: accepted quotes directly create B2B orders at `CONFIRMED` status, bypassing retail carts (Doc 14 §4, §6).
+- **Purchase Order Matching & Variance Detection (`crates/b2b/src/po.rs`)**:
+  - Uploads and matches PO against quotation. Variance sets `status = VARIANCE_BLOCKED` and blocks fulfilment until resolved (Doc 14 §7).
+- **Credit Control (`crates/b2b/src/credit.rs`)**:
+  - Verifies credit limits, account hold flags, and 90+ days overdue balances before quote acceptance and before dispatch (Doc 14 §8).
+  - Credit overrides require `b2b.credit` permission and write audited entries to `audit_logs` (Invariant I-9).
+- **Accounts Receivable & Aging (`crates/b2b/src/ar.rs`)**:
+  - Aging buckets: `Current`, `1-30`, `31-60`, `61-90`, `90+` days (Doc 14 §9).
+  - Automatic account lock (`on_hold = true`) when 90+ days overdue balance exists.
+  - FIFO partial payment allocation against oldest outstanding invoices.
+- **Consignment Stock Management (`crates/b2b/src/consignment.rs`)**:
+  - Placement records stock transfer to virtual hospital location, not a sale (Doc 14 §10).
+  - Reconciliation flags discrepancies with audit notes without auto-adjusting system quantities.
+- **Device Traceability & Recall Query (`crates/b2b/src/device.rs`)**:
+  - Unit-level tracking for implants (UDI, lot, serial) with `UNIQUE (tenant_id, serial_no)` invariant (Doc 14 §11).
+  - First-class manufacturer recall query returning all affected units, current locations, and patient references.
+- **API & OpenAPI**:
+  - 12 REST endpoints in `crates/api/src/routes/b2b.rs` matching Doc 14 §12.
+  - Emitted `contracts/openapi.json` and regenerated `@shifa/shared` types.
 
 ## Acceptance tests
-Spec names 11 acceptance tests. I implemented **11**.
+Spec names 17 acceptance tests. I implemented **17** across 12 test functions.
 
 | Spec test name | My test | File |
 |---|---|---|
-| `session_survives_container_restart` | `test_session_survives_container_restart_and_creds_encrypted_at_rest` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `session_creds_encrypted_at_rest` | `test_session_survives_container_restart_and_creds_encrypted_at_rest` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `choice_renders_as_numbered_text` | `test_choice_renders_as_numbered_text` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `reply_parser_accepts_urdu_and_roman_variants` | `test_reply_parser_accepts_urdu_and_roman_variants` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `send_pacing_respects_minimum_gap` | `test_send_pacing_respects_minimum_gap` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `daily_limit_blocks_further_sends` | `test_daily_limit_blocks_further_sends_and_warming_number_uses_reduced_limits` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `warming_number_uses_reduced_limits` | `test_daily_limit_blocks_further_sends_and_warming_number_uses_reduced_limits` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `logged_out_event_marks_banned_and_drains_queue` | `test_logged_out_event_marks_banned_and_failover_reassigns_queue` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `failover_reassigns_queue_to_next_active_channel` | `test_logged_out_event_marks_banned_and_failover_reassigns_queue` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `unofficial_number_cannot_join_official_waba_identity` | `test_unofficial_number_cannot_join_official_waba_identity` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
-| `business_logic_identical_across_transports` | `test_business_logic_identical_across_transports` | `crates/channel/tests/unofficial_acceptance_tests.rs` |
+| `negotiated_price_above_mrp_rejected` | `test_negotiated_price_above_mrp_rejected` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `quote_revision_creates_new_version_preserving_original` | `test_quote_revision_creates_new_version_preserving_original` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `expired_quote_cannot_convert` | `test_expired_quote_cannot_convert` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `discount_above_threshold_requires_approval` | `test_discount_approval_threshold_and_limits` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `approver_below_limit_cannot_approve` | `test_discount_approval_threshold_and_limits` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `credit_check_blocks_on_limit_exceeded` | `test_credit_control_rules` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `credit_check_blocks_on_90_day_overdue` | `test_credit_control_rules` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `credit_check_runs_again_before_dispatch` | `test_credit_control_rules` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `credit_override_requires_permission_and_audits` | `test_credit_override_requires_permission_and_audits` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `po_variance_blocks_fulfilment` | `test_po_variance_blocks_fulfilment` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `partial_payment_allocates_oldest_first` | `test_partial_payment_allocates_oldest_first` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `ninety_day_overdue_sets_account_on_hold` | `test_ninety_day_overdue_locks_account` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `consignment_placement_is_transfer_not_sale` | `test_consignment_transfer_and_reconciliation` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `consignment_discrepancy_flagged_not_auto_adjusted` | `test_consignment_transfer_and_reconciliation` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `device_serial_unique_per_tenant` | `test_device_serial_uniqueness_and_recall_query` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `recall_query_returns_all_affected_units_with_locations` | `test_device_serial_uniqueness_and_recall_query` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
+| `b2b_order_bypasses_retail_cart_stages` | `test_b2b_order_bypasses_retail_cart_stages` | `crates/b2b/tests/b2b_acceptance_tests.rs` |
 
-Missing, with reason: None. All 11 acceptance tests passing.
+Missing, with reason: None. All 17 acceptance assertions passing.
 
 ## Out of scope
 Confirmed nothing from the Out of scope section was built:
-- No changes to business logic (Invariant I-10).
-- No bulk or broadcast sending logic.
-- No path letting unofficial numbers join official WABA.
-- No automatic SIM purchasing.
+- No public tender or e-procurement integration.
+- No general ledger.
+- No sales commission tracking.
+- No retail order flow modifications.
 
 ## ASSUMPTIONS
-- Sidecar instances connect to NATS message broker on subjects `wa.unofficial.{channel_id}.*`.
+- Orders created from B2B quotes use `CREDIT_TERMS` payment method.
 
 ## Known gaps
 None.
 
 ## Contract changes
-- Added `wa_sessions` database table.
-- Extended `channels` table with `health_score`, `warming_started_at`, `daily_sent_count`, `daily_reset_at`, `banned_at`, `business_identity_id`, and `business_identity_kind`.
+- Added B2B endpoints (`/api/v1/b2b/*`) and types to `contracts/openapi.json` and `@shifa/shared`.
 
 ## Risk areas
-- Meta anti-spam heuristics change periodically; human pacing intervals and warming schedules should be tuned via ops configuration.
+- Device serial numbers must be entered accurately during warehouse receipt to guarantee recall query fidelity.

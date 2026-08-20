@@ -2490,6 +2490,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shifa-ai",
+ "shifa-b2b",
  "shifa-catalog",
  "shifa-channel",
  "shifa-conversation",
@@ -2518,7 +2519,19 @@ dependencies = [
 name = "shifa-b2b"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "chrono",
+ "rust_decimal",
+ "serde",
+ "serde_json",
  "shifa-core",
+ "shifa-db",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]

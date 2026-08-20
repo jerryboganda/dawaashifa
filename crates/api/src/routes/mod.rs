@@ -1,5 +1,6 @@
 pub mod ai;
 pub mod auth;
+pub mod b2b;
 pub mod branches;
 pub mod conversations;
 pub mod fulfilment;

@@ -5,6 +5,7 @@ use utoipa::{
 
 use crate::routes::*;
 use shifa_ai::models::*;
+use shifa_b2b::models::*;
 use shifa_catalog::models::*;
 use shifa_conversation::models::*;
 use shifa_core::id::*;
@@ -119,6 +120,18 @@ use shifa_tax::models::*;
         tax::patch_tax_category,
         tax::get_tax_report,
         tax::get_fbr_queue_status,
+        b2b::list_accounts,
+        b2b::create_account,
+        b2b::set_account_hold,
+        b2b::get_ar_summary,
+        b2b::create_quotation,
+        b2b::revise_quotation,
+        b2b::accept_quotation,
+        b2b::ingest_purchase_order,
+        b2b::place_consignment,
+        b2b::reconcile_consignment,
+        b2b::register_device,
+        b2b::query_device_recall,
     ),
     components(
         schemas(
@@ -263,6 +276,30 @@ use shifa_tax::models::*;
             TaxReportSummary,
             TaxReportDto,
             FbrQueueStatusDto,
+            BusinessAccountDto,
+            CreateAccountRequest,
+            PatchAccountRequest,
+            AccountHoldRequest,
+            BusinessContactDto,
+            CreateContactRequest,
+            QuotationDto,
+            QuotationItemDto,
+            CreateQuotationRequest,
+            QuotationItemRequest,
+            ReviseQuotationRequest,
+            PurchaseOrderDto,
+            CreatePurchaseOrderRequest,
+            ArAgingBucketDto,
+            ArSummaryDto,
+            ArAgingReportDto,
+            ConsignmentLocationDto,
+            ConsignmentStockDto,
+            PlaceConsignmentRequest,
+            ConsumeConsignmentRequest,
+            ReconcileConsignmentRequest,
+            DeviceUnitDto,
+            RegisterDeviceRequest,
+            RecallQueryResponse,
         )
     ),
     modifiers(&SecurityAddon),
@@ -281,6 +318,7 @@ use shifa_tax::models::*;
         (name = "Fulfilment", description = "Rider management, picking lists, delivery dispatch, POD, and cash reconciliation"),
         (name = "Invoices", description = "Fiscal invoice generation, PDF receipts, credit notes, and FBR retry queue"),
         (name = "Tax", description = "Tax categories with versioned rate periods, FBR POS reporting, and tax summaries"),
+        (name = "B2B", description = "Business accounts, quotations, purchase orders, credit control, AR aging, consignment, and device traceability"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

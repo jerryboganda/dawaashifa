@@ -164,6 +164,182 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/b2b/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_accounts"];
+        put?: never;
+        post: operations["create_account"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/accounts/{id}/ar-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_ar_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/accounts/{id}/hold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["set_account_hold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/consignment/stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["place_consignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/consignment/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reconcile_consignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["register_device"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/devices/recall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["query_device_recall"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ingest_purchase_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/quotations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_quotation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/quotations/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["accept_quotation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b2b/quotations/{id}/revise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["revise_quotation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/branches": {
         parameters: {
             query?: never;
@@ -1432,6 +1608,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccountHoldRequest: {
+            on_hold: boolean;
+            reason: string;
+        };
         AddOrderItemRequest: {
             discount?: components["schemas"]["Money"] | null;
             product_id: components["schemas"]["ProductId"];
@@ -1496,6 +1676,29 @@ export interface components {
         ApproveProofRequest: {
             note?: string | null;
         };
+        ArAgingBucketDto: {
+            current: string;
+            days_1_30: string;
+            days_31_60: string;
+            days_61_90: string;
+            days_90_plus: string;
+            total_outstanding: string;
+        };
+        ArAgingReportDto: {
+            accounts: components["schemas"]["ArSummaryDto"][];
+            aggregate_aging: components["schemas"]["ArAgingBucketDto"];
+            /** Format: uuid */
+            tenant_id: string;
+        };
+        ArSummaryDto: {
+            /** Format: uuid */
+            account_id: string;
+            account_name: string;
+            aging: components["schemas"]["ArAgingBucketDto"];
+            available_credit: string;
+            credit_limit: string;
+            on_hold: boolean;
+        };
         AssignBranchesRequest: {
             branch_ids: components["schemas"]["BranchId"][];
         };
@@ -1553,6 +1756,46 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         BranchId: string;
+        BusinessAccountDto: {
+            account_type: string;
+            billing_address: string;
+            /** Format: date-time */
+            created_at: string;
+            credit_limit: string;
+            hold_reason?: string | null;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            ntn?: string | null;
+            on_hold: boolean;
+            /** Format: int32 */
+            payment_terms_days: number;
+            /** Format: uuid */
+            price_list_id?: string | null;
+            shipping_addresses: unknown;
+            status: string;
+            strn?: string | null;
+            /** Format: uuid */
+            tenant_id: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        BusinessContactDto: {
+            /** Format: uuid */
+            account_id: string;
+            approval_limit: string;
+            can_approve_po: boolean;
+            /** Format: date-time */
+            created_at: string;
+            designation: string;
+            email?: string | null;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            phone: string;
+            /** Format: uuid */
+            tenant_id: string;
+        };
         CannedReplyDto: {
             body_en: string;
             body_ur?: string | null;
@@ -1588,6 +1831,50 @@ export interface components {
             /** Format: double */
             temperature_c: number;
         };
+        ConsignmentLocationDto: {
+            /** Format: uuid */
+            account_id: string;
+            address: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            managed_by?: string | null;
+            name: string;
+            /** Format: uuid */
+            tenant_id: string;
+        };
+        ConsignmentStockDto: {
+            /** Format: uuid */
+            batch_id?: string | null;
+            /** Format: date-time */
+            consumed_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            discrepancy_flagged: boolean;
+            discrepancy_reason?: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            invoiced_at?: string | null;
+            /** Format: uuid */
+            location_id: string;
+            /** Format: date-time */
+            placed_at: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: int32 */
+            qty: number;
+            serial_no?: string | null;
+            /** Format: uuid */
+            tenant_id: string;
+        };
+        ConsumeConsignmentRequest: {
+            patient_ref?: string | null;
+            /** Format: int32 */
+            qty_consumed: number;
+            surgeon_name?: string | null;
+        };
         ConversationDto: {
             assigned_to?: components["schemas"]["UserId"] | null;
             branch_id?: components["schemas"]["BranchId"] | null;
@@ -1608,6 +1895,19 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         ConversationId: string;
+        CreateAccountRequest: {
+            account_type?: string | null;
+            billing_address: string;
+            credit_limit?: string | null;
+            name: string;
+            ntn?: string | null;
+            /** Format: int32 */
+            payment_terms_days?: number | null;
+            /** Format: uuid */
+            price_list_id?: string | null;
+            shipping_addresses?: unknown;
+            strn?: string | null;
+        };
         CreateBranchRequest: {
             address: string;
             city: string;
@@ -1629,6 +1929,14 @@ export interface components {
             branch_id?: components["schemas"]["BranchId"] | null;
             shortcode: string;
             title: string;
+        };
+        CreateContactRequest: {
+            approval_limit?: string | null;
+            can_approve_po?: boolean | null;
+            designation: string;
+            email?: string | null;
+            name: string;
+            phone: string;
         };
         CreateCreditNoteRequest: {
             reason: string;
@@ -1673,6 +1981,23 @@ export interface components {
             payment_id?: components["schemas"]["PaymentId"] | null;
             raw_exif_software?: string | null;
             raw_sender?: string | null;
+        };
+        CreatePurchaseOrderRequest: {
+            /** Format: uuid */
+            account_id: string;
+            amount: string;
+            po_document_key?: string | null;
+            po_number: string;
+            /** Format: uuid */
+            quotation_id?: string | null;
+        };
+        CreateQuotationRequest: {
+            /** Format: uuid */
+            account_id: string;
+            items: components["schemas"]["QuotationItemRequest"][];
+            terms_text?: string | null;
+            /** Format: date-time */
+            valid_until: string;
         };
         CreateRiderRequest: {
             branch_id: components["schemas"]["BranchId"];
@@ -1774,6 +2099,30 @@ export interface components {
         DeliveryId: string;
         /** @enum {string} */
         DeliveryStatus: "Unassigned" | "Assigned" | "Accepted" | "PickedUp" | "InTransit" | "Delivered" | "Failed" | "Returned";
+        DeviceUnitDto: {
+            /** Format: uuid */
+            batch_id?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            implanted_at?: string | null;
+            /** Format: uuid */
+            location_id?: string | null;
+            location_type: string;
+            /** Format: uuid */
+            order_id?: string | null;
+            patient_ref?: string | null;
+            /** Format: uuid */
+            product_id: string;
+            serial_no: string;
+            status: string;
+            surgeon_name?: string | null;
+            /** Format: uuid */
+            tenant_id: string;
+            udi?: string | null;
+        };
         DraftReplyResult: {
             can_auto_send: boolean;
             /** Format: float */
@@ -2021,6 +2370,16 @@ export interface components {
         OverrideMessageRequest: {
             new_body: string;
         };
+        PatchAccountRequest: {
+            billing_address?: string | null;
+            credit_limit?: string | null;
+            name?: string | null;
+            /** Format: int32 */
+            payment_terms_days?: number | null;
+            /** Format: uuid */
+            price_list_id?: string | null;
+            status?: string | null;
+        };
         PatchTaxCategoryRequest: {
             /** Format: date-time */
             effective_from?: string | null;
@@ -2114,6 +2473,17 @@ export interface components {
         PickingListId: string;
         /** @enum {string} */
         PickingListStatus: "Pending" | "InProgress" | "Completed" | "Cancelled";
+        PlaceConsignmentRequest: {
+            /** Format: uuid */
+            batch_id?: string | null;
+            /** Format: uuid */
+            location_id: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: int32 */
+            qty: number;
+            serial_no?: string | null;
+        };
         PrescriptionDto: {
             assigned_to?: components["schemas"]["UserId"] | null;
             branch_id?: components["schemas"]["BranchId"] | null;
@@ -2205,6 +2575,28 @@ export interface components {
             picked_up_at?: string | null;
             status: components["schemas"]["DeliveryStatus"];
         };
+        PurchaseOrderDto: {
+            /** Format: uuid */
+            account_id: string;
+            amount: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            po_document_key?: string | null;
+            po_number: string;
+            /** Format: uuid */
+            quotation_id?: string | null;
+            /** Format: date-time */
+            received_at: string;
+            status: string;
+            /** Format: uuid */
+            tenant_id: string;
+            variance_detected: boolean;
+            variance_notes?: string | null;
+            /** Format: uuid */
+            verified_by?: string | null;
+        };
         QueueStatsDto: {
             /** Format: int64 */
             oldest_waiting_seconds?: number | null;
@@ -2215,9 +2607,81 @@ export interface components {
             /** Format: int64 */
             total_under_review: number;
         };
+        QuotationDto: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            approved_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            discount: string;
+            /** Format: uuid */
+            id: string;
+            items: components["schemas"]["QuotationItemDto"][];
+            /** Format: uuid */
+            parent_quote_id?: string | null;
+            /** Format: uuid */
+            prepared_by: string;
+            quote_no: string;
+            /** Format: date-time */
+            responded_at?: string | null;
+            /** Format: date-time */
+            sent_at?: string | null;
+            status: string;
+            subtotal: string;
+            tax_amount: string;
+            /** Format: uuid */
+            tenant_id: string;
+            terms_text?: string | null;
+            total: string;
+            /** Format: date-time */
+            valid_until: string;
+            /** Format: int32 */
+            version: number;
+        };
+        QuotationItemDto: {
+            discount: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            lead_time_days: number;
+            line_total: string;
+            notes?: string | null;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: int32 */
+            qty: number;
+            /** Format: uuid */
+            quotation_id: string;
+            unit_price: string;
+        };
+        QuotationItemRequest: {
+            discount?: string | null;
+            /** Format: int32 */
+            lead_time_days?: number | null;
+            notes?: string | null;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: int32 */
+            qty: number;
+            unit_price: string;
+        };
+        RecallQueryResponse: {
+            affected_units_count: number;
+            /** Format: uuid */
+            batch_id?: string | null;
+            /** Format: uuid */
+            product_id?: string | null;
+            units: components["schemas"]["DeviceUnitDto"][];
+        };
         ReconcileCashSessionRequest: {
             deposited_amount: components["schemas"]["Money"];
             note?: string | null;
+        };
+        ReconcileConsignmentRequest: {
+            notes?: string | null;
+            /** Format: int32 */
+            physical_count: number;
         };
         ReconciliationDiscrepancy: {
             description: string;
@@ -2250,6 +2714,17 @@ export interface components {
             refunded_amount: components["schemas"]["Money"];
             status: components["schemas"]["PaymentStatus"];
         };
+        RegisterDeviceRequest: {
+            /** Format: uuid */
+            batch_id?: string | null;
+            /** Format: uuid */
+            location_id?: string | null;
+            location_type?: string | null;
+            /** Format: uuid */
+            product_id: string;
+            serial_no: string;
+            udi?: string | null;
+        };
         RejectPrescriptionRequest: {
             client_device?: string | null;
             client_ip?: string | null;
@@ -2266,6 +2741,12 @@ export interface components {
             pharmacist_certified: boolean;
             /** Format: int32 */
             qty: number;
+        };
+        ReviseQuotationRequest: {
+            items: components["schemas"]["QuotationItemRequest"][];
+            terms_text?: string | null;
+            /** Format: date-time */
+            valid_until: string;
         };
         RiderCashSessionDto: {
             branch_id?: components["schemas"]["BranchId"] | null;
@@ -2818,6 +3299,292 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_accounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List business accounts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAccountDto"][];
+                };
+            };
+        };
+    };
+    create_account: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Business account created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAccountDto"];
+                };
+            };
+        };
+    };
+    get_ar_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Account ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description AR Summary and Aging */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArSummaryDto"];
+                };
+            };
+        };
+    };
+    set_account_hold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Account ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountHoldRequest"];
+            };
+        };
+        responses: {
+            /** @description Account hold status updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    place_consignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceConsignmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Consignment stock placed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsignmentStockDto"];
+                };
+            };
+        };
+    };
+    reconcile_consignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Consignment Stock ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileConsignmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Consignment stock reconciled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsignmentStockDto"];
+                };
+            };
+        };
+    };
+    register_device: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Device unit registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceUnitDto"];
+                };
+            };
+        };
+    };
+    query_device_recall: {
+        parameters: {
+            query?: {
+                product_id?: string | null;
+                batch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Device recall query result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecallQueryResponse"];
+                };
+            };
+        };
+    };
+    ingest_purchase_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePurchaseOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Purchase order uploaded and matched */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderDto"];
+                };
+            };
+        };
+    };
+    create_quotation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuotationRequest"];
+            };
+        };
+        responses: {
+            /** @description Quotation created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotationDto"];
+                };
+            };
+        };
+    };
+    accept_quotation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Quotation ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quotation accepted and order created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revise_quotation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Parent Quotation ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviseQuotationRequest"];
+            };
+        };
+        responses: {
+            /** @description Quotation revised to new version */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotationDto"];
+                };
             };
         };
     };
