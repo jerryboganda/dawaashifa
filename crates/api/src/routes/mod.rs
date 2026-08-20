@@ -1,4 +1,4 @@
-﻿pub mod ai;
+pub mod ai;
 pub mod auth;
 pub mod branches;
 pub mod conversations;
@@ -8,3 +8,5 @@ pub mod products;
 pub mod roles;
 pub mod users;
 pub mod webhooks;
+
+pub mod prescriptions;

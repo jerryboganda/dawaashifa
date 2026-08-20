@@ -1,7 +1,7 @@
 use shifa_core::context::TenantContext;
 use shifa_core::id::*;
-use shifa_db::rls::set_tenant_context;
 use shifa_db::seed::seed_database;
+use shifa_db::with_tenant;
 use sqlx::PgPool;
 
 #[tokio::test]
@@ -102,57 +102,50 @@ async fn test_database_migrations_and_rls_suite() {
         .await
         .expect("insert tenant b");
 
-    // Insert branch for tenant A
     let branch_a = BranchId::new();
-    let mut tx_a = pool.begin().await.expect("begin tx_a");
-    let ctx_a = TenantContext::from_verified_claims(
+    let ctx_a = TenantContext::from_authenticated_session(
         tenant_a,
         UserId::new(),
         vec![],
         Default::default(),
         vec![],
-        false,
     );
-    set_tenant_context(&mut tx_a, &ctx_a)
-        .await
-        .expect("set tenant a context");
-
-    sqlx::query(
-        "INSERT INTO branches (id, tenant_id, name, code, drap_licence_no, pharmacist_in_charge, address, city, geo)
-         VALUES ($1, $2, 'Branch A', 'BR-A', 'DRAP-01', 'Pharmacist', 'Address', 'Karachi', ST_SetSRID(ST_MakePoint(67.0, 24.8), 4326)::geography)"
-    )
-    .bind(branch_a.0)
-    .bind(tenant_a.0)
-    .execute(&mut *tx_a)
+    with_tenant(&pool, &ctx_a, |conn| {
+        Box::pin(async move {
+            sqlx::query(
+                "INSERT INTO branches (id, tenant_id, name, code, drap_licence_no, pharmacist_in_charge, address, city, geo)
+                 VALUES ($1, $2, 'Branch A', 'BR-A', 'DRAP-01', 'Pharmacist', 'Address', 'Karachi', ST_SetSRID(ST_MakePoint(67.0, 24.8), 4326)::geography)"
+            )
+            .bind(branch_a.0)
+            .bind(tenant_a.0)
+            .execute(&mut *conn)
+            .await?;
+            Ok(())
+        })
+    })
     .await
     .expect("insert branch a");
-    tx_a.commit().await.expect("commit tx_a");
 
-    // Query from tenant B context
-    let mut tx_b = pool.begin().await.expect("begin tx_b");
-    let ctx_b = TenantContext::from_verified_claims(
+    let ctx_b = TenantContext::from_authenticated_session(
         tenant_b,
         UserId::new(),
         vec![],
         Default::default(),
         vec![],
-        false,
     );
-    set_tenant_context(&mut tx_b, &ctx_b)
-        .await
-        .expect("set tenant b context");
+    let count = with_tenant(&pool, &ctx_b, |conn| {
+        Box::pin(async move {
+            let count: (i64,) = sqlx::query_as("SELECT count(*) FROM branches WHERE id = $1")
+                .bind(branch_a.0)
+                .fetch_one(&mut *conn)
+                .await?;
+            Ok(count.0)
+        })
+    })
+    .await
+    .expect("query branch under tenant B context");
 
-    let count: (i64,) = sqlx::query_as("SELECT count(*) FROM branches WHERE id = $1")
-        .bind(branch_a.0)
-        .fetch_one(&mut *tx_b)
-        .await
-        .expect("query branch under tenant B context");
-
-    assert_eq!(
-        count.0, 0,
-        "Tenant B must not see Tenant A branch under RLS"
-    );
-    tx_b.commit().await.expect("commit tx_b");
+    assert_eq!(count, 0, "Tenant B must not see Tenant A branch under RLS");
 
     // 6. Test seed_generator_runs
     let stats = seed_database(&pool).await.expect("seed generator run");

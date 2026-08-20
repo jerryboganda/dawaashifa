@@ -1,48 +1,69 @@
-﻿# REVIEW_BRIEF.md — Spec 08 (AI Orchestration & Language Pipeline)
+﻿# REVIEW BRIEF — Spec 09: Prescription Workflow & Pharmacist Approval Gate
 
-## Specification & Scope
-- **Spec**: `docs/08_AI_ORCHESTRATION.md`
-- **Branch**: `feat/08-ai-orchestration`
-- **Scope**: AI gateway with versioned prompt templates, deterministic Roman Urdu normalizer, script detection, multi-signal confidence gating matrix, voice note transcription escalation, circuit breaker resiliency, invocation cost logging (`ai_invocations`), and feedback loop with dynamic alias learning (`ai_feedback` -> `product_aliases`).
+**Branch:** `feat/09-prescription-workflow`  
+**Target:** `main`  
+**Author:** Builder Agent (Antigravity)  
+**Reviewer:** Reviewer Agent (GitHub Copilot / Grok 4.6)  
+**Spec Document:** `docs/09_PRESCRIPTION_WORKFLOW.md`  
 
-## Invariants Enforced
-- **I-6**: AI output never reaches a customer unmodified in Rx flows. Pharmacist approval required at any confidence score (even 0.99).
-- **I-9**: Every AI invocation logs full metadata: tenant_id, conversation_id, message_id, prompt_version, token counts, and execution latency.
-- **I-1**: `tenant_id` enforced on `ai_invocations` and `ai_feedback` tables with Postgres RLS.
+---
 
-## Key Changes
-1. **Prompt Versioning**: Versioned templates in `crates/ai/prompts/` (`intent_classify.v3.md`, `reply_generate.v2.md`, `entity_extract.v2.md`, `rx_extract.v4.md`).
-2. **Language Pipeline (`shifa-ai::language`)**:
-   - `detect_script`: Unicode character block detection for Urdu (`\u0600`-\u06FF`, `\u0750`-\u077F`, `\uFB50`-\uFDFF`, `\uFE70`-\uFEFF`), Latin/Roman Urdu, and Code-Mixed.
-   - `normalise_roman_urdu`: Rule-based normalizer converting Eastern Arabic numerals (`٠-٩`, `۰-۹`) to standard digits, mapping 60+ dialect variants (e.g. `mujhe`/`mujay`/`mjhe` -> `muje`, `chahiye`/`chaiye` -> `caye`, `kitne`/`kitnay` -> `kitne`), letter transforms (`kh`->`k`, `ph`->`f`, `gh`->`g`, `th`->`t`, `ee`->`i`, `oo`->`u`), and collapsing doubled consonants without affecting numbers. Runs strictly *before* any model invocation.
-3. **Confidence Gating Matrix (`shifa-ai::gating`)**:
-   - Immediate human escalation for `HumanRequest` and `Complaint` regardless of confidence score.
-   - Automatic pharmacist queue for all prescription (`is_rx_context`) and controlled substances.
-   - Low confidence (< 0.60) human escalation with courteous customer acknowledgment draft.
-   - Auto-send strictly disabled by default; when enabled, forbidden on pricing enquiries and Rx.
-4. **Resilience & Circuit Breaker (`shifa-ai::provider`)**:
-   - Atomic circuit breaker trips after 5 consecutive provider failures with a 30-second half-open cooldown.
-   - Provider failures automatically escalate to human queue without message loss.
-5. **Voice Note Audio Pipeline**:
-   - Transcription with script detection and normalisation.
-   - Forced human escalation for audio > 180s (3 minutes) or transcription confidence < 0.70 with original audio attached.
-6. **Continuous Feedback Loop & Active Learning**:
-   - Human overrides write `ai_feedback` with Levenshtein-based edit distance.
-   - Corrected drug brand/generic names dynamically insert high-confidence alias records into `product_aliases` via `CatalogService::learn_alias`.
-7. **REST Endpoints (`crates/api/src/routes/ai.rs`)**:
-   - `POST /api/v1/ai/analyse`
-   - `POST /api/v1/ai/draft-reply`
-   - `POST /api/v1/ai/transcribe`
-   - `POST /api/v1/ai/feedback`
-   - `GET /api/v1/ai/health`
-8. **API Contracts**: OpenAPI specification updated and TypeScript client regenerated in `@shifa/shared`.
+## 1. Executive Summary
 
-## Acceptance Verification Results
-- 4 comprehensive integration test suites in `crates/ai/tests/ai_tests.rs`:
-  - `test_script_detection_table`: PASSED
-  - `test_roman_urdu_normaliser_table`: PASSED
-  - `test_confidence_gating_rules`: PASSED
-  - `test_ai_pipeline_voice_notes_and_feedback_integration`: PASSED
-- `cargo fmt --all --check`: CLEAN
-- `cargo clippy --workspace --all-targets -- -D warnings`: CLEAN (0 warnings)
-- `pnpm check`, `pnpm lint`, `pnpm test`: CLEAN
+Implemented end-to-end prescription intake, VLM-based OCR extraction, drug catalog matching, and the non-negotiable **Licensed Pharmacist Approval Gate (Invariant I-3 & I-6)**. 
+
+No prescription order can ever advance to cart or order creation without an explicit, line-by-line review recorded in `pharmacist_approvals` by an authenticated pharmacist with `rx.approve` permission. Bulk approval routes do not exist.
+
+---
+
+## 2. Invariants Enforced
+
+| Invariant | Implementation Detail | Verification |
+|---|---|---|
+| **I-1** (`tenant_id` on all tables) | Added `tenant_id UUID NOT NULL` to `prescriptions`, `rx_lines`, `rx_ocr_results`, `pharmacist_approvals`, `controlled_dispensing_register`, and `rx_substitutions`. | Passed (`migration_tests`) |
+| **I-2** (Row-Level Security) | RLS enabled with `FORCE ROW LEVEL SECURITY` and `tenant_isolation_policy` on all 6 tables. | Passed (`migration_tests`, `rls_with_tenant`) |
+| **I-3** (Pharmacist Approval Gate) | `PrescriptionService::approve` requires `ctx.require("rx.approve")` and iterates over every line in `rx.lines`. If any extracted line number is missing from the submitted decisions list, `RxError::IncompleteReview(line_no)` is returned. | Passed (`test_prescription_approval_gate_and_invariants`) |
+| **I-6** (AI Output Gating) | AI VLM extraction reaches `PENDING_REVIEW` queue. Raw doctor handwriting OCR text is stored immutably in `rx_lines.ocr_text` and never overwritten by human corrections. | Passed (`test_vlm_never_guesses_illegible_drug`) |
+| **Controlled Substances** | Any approved narcotic drug (`is_narcotic == true`) writes an immutable record to `controlled_dispensing_register` capturing doctor PMDC number, patient name, pharmacist ID, and quantity. | Passed (`test_prescription_approval_gate_and_invariants`) |
+| **Drug Substitutions** | Substituted drugs generate `rx_substitutions` row with `customer_informed = false` requiring explicit customer notice before order dispatch. | Passed (`test_prescription_approval_gate_and_invariants`) |
+| **Dynamic Alias Learning** | Pharmacist edits/substitutions automatically feed the catalog alias engine via `catalog_service.learn_alias` to improve future OCR matching. | Passed (`test_prescription_approval_gate_and_invariants`) |
+
+---
+
+## 3. Database Schema Extensions
+
+- **Migration**: `migrations/20260821000001_prescription_extensions.sql`
+  - Added prescription status enum values (`PARTIALLY_APPROVED`, `NEEDS_CLARIFICATION`, `PREPROCESSING`, `EXTRACTING`, `PENDING_REVIEW`, `UNDER_REVIEW`).
+  - Added `pharmacist_action` enum (`ACCEPTED`, `EDITED`, `REJECTED`, `ADDED_MANUALLY`).
+  - Created `controlled_dispensing_register` table with indexes and RLS.
+  - Created `rx_substitutions` table with indexes and RLS.
+  - Added indexes on foreign keys (`prescription_id`, `product_id`, `pharmacist_id`).
+
+---
+
+## 4. API Endpoints (`crates/api/src/routes/prescriptions.rs`)
+
+- `POST /api/v1/prescriptions` — Intake prescription image from WhatsApp/Web.
+- `GET /api/v1/prescriptions` — List prescriptions with status filter and pagination.
+- `GET /api/v1/prescriptions/{id}` — Fetch prescription detail with extracted lines and candidates.
+- `POST /api/v1/prescriptions/{id}/extract` — Trigger / re-run VLM extraction.
+- `POST /api/v1/prescriptions/{id}/claim` — Pharmacist claims prescription for review.
+- `POST /api/v1/prescriptions/{id}/approve` — Pharmacist line-by-line approval / edit / substitute / reject.
+- `POST /api/v1/prescriptions/{id}/reject` — Outright prescription rejection.
+- `POST /api/v1/prescriptions/{id}/clarify` — Request customer clarification.
+- `GET /api/v1/prescriptions/queue/stats` — Ops queue statistics (pending, under review, oldest wait time).
+- `GET /api/v1/prescriptions/{id}/audit` — Reconstruct complete immutable audit trail.
+
+---
+
+## 5. Verification Results
+
+- `cargo fmt --all --check`: Clean (0 diffs)
+- `cargo clippy --workspace --all-targets -- -D warnings`: Clean (0 warnings)
+- `cargo test -p shifa-prescription`: 3/3 passed (30.01s)
+- `cargo test -p shifa-db`: 6/6 passed (RLS + migration suite)
+- `pnpm -r check`: Clean (4/4 projects ok)
+- `pnpm -r lint`: Clean (4/4 projects ok)
+- `pnpm -r test`: Clean (4/4 projects ok)
+- `contracts/openapi.json`: Regenerated and committed.
+- `apps/shared/src/api/schema.d.ts`: Regenerated via `pnpm gen:api`.

@@ -19,6 +19,7 @@ use shifa_conversation::ConversationService;
 use shifa_identity::IdentityService;
 use shifa_inventory::{ColdChainService, InventoryService, TransferService};
 use shifa_orders::OrderService;
+use shifa_prescription::PrescriptionService;
 use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -34,6 +35,7 @@ pub struct AppState {
     pub conversation_service: ConversationService,
     pub order_service: OrderService,
     pub ai_service: AiService,
+    pub prescription_service: PrescriptionService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
@@ -44,6 +46,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let conversation_service = ConversationService::new(pool.clone());
     let order_service = OrderService::new(pool.clone());
     let ai_service = AiService::new(pool.clone());
+    let prescription_service = PrescriptionService::new(pool.clone());
 
     let state = AppState {
         pool,
@@ -55,6 +58,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         conversation_service,
         order_service,
         ai_service,
+        prescription_service,
     };
 
     let auth_routes = Router::new()
@@ -147,6 +151,36 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .route("/:id/confirm-cart", post(routes::orders::confirm_cart))
         .route("/:id/transition", post(routes::orders::transition_order));
 
+    let prescription_routes = Router::new()
+        .route(
+            "/",
+            get(routes::prescriptions::list_prescriptions)
+                .post(routes::prescriptions::create_prescription),
+        )
+        .route("/queue/stats", get(routes::prescriptions::get_queue_stats))
+        .route("/:id", get(routes::prescriptions::get_prescription))
+        .route(
+            "/:id/extract",
+            post(routes::prescriptions::extract_prescription),
+        )
+        .route(
+            "/:id/claim",
+            post(routes::prescriptions::claim_prescription),
+        )
+        .route(
+            "/:id/approve",
+            post(routes::prescriptions::approve_prescription),
+        )
+        .route(
+            "/:id/reject",
+            post(routes::prescriptions::reject_prescription),
+        )
+        .route(
+            "/:id/clarify",
+            post(routes::prescriptions::clarify_prescription),
+        )
+        .route("/:id/audit", get(routes::prescriptions::get_audit_trail));
+
     let ai_routes = Router::new()
         .route("/analyse", post(routes::ai::analyse_handler))
         .route("/draft-reply", post(routes::ai::draft_reply_handler))
@@ -170,6 +204,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/messages", message_routes)
         .nest("/canned-replies", canned_reply_routes)
         .nest("/orders", order_routes)
+        .nest("/prescriptions", prescription_routes)
         .nest("/ai", ai_routes)
         .merge(role_routes);
 

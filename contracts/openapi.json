@@ -1322,6 +1322,389 @@
         ]
       }
     },
+    "/api/v1/prescriptions": {
+      "get": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "list_prescriptions",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (default 50)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset (default 0)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of prescriptions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrescriptionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "create_prescription",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePrescriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Prescription received and queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrescriptionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        }
+      }
+    },
+    "/api/v1/prescriptions/queue/stats": {
+      "get": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "get_queue_stats",
+        "responses": {
+          "200": {
+            "description": "Prescription review queue metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueStatsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prescriptions/{id}": {
+      "get": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "get_prescription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Prescription ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prescription full detail with lines and candidates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrescriptionDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/prescriptions/{id}/approve": {
+      "post": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "approve_prescription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Prescription ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovePrescriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Approval result recorded immutably",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Incomplete review / missing decision for line"
+          },
+          "403": {
+            "description": "Forbidden (requires rx.approve permission)"
+          }
+        }
+      }
+    },
+    "/api/v1/prescriptions/{id}/audit": {
+      "get": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "get_audit_trail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Prescription ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full immutable audit trail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RxAuditEntryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prescriptions/{id}/claim": {
+      "post": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "claim_prescription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Prescription ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claim prescription for review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrescriptionDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already claimed by another pharmacist"
+          }
+        }
+      }
+    },
+    "/api/v1/prescriptions/{id}/clarify": {
+      "post": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "clarify_prescription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Prescription ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClarifyPrescriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Clarification requested",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrescriptionDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/prescriptions/{id}/extract": {
+      "post": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "extract_prescription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Prescription ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Re-run extraction result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrescriptionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prescriptions/{id}/reject": {
+      "post": {
+        "tags": [
+          "Prescriptions"
+        ],
+        "operationId": "reject_prescription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Prescription ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectPrescriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rejection recorded immutably",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
     "/api/v1/products": {
       "get": {
         "tags": [
@@ -2087,6 +2470,72 @@
           }
         }
       },
+      "ApprovalResult": {
+        "type": "object",
+        "required": [
+          "prescription_id",
+          "status",
+          "approved_lines_count",
+          "rejected_lines_count",
+          "approval_id",
+          "controlled_substances_dispensed",
+          "substitutions_count"
+        ],
+        "properties": {
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approved_lines_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "controlled_substances_dispensed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "prescription_id": {
+            "$ref": "#/components/schemas/PrescriptionId"
+          },
+          "rejected_lines_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/PrescriptionStatus"
+          },
+          "substitutions_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ApprovePrescriptionRequest": {
+        "type": "object",
+        "required": [
+          "decisions"
+        ],
+        "properties": {
+          "client_device": {
+            "type": "string",
+            "nullable": true
+          },
+          "client_ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineDecision"
+            }
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "AssignBranchesRequest": {
         "type": "object",
         "required": [
@@ -2312,6 +2761,25 @@
           }
         }
       },
+      "ClarifyPrescriptionRequest": {
+        "type": "object",
+        "required": [
+          "question_to_customer"
+        ],
+        "properties": {
+          "client_device": {
+            "type": "string",
+            "nullable": true
+          },
+          "client_ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "question_to_customer": {
+            "type": "string"
+          }
+        }
+      },
       "ClearExcursionRequest": {
         "type": "object",
         "required": [
@@ -2512,6 +2980,58 @@
             "$ref": "#/components/schemas/CustomerId"
           },
           "payment_method": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CreatePrescriptionRequest": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "image_object_key"
+        ],
+        "properties": {
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "conversation_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConversationId"
+              }
+            ],
+            "nullable": true
+          },
+          "customer_id": {
+            "$ref": "#/components/schemas/CustomerId"
+          },
+          "image_bytes_len": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
+          },
+          "image_height": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "minimum": 0
+          },
+          "image_object_key": {
+            "type": "string"
+          },
+          "image_width": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "minimum": 0
+          },
+          "source_channel": {
             "type": "string",
             "nullable": true
           }
@@ -2825,6 +3345,137 @@
           "HumanRequest",
           "Other"
         ]
+      },
+      "LineAction": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Accept"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "product_id",
+              "qty",
+              "type"
+            ],
+            "properties": {
+              "dosage": {
+                "type": "string",
+                "nullable": true
+              },
+              "product_id": {
+                "$ref": "#/components/schemas/ProductId"
+              },
+              "qty": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Edit"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "product_id",
+              "reason",
+              "type"
+            ],
+            "properties": {
+              "product_id": {
+                "$ref": "#/components/schemas/ProductId"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Substitute"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "reason",
+              "type"
+            ],
+            "properties": {
+              "reason": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Reject"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "product_id",
+              "qty",
+              "type"
+            ],
+            "properties": {
+              "dosage": {
+                "type": "string",
+                "nullable": true
+              },
+              "product_id": {
+                "$ref": "#/components/schemas/ProductId"
+              },
+              "qty": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "AddManual"
+                ]
+              }
+            }
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
+        }
+      },
+      "LineDecision": {
+        "type": "object",
+        "required": [
+          "line_no",
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/LineAction"
+          },
+          "line_no": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "LoginRequest": {
         "type": "object",
@@ -3186,6 +3837,128 @@
           }
         }
       },
+      "PrescriptionDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "customer_id",
+          "image_object_key",
+          "source_channel",
+          "received_at",
+          "status",
+          "lines",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "assigned_to": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "clarification_notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "conversation_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConversationId"
+              }
+            ],
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customer_id": {
+            "$ref": "#/components/schemas/CustomerId"
+          },
+          "doctor_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "doctor_pmdc_no": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "$ref": "#/components/schemas/PrescriptionId"
+          },
+          "image_object_key": {
+            "type": "string"
+          },
+          "issued_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RxLineDto"
+            }
+          },
+          "patient_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "preprocessed_image_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_channel": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PrescriptionStatus"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PrescriptionId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "PrescriptionStatus": {
+        "type": "string",
+        "enum": [
+          "RECEIVED",
+          "PREPROCESSING",
+          "EXTRACTING",
+          "PENDING_REVIEW",
+          "UNDER_REVIEW",
+          "APPROVED",
+          "PARTIALLY_APPROVED",
+          "REJECTED",
+          "NEEDS_CLARIFICATION",
+          "CANCELLED"
+        ]
+      },
       "ProductAliasDto": {
         "type": "object",
         "required": [
@@ -3317,6 +4090,33 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "QueueStatsDto": {
+        "type": "object",
+        "required": [
+          "total_pending",
+          "total_under_review",
+          "total_needs_clarification"
+        ],
+        "properties": {
+          "oldest_waiting_seconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "total_needs_clarification": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pending": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_under_review": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "RefreshRequest": {
         "type": "object",
         "required": [
@@ -3324,6 +4124,25 @@
         ],
         "properties": {
           "refresh_token": {
+            "type": "string"
+          }
+        }
+      },
+      "RejectPrescriptionRequest": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "client_device": {
+            "type": "string",
+            "nullable": true
+          },
+          "client_ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
             "type": "string"
           }
         }
@@ -3395,6 +4214,100 @@
         "type": "string",
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "RxAuditEntryDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "action",
+          "timestamp",
+          "details"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "actor_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "details": {},
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RxLineDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "line_no",
+          "ocr_text",
+          "qty",
+          "is_controlled"
+        ],
+        "properties": {
+          "dosage_instructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "is_controlled": {
+            "type": "boolean"
+          },
+          "line_no": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "match_confidence": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "match_method": {
+            "type": "string",
+            "nullable": true
+          },
+          "matched_brand_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "matched_product_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ],
+            "nullable": true
+          },
+          "ocr_text": {
+            "type": "string"
+          },
+          "pharmacist_action": {
+            "type": "string",
+            "nullable": true
+          },
+          "pharmacist_note": {
+            "type": "string",
+            "nullable": true
+          },
+          "qty": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "SendMessageRequest": {
         "type": "object",
@@ -3924,6 +4837,10 @@
     {
       "name": "Orders",
       "description": "Order state machine, cart, branch routing, and COD"
+    },
+    {
+      "name": "Prescriptions",
+      "description": "Prescription intake, OCR extraction, and licensed pharmacist approval gate"
     },
     {
       "name": "AI",
