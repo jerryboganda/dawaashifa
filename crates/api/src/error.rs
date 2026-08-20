@@ -1,4 +1,4 @@
-use axum::http::StatusCode;
+﻿use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde_json::json;
@@ -33,6 +33,9 @@ pub enum ApiError {
     #[error("Inventory error: {0}")]
     Inventory(#[from] shifa_inventory::InventoryError),
 
+    #[error("Conversation error: {0}")]
+    Conversation(#[from] shifa_conversation::ConversationError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -45,6 +48,23 @@ impl IntoResponse for ApiError {
             ApiError::NotFound => (StatusCode::NOT_FOUND, "Resource not found".to_string()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            ApiError::Conversation(shifa_conversation::ConversationError::AlreadyClaimed(u)) => (
+                StatusCode::CONFLICT,
+                format!("Conversation already claimed by user {}", u),
+            ),
+            ApiError::Conversation(shifa_conversation::ConversationError::BulkApprovalRejectedForRx) => (
+                StatusCode::BAD_REQUEST,
+                "Bulk approval rejected: Rx-linked conversations require individual review (Invariant I-6)".to_string(),
+            ),
+            ApiError::Conversation(shifa_conversation::ConversationError::OutsideServiceWindow) => (
+                StatusCode::BAD_REQUEST,
+                "Free-form message rejected: outside 24h WhatsApp service window, template required".to_string(),
+            ),
+            ApiError::Conversation(shifa_conversation::ConversationError::Unauthorized(msg)) => (
+                StatusCode::FORBIDDEN,
+                msg,
+            ),
+            ApiError::Conversation(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Catalog(shifa_catalog::CatalogError::ProductNotFound(_)) => {
                 (StatusCode::NOT_FOUND, "Product not found".to_string())
             }
@@ -56,16 +76,9 @@ impl IntoResponse for ApiError {
                 (StatusCode::FORBIDDEN, msg)
             }
             ApiError::Catalog(err) => (StatusCode::BAD_REQUEST, err.to_string()),
-            ApiError::Inventory(shifa_inventory::InventoryError::InsufficientStock {
-                requested,
-                available,
-                ..
-            }) => (
+            ApiError::Inventory(shifa_inventory::InventoryError::InsufficientStock { requested, available, .. }) => (
                 StatusCode::BAD_REQUEST,
-                format!(
-                    "Insufficient stock: requested {}, available {}",
-                    requested, available
-                ),
+                format!("Insufficient stock: requested {}, available {}", requested, available),
             ),
             ApiError::Inventory(shifa_inventory::InventoryError::Unauthorized(msg)) => {
                 (StatusCode::FORBIDDEN, msg)

@@ -116,6 +116,118 @@ export interface paths {
         patch: operations["update_branch"];
         trace?: never;
     };
+    "/api/v1/canned-replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_canned_reply_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_conversations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/inbound": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["inbound_message"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assign_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claim_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["send_message"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transfer_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/inventory/adjustments": {
         parameters: {
             query?: never;
@@ -226,6 +338,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/bulk-approve/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulk_approve_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["override_message_handler"];
         trace?: never;
     };
     "/api/v1/permissions": {
@@ -411,6 +555,9 @@ export interface components {
         AssignBranchesRequest: {
             branch_ids: components["schemas"]["BranchId"][];
         };
+        AssignConversationRequest: {
+            user_id: components["schemas"]["UserId"];
+        };
         AssignRolesRequest: {
             role_names: string[];
         };
@@ -459,6 +606,15 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         BranchId: string;
+        CannedReplyDto: {
+            body_en: string;
+            body_ur?: string | null;
+            body_ur_latn?: string | null;
+            /** Format: uuid */
+            id: string;
+            shortcode: string;
+            title: string;
+        };
         /**
          * Format: uuid
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
@@ -478,6 +634,26 @@ export interface components {
             /** Format: double */
             temperature_c: number;
         };
+        ConversationDto: {
+            assigned_to?: components["schemas"]["UserId"] | null;
+            branch_id?: components["schemas"]["BranchId"] | null;
+            /** Format: date-time */
+            created_at: string;
+            customer_id: components["schemas"]["CustomerId"];
+            id: components["schemas"]["ConversationId"];
+            is_rx_linked: boolean;
+            /** Format: date-time */
+            last_message_at?: string | null;
+            status: string;
+            tenant_id: components["schemas"]["TenantId"];
+            /** Format: int32 */
+            unread_count: number;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        ConversationId: string;
         CreateBranchRequest: {
             address: string;
             city: string;
@@ -491,6 +667,14 @@ export interface components {
             longitude: number;
             name: string;
             pharmacist_in_charge: string;
+        };
+        CreateCannedReplyRequest: {
+            body_en: string;
+            body_ur?: string | null;
+            body_ur_latn?: string | null;
+            branch_id?: components["schemas"]["BranchId"] | null;
+            shortcode: string;
+            title: string;
         };
         CreateProductRequest: {
             barcode?: string | null;
@@ -526,7 +710,20 @@ export interface components {
          * Format: uuid
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
+        CustomerId: string;
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
         GenericId: string;
+        InboundMessageRequest: {
+            branch_id?: components["schemas"]["BranchId"] | null;
+            /** Format: uuid */
+            channel_id?: string | null;
+            display_name?: string | null;
+            msisdn: string;
+            text: string;
+        };
         LoginRequest: {
             password: string;
             phone_or_email: string;
@@ -550,6 +747,25 @@ export interface components {
             limit?: number;
             query: string;
         };
+        MessageDto: {
+            body: string;
+            conversation_id: components["schemas"]["ConversationId"];
+            /** Format: date-time */
+            created_at: string;
+            direction: string;
+            id: components["schemas"]["MessageId"];
+            original_body?: string | null;
+            overridden_by?: components["schemas"]["UserId"] | null;
+            /** Format: uuid */
+            sender_id?: string | null;
+            sender_type: string;
+            status: string;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        MessageId: string;
         /**
          * @description Monetary amount represented with exact precision using Decimal.
          *     Invariant I-8: All money is rust_decimal::Decimal. Never f64 or f32.
@@ -557,6 +773,9 @@ export interface components {
          * @example 1250.00
          */
         Money: string;
+        OverrideMessageRequest: {
+            new_body: string;
+        };
         ProductAliasDto: {
             alias: string;
             alias_type: string;
@@ -611,6 +830,11 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         RoleId: string;
+        SendMessageRequest: {
+            body: string;
+            is_template: boolean;
+            template_name?: string | null;
+        };
         StockAdjustmentRequest: {
             batch_id: components["schemas"]["BatchId"];
             branch_id: components["schemas"]["BranchId"];
@@ -657,6 +881,9 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         TenantId: string;
+        TransferConversationRequest: {
+            branch_id: components["schemas"]["BranchId"];
+        };
         TransferDto: {
             /** Format: date-time */
             created_at: string;
@@ -969,6 +1196,177 @@ export interface operations {
             };
         };
     };
+    create_canned_reply_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCannedReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Canned reply created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CannedReplyDto"];
+                };
+            };
+        };
+    };
+    list_conversations: {
+        parameters: {
+            query?: {
+                /** @description Filter by branch ID */
+                branch_id?: string | null;
+                /** @description Filter by status */
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of conversations */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDto"][];
+                };
+            };
+        };
+    };
+    inbound_message: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InboundMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Processed inbound message */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDto"];
+                };
+            };
+        };
+    };
+    assign_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Conversation ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description Conversation assigned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    claim_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Conversation ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conversation claimed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    send_message: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Conversation ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Outbound message sent */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageDto"];
+                };
+            };
+        };
+    };
+    transfer_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Conversation ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description Conversation transferred */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     adjust_stock: {
         parameters: {
             query?: never;
@@ -1130,6 +1528,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransferDto"];
+                };
+            };
+        };
+    };
+    bulk_approve_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Conversation ID */
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bulk approved non-Rx drafts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    override_message_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Message ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverrideMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Draft message overridden */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageDto"];
                 };
             };
         };

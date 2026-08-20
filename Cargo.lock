@@ -2357,6 +2357,7 @@ dependencies = [
  "serde_json",
  "shifa-catalog",
  "shifa-channel",
+ "shifa-conversation",
  "shifa-core",
  "shifa-db",
  "shifa-identity",
@@ -2427,7 +2428,18 @@ dependencies = [
 name = "shifa-conversation"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "shifa-channel",
  "shifa-core",
+ "shifa-db",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]

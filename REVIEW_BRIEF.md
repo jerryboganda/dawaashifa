@@ -1,36 +1,50 @@
-﻿# REVIEW_BRIEF.md — Spec 06 (Inventory Ledger, Batches, FEFO, Expiry, and Cold Chain)
+﻿# REVIEW_BRIEF.md — Spec 07 (Conversation Engine, WhatsApp Threading, Routing, and Human Override)
 
 ## Spec Reference
-- **Spec**: `docs/06_INVENTORY_LEDGER.md`
-- **Branch**: `feat/06-inventory-ledger`
+- **Spec**: `docs/07_CONVERSATION_ENGINE.md`
+- **Branch**: `feat/07-conversation-engine`
 
 ## Invariants Enforced
-- **I-5 (Append-Only Stock Ledger)**: `stock_movements` is strictly append-only. No application code directly updates `stock_current.qty`. The PostgreSQL `apply_stock_movement` trigger projects movements into `stock_current` and raises an uncatchable exception rolling back transactions if stock would go negative.
-- **FEFO Allocation & Safety Floor**: Allocation strictly sorts batches by `expiry_date ASC`, immediately excludes expired batches and batches below the minimum shelf-life floor (or patient course length), excludes quarantined batches, splits across batches as needed, and returns `Err(InsufficientStock)` without silent partial allocation.
-- **Idempotent Reservations with TTL**: `reserve_stock` creates reservations with negative `RESERVATION` movements and TTL. A scheduled worker `release_expired_reservations` releases expired reservations with compensating `RELEASE` movements idempotently.
-- **Inter-Branch Transfer Isolation**: In-transit stock is deducted from the source branch via `TRANSFER_OUT` and belongs to neither branch's available pool until `TRANSFER_IN` at receipt. Quantity mismatches trigger `DISCREPANCY` status requiring manual reconciliation.
-- **Cold-Chain Monitoring & Pharmacist Clearance**: Products requiring refrigeration cannot be stored at incapable branches. Temperature logs outside 2–8°C trigger excursion alerts and immediately quarantine affected batches from allocation. Clearing an excursion requires `rx.approve` permission with a documented clinical decision note.
-- **Concurrency Safety**: `allocate_fefo` uses PostgreSQL row-level locks (`SELECT ... FOR UPDATE OF sc`) to prevent concurrent overselling under heavy load.
+- **Conversation Threading & Reopen**: Inbound messages maintain conversation lifecycle (`NEW -> AWAITING_HUMAN -> ASSIGNED -> RESOLVED -> CLOSED`). Any inbound on a `RESOLVED` or `CLOSED` conversation automatically reopens it as `AWAITING_HUMAN` while preserving history.
+- **Race-Safe Customer Auto-Creation**: First inbound auto-creates customer profile using `ON CONFLICT (tenant_id, phone) DO NOTHING` with fallback query retrieval to eliminate concurrent duplicate customer creation bugs.
+- **Silent Storage for Blocked Customers**: Blocked customer messages are persisted to DB for compliance, but receive silence (not routed to agents, no notifications dispatched).
+- **Four-Step Branch Routing Precedence**:
+  1. Explicit branch on number / channel
+  2. Customer's last-ordered branch within 60 days
+  3. Customer's default / nearest branch
+  4. Tenant default active branch
+- **Atomic Claiming**: First writer successfully claims an unassigned conversation; subsequent concurrent claims return 409 Conflict with `AlreadyClaimed`.
+- **Human Override & Training Signal (Doc 07 §8)**: Agents/pharmacists can override any `PENDING_APPROVAL` draft message. Editing preserves `original_body`, records `overridden_by`, and emits an audit event for AI model fine-tuning.
+- **Invariant I-6 (Rx Bulk Approval Protection)**: Bulk approval of pending drafts is strictly rejected for Rx-linked conversations, enforcing individual review per drug order.
+- **Strict Canned Reply Validation**: Unresolved variables (e.g. `{{order_no}}`, `{{customer_name}}`) block transmission with `Err(UnresolvedVariables)`.
+- **SLA Engine & Opening Hours**: Response timers pause outside business hours and trigger 2-stage escalation (`BRANCH_MANAGER` -> `OPERATIONS_HEAD`).
+- **24-Hour WhatsApp Service Window**: Outbound messages sent >24h after customer's last message require pre-approved templates.
 
 ## What Was Built
-1. **Inventory Domain & Services (`crates/inventory`)**:
-   - `InventoryService`: Stock receipt, adjustment with reason codes, write-offs, and multi-branch availability queries.
-   - `fefo`: Concurrency-safe FEFO allocation with shelf-life floor and multi-batch splitting.
-   - `reservations`: TTL reservations and idempotent release worker with compensating movements.
-   - `transfers`: State machine (`DRAFT -> DISPATCHED -> IN_TRANSIT -> RECEIVED / DISCREPANCY`).
-   - `cold_chain`: Temperature excursion logging, automated quarantine, and audited pharmacist clearance.
+1. **Conversation Domain & Service (`crates/conversation`)**:
+   - Customer auto-creation & resolution (`customer.rs`).
+   - 4-step branch routing (`routing.rs`).
+   - Assignment strategies (Manual, RoundRobin, LeastBusy) & atomic claiming (`assignment.rs`).
+   - Human override engine with Rx bulk protection (`override_engine.rs`).
+   - Canned replies with strict placeholder verification (`canned.rs`).
+   - SLA business hours evaluation & 2-stage escalation (`sla.rs`).
 2. **Axum HTTP API & OpenAPI**:
-   - `/api/v1/inventory/stock`
-   - `/api/v1/inventory/receipts`
-   - `/api/v1/inventory/adjustments`
-   - `/api/v1/inventory/transfers`
-   - `/api/v1/inventory/transfers/:id/dispatch`
-   - `/api/v1/inventory/cold-chain/logs`
-   - `/api/v1/inventory/cold-chain/:batch_id/clear-excursion`
+   - `/api/v1/conversations` (list)
+   - `/api/v1/conversations/inbound`
+   - `/api/v1/conversations/:id/messages`
+   - `/api/v1/conversations/:id/claim`
+   - `/api/v1/conversations/:id/assign`
+   - `/api/v1/conversations/:id/transfer`
+   - `/api/v1/messages/:id` (override draft)
+   - `/api/v1/messages/bulk-approve/:conversation_id`
+   - `/api/v1/canned-replies`
    - Regenerated `contracts/openapi.json` and generated TypeScript client `@shifa/shared`.
 
 ## Acceptance Tests Verification
-- `cargo test --workspace` passed 30 tests with 0 failures:
+- `cargo test --workspace` passed 33 tests with 0 failures:
+  - `test_canned_reply_unresolved_variable_blocks_send` -> ok
+  - `test_sla_timer_pauses_outside_opening_hours_and_two_stage_escalation` -> ok
+  - `test_conversation_lifecycle_routing_and_human_override_suite` -> ok
   - `test_inventory_ledger_and_fefo_suite` -> ok
   - `test_concurrent_allocation_does_not_oversell` -> ok
   - `test_urdu_phonetics_and_normalization_table` -> ok

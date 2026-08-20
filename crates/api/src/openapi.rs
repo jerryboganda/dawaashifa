@@ -5,6 +5,7 @@
 
 use crate::routes::*;
 use shifa_catalog::models::*;
+use shifa_conversation::models::*;
 use shifa_core::id::*;
 use shifa_core::money::Money;
 use shifa_identity::models::*;
@@ -41,6 +42,15 @@ use shifa_inventory::models::*;
         inventory::dispatch_transfer,
         inventory::log_cold_chain,
         inventory::clear_excursion,
+        conversations::list_conversations,
+        conversations::inbound_message,
+        conversations::send_message,
+        conversations::claim_handler,
+        conversations::assign_handler,
+        conversations::transfer_handler,
+        conversations::override_message_handler,
+        conversations::bulk_approve_handler,
+        conversations::create_canned_reply_handler,
         webhooks::verify_webhook_challenge,
         webhooks::handle_inbound_webhook,
     ),
@@ -54,6 +64,9 @@ use shifa_inventory::models::*;
             CategoryId,
             GenericId,
             BatchId,
+            ConversationId,
+            CustomerId,
+            MessageId,
             Money,
             AuthTokens,
             LoginRequest,
@@ -87,6 +100,15 @@ use shifa_inventory::models::*;
             ColdChainLogRequest,
             ClearExcursionRequest,
             BranchAvailabilityDto,
+            ConversationDto,
+            MessageDto,
+            InboundMessageRequest,
+            SendMessageRequest,
+            OverrideMessageRequest,
+            CannedReplyDto,
+            CreateCannedReplyRequest,
+            AssignConversationRequest,
+            TransferConversationRequest,
         )
     ),
     modifiers(&SecurityAddon),
@@ -97,6 +119,7 @@ use shifa_inventory::models::*;
         (name = "Roles", description = "Roles and permissions directory"),
         (name = "Products", description = "Drug master, catalog, MRP enforcement, and matching"),
         (name = "Inventory", description = "Append-only stock ledger, batches, transfers, and cold chain"),
+        (name = "Conversations", description = "WhatsApp conversations, routing, human override, and inbox"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

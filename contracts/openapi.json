@@ -265,6 +265,279 @@
         ]
       }
     },
+    "/api/v1/canned-replies": {
+      "post": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "create_canned_reply_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCannedReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Canned reply created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CannedReplyDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations": {
+      "get": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "list_conversations",
+        "parameters": [
+          {
+            "name": "branch_id",
+            "in": "query",
+            "description": "Filter by branch ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of conversations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations/inbound": {
+      "post": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "inbound_message",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InboundMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Processed inbound message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{id}/assign": {
+      "post": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "assign_handler",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Conversation ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignConversationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Conversation assigned"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations/{id}/claim": {
+      "post": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "claim_handler",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Conversation ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversation claimed successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations/{id}/messages": {
+      "post": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "send_message",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Conversation ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Outbound message sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations/{id}/transfer": {
+      "post": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "transfer_handler",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Conversation ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferConversationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Conversation transferred"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/api/v1/inventory/adjustments": {
       "post": {
         "tags": [
@@ -508,6 +781,83 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TransferDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/messages/bulk-approve/{conversation_id}": {
+      "post": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "bulk_approve_handler",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "description": "Conversation ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk approved non-Rx drafts"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/messages/{id}": {
+      "patch": {
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "override_message_handler",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OverrideMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Draft message overridden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDto"
                 }
               }
             }
@@ -1154,6 +1504,17 @@
           }
         }
       },
+      "AssignConversationRequest": {
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "properties": {
+          "user_id": {
+            "$ref": "#/components/schemas/UserId"
+          }
+        }
+      },
       "AssignRolesRequest": {
         "type": "object",
         "required": [
@@ -1302,6 +1663,38 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "CannedReplyDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "shortcode",
+          "title",
+          "body_en"
+        ],
+        "properties": {
+          "body_en": {
+            "type": "string"
+          },
+          "body_ur": {
+            "type": "string",
+            "nullable": true
+          },
+          "body_ur_latn": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "shortcode": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
       "CategoryId": {
         "type": "string",
         "format": "uuid",
@@ -1357,6 +1750,69 @@
           }
         }
       },
+      "ConversationDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "customer_id",
+          "status",
+          "is_rx_linked",
+          "unread_count",
+          "created_at"
+        ],
+        "properties": {
+          "assigned_to": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customer_id": {
+            "$ref": "#/components/schemas/CustomerId"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ConversationId"
+          },
+          "is_rx_linked": {
+            "type": "boolean"
+          },
+          "last_message_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "unread_count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ConversationId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
       "CreateBranchRequest": {
         "type": "object",
         "required": [
@@ -1402,6 +1858,41 @@
             "type": "string"
           },
           "pharmacist_in_charge": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateCannedReplyRequest": {
+        "type": "object",
+        "required": [
+          "shortcode",
+          "title",
+          "body_en"
+        ],
+        "properties": {
+          "body_en": {
+            "type": "string"
+          },
+          "body_ur": {
+            "type": "string",
+            "nullable": true
+          },
+          "body_ur_latn": {
+            "type": "string",
+            "nullable": true
+          },
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "shortcode": {
+            "type": "string"
+          },
+          "title": {
             "type": "string"
           }
         }
@@ -1544,10 +2035,47 @@
           }
         }
       },
+      "CustomerId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
       "GenericId": {
         "type": "string",
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "InboundMessageRequest": {
+        "type": "object",
+        "required": [
+          "msisdn",
+          "text"
+        ],
+        "properties": {
+          "branch_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchId"
+              }
+            ],
+            "nullable": true
+          },
+          "channel_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "msisdn": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
       },
       "LoginRequest": {
         "type": "object",
@@ -1635,10 +2163,79 @@
           }
         }
       },
+      "MessageDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "conversation_id",
+          "sender_type",
+          "direction",
+          "status",
+          "body",
+          "created_at"
+        ],
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "conversation_id": {
+            "$ref": "#/components/schemas/ConversationId"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "id": {
+            "$ref": "#/components/schemas/MessageId"
+          },
+          "original_body": {
+            "type": "string",
+            "nullable": true
+          },
+          "overridden_by": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "sender_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "sender_type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "MessageId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
       "Money": {
         "type": "string",
         "description": "Monetary amount represented with exact precision using Decimal.\nInvariant I-8: All money is rust_decimal::Decimal. Never f64 or f32.\nSerializes over the wire as a quoted decimal string to preserve precision in frontend clients.",
         "example": "1250.00"
+      },
+      "OverrideMessageRequest": {
+        "type": "object",
+        "required": [
+          "new_body"
+        ],
+        "properties": {
+          "new_body": {
+            "type": "string"
+          }
+        }
       },
       "ProductAliasDto": {
         "type": "object",
@@ -1821,6 +2418,25 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "SendMessageRequest": {
+        "type": "object",
+        "required": [
+          "body",
+          "is_template"
+        ],
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "is_template": {
+            "type": "boolean"
+          },
+          "template_name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "StockAdjustmentRequest": {
         "type": "object",
         "required": [
@@ -1971,6 +2587,17 @@
         "type": "string",
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "TransferConversationRequest": {
+        "type": "object",
+        "required": [
+          "branch_id"
+        ],
+        "properties": {
+          "branch_id": {
+            "$ref": "#/components/schemas/BranchId"
+          }
+        }
       },
       "TransferDto": {
         "type": "object",
@@ -2263,6 +2890,10 @@
     {
       "name": "Inventory",
       "description": "Append-only stock ledger, batches, transfers, and cold chain"
+    },
+    {
+      "name": "Conversations",
+      "description": "WhatsApp conversations, routing, human override, and inbox"
     },
     {
       "name": "Webhooks",

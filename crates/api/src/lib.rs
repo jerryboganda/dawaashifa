@@ -10,10 +10,11 @@ pub use error::ApiError;
 pub use openapi::ApiDoc;
 
 use axum::{
-    routing::{get, post},
+    routing::{get, patch, post},
     Router,
 };
 use shifa_catalog::CatalogService;
+use shifa_conversation::ConversationService;
 use shifa_identity::IdentityService;
 use shifa_inventory::{ColdChainService, InventoryService, TransferService};
 use sqlx::PgPool;
@@ -28,6 +29,7 @@ pub struct AppState {
     pub inventory_service: InventoryService,
     pub transfer_service: TransferService,
     pub cold_chain_service: ColdChainService,
+    pub conversation_service: ConversationService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
@@ -35,6 +37,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let inventory_service = InventoryService::new(pool.clone());
     let transfer_service = TransferService::new(pool.clone());
     let cold_chain_service = ColdChainService::new(pool.clone());
+    let conversation_service = ConversationService::new(pool.clone());
 
     let state = AppState {
         pool,
@@ -43,6 +46,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         inventory_service,
         transfer_service,
         cold_chain_service,
+        conversation_service,
     };
 
     let auth_routes = Router::new()
@@ -59,7 +63,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         )
         .route(
             "/:id",
-            axum::routing::patch(routes::users::update_user).delete(routes::users::delete_user),
+            patch(routes::users::update_user).delete(routes::users::delete_user),
         )
         .route("/:id/roles", post(routes::users::assign_roles))
         .route("/:id/branches", post(routes::users::assign_branches));
@@ -69,10 +73,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
             "/",
             get(routes::branches::list_branches).post(routes::branches::create_branch),
         )
-        .route(
-            "/:id",
-            axum::routing::patch(routes::branches::update_branch),
-        );
+        .route("/:id", patch(routes::branches::update_branch));
 
     let role_routes = Router::new()
         .route("/roles", get(routes::roles::list_roles))
@@ -102,6 +103,32 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
             post(routes::inventory::clear_excursion),
         );
 
+    let conversation_routes = Router::new()
+        .route("/", get(routes::conversations::list_conversations))
+        .route("/inbound", post(routes::conversations::inbound_message))
+        .route("/:id/messages", post(routes::conversations::send_message))
+        .route("/:id/claim", post(routes::conversations::claim_handler))
+        .route("/:id/assign", post(routes::conversations::assign_handler))
+        .route(
+            "/:id/transfer",
+            post(routes::conversations::transfer_handler),
+        );
+
+    let message_routes = Router::new()
+        .route(
+            "/:id",
+            patch(routes::conversations::override_message_handler),
+        )
+        .route(
+            "/bulk-approve/:conversation_id",
+            post(routes::conversations::bulk_approve_handler),
+        );
+
+    let canned_reply_routes = Router::new().route(
+        "/",
+        post(routes::conversations::create_canned_reply_handler),
+    );
+
     let webhook_routes = Router::new().route(
         "/whatsapp/:channel_id",
         get(routes::webhooks::verify_webhook_challenge)
@@ -114,6 +141,9 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/branches", branch_routes)
         .nest("/products", product_routes)
         .nest("/inventory", inventory_routes)
+        .nest("/conversations", conversation_routes)
+        .nest("/messages", message_routes)
+        .nest("/canned-replies", canned_reply_routes)
         .merge(role_routes);
 
     Router::new()
