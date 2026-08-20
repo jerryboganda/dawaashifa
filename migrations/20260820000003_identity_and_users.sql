@@ -3,7 +3,7 @@ CREATE TYPE user_status AS ENUM ('ACTIVE', 'SUSPENDED', 'INVITED');
 
 -- Users table
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     phone TEXT NOT NULL,
     email TEXT,
@@ -22,7 +22,7 @@ CREATE INDEX idx_users_tenant_email ON users(tenant_id, email);
 
 -- Roles table
 CREATE TABLE roles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     name TEXT NOT NULL,
     is_system BOOLEAN NOT NULL DEFAULT false,
@@ -36,7 +36,7 @@ CREATE INDEX idx_roles_tenant_id ON roles(tenant_id);
 
 -- Permissions table (per I-1, every lookup table has tenant_id)
 CREATE TABLE permissions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     key TEXT NOT NULL,
     description TEXT,
@@ -87,7 +87,7 @@ CREATE INDEX idx_user_branches_branch_id ON user_branches(branch_id);
 
 -- Sessions table
 CREATE TABLE sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash TEXT NOT NULL,
@@ -103,3 +103,4 @@ CREATE INDEX idx_sessions_tenant_id ON sessions(tenant_id);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX idx_sessions_token_hash ON sessions(token_hash);
 CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+

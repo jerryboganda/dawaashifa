@@ -1,7 +1,7 @@
-# DOC 01 — DOMAIN MODEL, ERD & MIGRATION SET
+﻿# DOC 01 â€” DOMAIN MODEL, ERD & MIGRATION SET
 
 **Agent:** Backend (Copilot)
-**Depends on:** nothing — this is the foundation
+**Depends on:** nothing â€” this is the foundation
 **Produces:** `crates/core`, `crates/db`, complete `migrations/`
 **Branch:** `feat/01-domain-model`
 
@@ -16,11 +16,11 @@ Establish the workspace, the core domain types, and the complete database schema
 - Cargo workspace skeleton with all crates stubbed
 - `crates/core`: newtype IDs, `Money`, `TenantContext`, error primitives
 - `crates/db`: connection pool, migration runner, RLS session setup, repository trait
-- All migrations for every table in §5
-- `docker-compose.yml`: Postgres 17 (+pgvector, pg_trgm, pg_partman), Redis 7, NATS JetStream, MinIO
+- All migrations for every table in Â§5
+- `docker-compose.yml`: Postgres 18 (+pgvector, pg_trgm, pg_partman), Redis 7, NATS JetStream, MinIO
 - Seed data generator: 1 tenant, 8 branches, 5,000 products, 50 users
 
-## 3. Out of scope — do NOT build
+## 3. Out of scope â€” do NOT build
 
 - Any HTTP route or Axum handler
 - Any business logic
@@ -46,7 +46,7 @@ Every crate other than `core` and `db` is a stub with `lib.rs` containing only a
 ## 5. Core types (`crates/core`)
 
 ```rust
-// Newtype IDs — prevents argument-order bugs at compile time
+// Newtype IDs â€” prevents argument-order bugs at compile time
 macro_rules! id_type { ($n:ident) => {
     #[derive(Debug,Clone,Copy,PartialEq,Eq,Hash,Serialize,Deserialize,sqlx::Type)]
     #[sqlx(transparent)]
@@ -57,12 +57,12 @@ id_type!(ProductId); id_type!(BatchId);   id_type!(OrderId);
 id_type!(CustomerId); id_type!(PrescriptionId); id_type!(ConversationId);
 id_type!(MessageId); id_type!(RiderId);   id_type!(ChannelId);
 
-// Money — NEVER f64
+// Money â€” NEVER f64
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Money(pub rust_decimal::Decimal);
 // Serialises as a STRING over the wire. #[schema(value_type = String)]
 
-// Tenant context — comes from the JWT, never from a request body
+// Tenant context â€” comes from the JWT, never from a request body
 #[derive(Debug, Clone)]
 pub struct TenantContext {
     pub tenant_id: TenantId,
@@ -77,7 +77,7 @@ pub struct TenantContext {
 ### 6.1 Tenancy & org
 ```sql
 CREATE TABLE tenants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     name TEXT NOT NULL, legal_name TEXT NOT NULL,
     ntn TEXT, strn TEXT,
     status tenant_status NOT NULL DEFAULT 'ACTIVE',
@@ -87,7 +87,7 @@ CREATE TABLE tenants (
 );
 
 CREATE TABLE branches (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id),
     name TEXT NOT NULL, code TEXT NOT NULL,
     drap_licence_no TEXT NOT NULL,
@@ -128,7 +128,7 @@ customer_addresses(id, tenant_id, customer_id, label, address_line,
 UNIQUE (tenant_id, msisdn)
 ```
 
-### 6.4 Catalog — detail in Doc 05
+### 6.4 Catalog â€” detail in Doc 05
 ```sql
 product_categories(id, tenant_id, name, parent_id, tax_category)
 products(id, tenant_id, sku, name_en, name_ur, form, strength, pack_size,
@@ -143,7 +143,7 @@ product_aliases(id, tenant_id, product_id, alias, alias_type, script,
                 weight NUMERIC(3,2), source, created_at)
 ```
 
-### 6.5 Inventory — detail in Doc 06
+### 6.5 Inventory â€” detail in Doc 06
 ```sql
 suppliers(id, tenant_id, name, contact, ntn, created_at)
 batches(id, tenant_id, product_id, branch_id, batch_no, expiry_date,
@@ -158,7 +158,7 @@ cold_chain_logs(id, tenant_id, branch_id, batch_id, temperature_c,
                 recorded_at, recorded_by, is_excursion)
 ```
 
-### 6.6 Channel & conversation — Docs 02, 03, 07
+### 6.6 Channel & conversation â€” Docs 02, 03, 07
 ```sql
 channels(id, tenant_id, transport, msisdn, display_name, status,
          business_identity_id, waba_id, phone_number_id,
@@ -175,7 +175,7 @@ messages(id, tenant_id, conversation_id, direction, transport_message_id,
   PARTITION BY RANGE (created_at)
 ```
 
-### 6.7 Prescriptions — Doc 09
+### 6.7 Prescriptions â€” Doc 09
 ```sql
 prescriptions(id, tenant_id, customer_id, conversation_id,
               image_object_key, source_channel, received_at, status,
@@ -190,7 +190,7 @@ pharmacist_approvals(id, tenant_id, prescription_id, user_id, decision,
                      reason, approved_at, ip, device)
 ```
 
-### 6.8 Orders — Doc 10
+### 6.8 Orders â€” Doc 10
 ```sql
 orders(id, tenant_id, branch_id, customer_id, conversation_id,
        prescription_id NULL, order_no TEXT, status order_status,
@@ -205,7 +205,7 @@ order_events(id, tenant_id, order_id, from_status, to_status,
              actor_id, actor_type, reason, occurred_at)
 ```
 
-### 6.9 Payments — Doc 11
+### 6.9 Payments â€” Doc 11
 ```sql
 payments(id, tenant_id, order_id, method, amount, status,
          gateway, gateway_ref, gateway_payload JSONB,
@@ -219,7 +219,7 @@ transaction_id_ledger(tid TEXT, gateway TEXT, tenant_id UUID,
                       PRIMARY KEY (tenant_id, gateway, tid))
 ```
 
-### 6.10 Fulfilment — Doc 12
+### 6.10 Fulfilment â€” Doc 12
 ```sql
 riders(id, tenant_id, branch_id, user_id, vehicle_type, cnic,
        licence_no, status, current_geo, created_at)
@@ -232,7 +232,7 @@ rider_cash_sessions(id, tenant_id, rider_id, opened_at, closed_at,
                     variance, reconciled_by, note)
 ```
 
-### 6.11 Tax & audit — Docs 13, 17
+### 6.11 Tax & audit â€” Docs 13, 17
 ```sql
 invoices(id, tenant_id, branch_id, order_id, invoice_no, fiscal_invoice_no,
          fbr_status, fbr_request JSONB, fbr_response JSONB, fbr_qr_payload,
@@ -243,7 +243,7 @@ audit_log(id, tenant_id, actor_id, actor_type, entity_type, entity_id,
   PARTITION BY RANGE (occurred_at)
 ```
 
-## 7. RLS pattern — apply to every tenant-scoped table
+## 7. RLS pattern â€” apply to every tenant-scoped table
 
 ```sql
 ALTER TABLE {t} ENABLE ROW LEVEL SECURITY;
@@ -260,12 +260,12 @@ sqlx::query("SELECT set_config('app.tenant_id', $1, true)")
 
 ## 8. Acceptance tests
 
-- `migrate_up_and_down_is_clean` — full migration run against a fresh container
-- `every_tenant_table_has_rls` — queries `pg_policies`, asserts a policy exists for every table with a `tenant_id` column. **This test must fail if a later spec adds a table without RLS.**
-- `every_fk_has_index` — introspects `pg_constraint` vs `pg_indexes`
-- `rls_blocks_cross_tenant_read` — insert as tenant A, set `app.tenant_id` to B, assert zero rows
-- `money_column_types` — asserts no money column is `float4`/`float8`
-- `seed_generator_runs` — produces the documented volumes without error
+- `migrate_up_and_down_is_clean` â€” full migration run against a fresh container
+- `every_tenant_table_has_rls` â€” queries `pg_policies`, asserts a policy exists for every table with a `tenant_id` column. **This test must fail if a later spec adds a table without RLS.**
+- `every_fk_has_index` â€” introspects `pg_constraint` vs `pg_indexes`
+- `rls_blocks_cross_tenant_read` â€” insert as tenant A, set `app.tenant_id` to B, assert zero rows
+- `money_column_types` â€” asserts no money column is `float4`/`float8`
+- `seed_generator_runs` â€” produces the documented volumes without error
 
 ## 9. Done checklist
 
@@ -277,3 +277,4 @@ sqlx::query("SELECT set_config('app.tenant_id', $1, true)")
 - [ ] `.env.example` committed with every required variable, dummy values
 - [ ] Seed generator produces 1 tenant / 8 branches / 5,000 products / 50 users
 - [ ] `cargo clippy --workspace --all-targets -- -D warnings` clean
+

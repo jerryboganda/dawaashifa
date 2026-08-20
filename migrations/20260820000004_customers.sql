@@ -1,6 +1,6 @@
 ﻿-- Customers table
 CREATE TABLE customers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     msisdn TEXT NOT NULL,
     display_name TEXT,
@@ -21,7 +21,7 @@ CREATE INDEX idx_customers_default_geo ON customers USING GIST(default_geo);
 
 -- Customer Addresses table
 CREATE TABLE customer_addresses (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
     label TEXT NOT NULL DEFAULT 'Home',
@@ -36,3 +36,4 @@ CREATE TABLE customer_addresses (
 CREATE INDEX idx_customer_addresses_tenant_id ON customer_addresses(tenant_id);
 CREATE INDEX idx_customer_addresses_customer_id ON customer_addresses(customer_id);
 CREATE INDEX idx_customer_addresses_geo ON customer_addresses USING GIST(geo);
+

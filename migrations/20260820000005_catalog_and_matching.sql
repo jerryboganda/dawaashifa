@@ -1,6 +1,6 @@
 ﻿-- Product Categories table
 CREATE TABLE product_categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     name TEXT NOT NULL,
     parent_id UUID REFERENCES product_categories(id) ON DELETE SET NULL,
@@ -15,7 +15,7 @@ CREATE INDEX idx_product_categories_parent_id ON product_categories(parent_id);
 
 -- Generics master table
 CREATE TABLE generics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     name TEXT NOT NULL,
     atc_code TEXT,
@@ -29,7 +29,7 @@ CREATE INDEX idx_generics_atc_code ON generics(atc_code);
 
 -- Generic Equivalents table (for substitution engine)
 CREATE TABLE generic_equivalents (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     generic_id UUID NOT NULL REFERENCES generics(id) ON DELETE CASCADE,
     equivalent_generic_id UUID NOT NULL REFERENCES generics(id) ON DELETE CASCADE,
@@ -47,7 +47,7 @@ CREATE TYPE product_status AS ENUM ('ACTIVE', 'DISCONTINUED', 'OUT_OF_STOCK');
 
 -- Products table (Drug master)
 CREATE TABLE products (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     sku TEXT NOT NULL,
     name_en TEXT NOT NULL,
@@ -92,7 +92,7 @@ CREATE INDEX idx_product_generics_generic_id ON product_generics(generic_id);
 
 -- Product Aliases table (high leverage matching engine)
 CREATE TABLE product_aliases (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     alias TEXT NOT NULL,
@@ -108,3 +108,4 @@ CREATE TABLE product_aliases (
 CREATE INDEX idx_product_aliases_tenant_id ON product_aliases(tenant_id);
 CREATE INDEX idx_product_aliases_product_id ON product_aliases(product_id);
 CREATE INDEX idx_product_aliases_trgm ON product_aliases USING GIN(alias gin_trgm_ops);
+

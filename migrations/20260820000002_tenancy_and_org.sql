@@ -4,7 +4,7 @@ CREATE TYPE branch_status AS ENUM ('ACTIVE', 'CLOSED', 'REFURBISHING');
 
 -- Tenants table (Root organization)
 CREATE TABLE tenants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     name TEXT NOT NULL,
     legal_name TEXT NOT NULL,
     ntn TEXT,
@@ -17,7 +17,7 @@ CREATE TABLE tenants (
 
 -- Branches table
 CREATE TABLE branches (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     name TEXT NOT NULL,
     code TEXT NOT NULL,
@@ -40,3 +40,4 @@ CREATE TABLE branches (
 
 CREATE INDEX idx_branches_tenant_id ON branches(tenant_id);
 CREATE INDEX idx_branches_geo ON branches USING GIST(geo);
+

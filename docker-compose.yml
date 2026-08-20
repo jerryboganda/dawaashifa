@@ -1,6 +1,6 @@
 ﻿services:
   postgres:
-    image: pgvector/pgvector:pg17
+    image: pgvector/pgvector:pg18
     container_name: dawaa-postgres
     restart: unless-stopped
     environment:
@@ -72,3 +72,4 @@ volumes:
   redis_data:
   nats_data:
   minio_data:
+
