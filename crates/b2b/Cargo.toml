@@ -1,0 +1,8 @@
+﻿[package]
+name = "dawaa-b2b"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dawaa-core.workspace = true

@@ -1,0 +1,60 @@
+﻿[workspace]
+members = [
+    "crates/core",
+    "crates/db",
+    "crates/identity",
+    "crates/catalog",
+    "crates/inventory",
+    "crates/channel",
+    "crates/conversation",
+    "crates/ai",
+    "crates/prescription",
+    "crates/orders",
+    "crates/payments",
+    "crates/fulfilment",
+    "crates/b2b",
+    "crates/tax",
+    "crates/admin",
+    "crates/api",
+    "crates/worker",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Dawaa Platform Team"]
+license = "Proprietary"
+
+[workspace.dependencies]
+# Internal workspace crates
+dawaa-core = { path = "crates/core" }
+dawaa-db = { path = "crates/db" }
+dawaa-identity = { path = "crates/identity" }
+dawaa-catalog = { path = "crates/catalog" }
+dawaa-inventory = { path = "crates/inventory" }
+dawaa-channel = { path = "crates/channel" }
+dawaa-conversation = { path = "crates/conversation" }
+dawaa-ai = { path = "crates/ai" }
+dawaa-prescription = { path = "crates/prescription" }
+dawaa-orders = { path = "crates/orders" }
+dawaa-payments = { path = "crates/payments" }
+dawaa-fulfilment = { path = "crates/fulfilment" }
+dawaa-b2b = { path = "crates/b2b" }
+dawaa-tax = { path = "crates/tax" }
+dawaa-admin = { path = "crates/admin" }
+dawaa-api = { path = "crates/api" }
+dawaa-worker = { path = "crates/worker" }
+
+# External shared dependencies
+rust_decimal = { version = "1.36", features = ["serde"] }
+uuid = { version = "1.10", features = ["v4", "v7", "serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "rust_decimal", "chrono", "migrate"] }
+tokio = { version = "1.40", features = ["full"] }
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
