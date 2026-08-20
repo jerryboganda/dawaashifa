@@ -19,6 +19,7 @@ use shifa_conversation::ConversationService;
 use shifa_identity::IdentityService;
 use shifa_inventory::{ColdChainService, InventoryService, TransferService};
 use shifa_orders::OrderService;
+use shifa_payments::PaymentService;
 use shifa_prescription::PrescriptionService;
 use sqlx::PgPool;
 use utoipa::OpenApi;
@@ -36,6 +37,7 @@ pub struct AppState {
     pub order_service: OrderService,
     pub ai_service: AiService,
     pub prescription_service: PrescriptionService,
+    pub payment_service: PaymentService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
@@ -47,6 +49,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let order_service = OrderService::new(pool.clone());
     let ai_service = AiService::new(pool.clone());
     let prescription_service = PrescriptionService::new(pool.clone());
+    let payment_service = PaymentService::new(pool.clone());
 
     let state = AppState {
         pool,
@@ -59,6 +62,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         order_service,
         ai_service,
         prescription_service,
+        payment_service,
     };
 
     let auth_routes = Router::new()
@@ -188,6 +192,30 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .route("/feedback", post(routes::ai::feedback_handler))
         .route("/health", get(routes::ai::health_handler));
 
+    let payment_routes = Router::new()
+        .route("/intent", post(routes::payments::create_payment_intent))
+        .route(
+            "/webhooks/:gateway",
+            post(routes::payments::handle_gateway_webhook),
+        )
+        .route("/proofs", post(routes::payments::create_payment_proof))
+        .route("/proofs/queue", get(routes::payments::list_proofs_queue))
+        .route("/proofs/:id", get(routes::payments::get_payment_proof))
+        .route(
+            "/proofs/:id/approve",
+            post(routes::payments::approve_payment_proof),
+        )
+        .route(
+            "/proofs/:id/reject",
+            post(routes::payments::reject_payment_proof),
+        )
+        .route("/:id/refund", post(routes::payments::refund_payment))
+        .route("/", get(routes::payments::list_payments))
+        .route(
+            "/reconciliation",
+            get(routes::payments::get_reconciliation_report),
+        );
+
     let webhook_routes = Router::new().route(
         "/whatsapp/:channel_id",
         get(routes::webhooks::verify_webhook_challenge)
@@ -205,6 +233,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/canned-replies", canned_reply_routes)
         .nest("/orders", order_routes)
         .nest("/prescriptions", prescription_routes)
+        .nest("/payments", payment_routes)
         .nest("/ai", ai_routes)
         .merge(role_routes);
 

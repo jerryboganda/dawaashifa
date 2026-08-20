@@ -4,9 +4,9 @@ pub mod branches;
 pub mod conversations;
 pub mod inventory;
 pub mod orders;
+pub mod payments;
+pub mod prescriptions;
 pub mod products;
 pub mod roles;
 pub mod users;
 pub mod webhooks;
-
-pub mod prescriptions;

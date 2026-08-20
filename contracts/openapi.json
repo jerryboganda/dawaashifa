@@ -1291,6 +1291,458 @@
         ]
       }
     },
+    "/api/v1/payments": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "list_payments",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "query",
+            "description": "Filter by order ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (default 50)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset (default 0)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of payments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/intent": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "create_payment_intent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Payment intent created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentIntent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or COD limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/proofs": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "create_payment_proof",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProofRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Screenshot proof submitted and queued for review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProofDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/proofs/queue": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "list_proofs_queue",
+        "parameters": [
+          {
+            "name": "severity",
+            "in": "query",
+            "description": "Filter by fraud severity (CRITICAL, HIGH, MEDIUM, LOW)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (default 50)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset (default 0)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pending payment proofs in review queue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentProofDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/proofs/{id}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "get_payment_proof",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Proof ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment proof details with fraud flags and order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProofDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Proof not found"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/proofs/{id}/approve": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "approve_payment_proof",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Proof ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveProofRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Payment proof approved, TID recorded in ledger, payment and order confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProofDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing payment.approve permission"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/proofs/{id}/reject": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "reject_payment_proof",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Proof ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectProofRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Payment proof rejected with reason",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProofDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing payment.reject permission"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/reconciliation": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "get_reconciliation_report",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Date YYYY-MM-DD (default today)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "gateway",
+            "in": "query",
+            "description": "Gateway name (default JAZZCASH)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settlement reconciliation report with unmatched discrepancies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconciliationReportDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing report.view permission"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/webhooks/{gateway}": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "handle_gateway_webhook",
+        "parameters": [
+          {
+            "name": "gateway",
+            "in": "path",
+            "description": "Gateway identifier (e.g. jazzcash, easypaisa, raast, safepay)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook verified and payment confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid signature, replay, or amount mismatch"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/{id}/refund": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "refund_payment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Payment refunded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing payment.refund permission"
+          }
+        }
+      }
+    },
     "/api/v1/permissions": {
       "get": {
         "tags": [
@@ -2536,6 +2988,15 @@
           }
         }
       },
+      "ApproveProofRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "AssignBranchesRequest": {
         "type": "object",
         "required": [
@@ -3112,6 +3573,41 @@
           }
         }
       },
+      "CreateProofRequest": {
+        "type": "object",
+        "required": [
+          "order_id",
+          "image_object_key"
+        ],
+        "properties": {
+          "client_ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "image_object_key": {
+            "type": "string"
+          },
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "payment_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentId"
+              }
+            ],
+            "nullable": true
+          },
+          "raw_exif_software": {
+            "type": "string",
+            "nullable": true
+          },
+          "raw_sender": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "CreateTransferRequest": {
         "type": "object",
         "required": [
@@ -3291,6 +3787,47 @@
           }
         }
       },
+      "FraudFlag": {
+        "type": "object",
+        "required": [
+          "flag_type",
+          "severity",
+          "description"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "flag_type": {
+            "$ref": "#/components/schemas/FraudFlagType"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/FraudSeverity"
+          }
+        }
+      },
+      "FraudFlagType": {
+        "type": "string",
+        "enum": [
+          "DUPLICATE_TID",
+          "AMOUNT_MISMATCH",
+          "TIMESTAMP_BEFORE_ORDER",
+          "TIMESTAMP_STALE",
+          "EDITED_IMAGE",
+          "SENDER_REUSED_ACROSS_CUSTOMERS",
+          "LOW_OCR_CONFIDENCE",
+          "UNKNOWN_BANK_LAYOUT"
+        ]
+      },
+      "FraudSeverity": {
+        "type": "string",
+        "enum": [
+          "CRITICAL",
+          "HIGH",
+          "MEDIUM",
+          "LOW"
+        ]
+      },
       "GenericId": {
         "type": "string",
         "format": "uuid",
@@ -3325,6 +3862,21 @@
           },
           "text": {
             "type": "string"
+          }
+        }
+      },
+      "IntentRequest": {
+        "type": "object",
+        "required": [
+          "order_id",
+          "method"
+        ],
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
           }
         }
       },
@@ -3837,6 +4389,248 @@
           }
         }
       },
+      "PaymentDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_id",
+          "method",
+          "amount",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "confirmed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "confirmed_by": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "gateway": {
+            "type": "string",
+            "nullable": true
+          },
+          "gateway_ref": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "$ref": "#/components/schemas/PaymentId"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "refund_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "refunded_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaymentId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "PaymentIntent": {
+        "type": "object",
+        "required": [
+          "payment_id",
+          "order_id",
+          "method",
+          "amount",
+          "instructions",
+          "expires_at"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "payment_id": {
+            "$ref": "#/components/schemas/PaymentId"
+          },
+          "payment_url": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "PaymentMethod": {
+        "type": "string",
+        "enum": [
+          "COD",
+          "JAZZCASH",
+          "EASYPAISA",
+          "RAAST",
+          "DIRECT_DEPOSIT",
+          "SAFEPAY"
+        ]
+      },
+      "PaymentProofDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_id",
+          "image_object_key",
+          "fraud_flags",
+          "review_status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "duplicate_of_proof_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProofId"
+              }
+            ],
+            "nullable": true
+          },
+          "fraud_flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FraudFlag"
+            }
+          },
+          "id": {
+            "$ref": "#/components/schemas/ProofId"
+          },
+          "image_object_key": {
+            "type": "string"
+          },
+          "ocr_amount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "ocr_bank": {
+            "type": "string",
+            "nullable": true
+          },
+          "ocr_confidence": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "ocr_sender": {
+            "type": "string",
+            "nullable": true
+          },
+          "ocr_tid": {
+            "type": "string",
+            "nullable": true
+          },
+          "ocr_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "order_id": {
+            "$ref": "#/components/schemas/OrderId"
+          },
+          "payment_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentId"
+              }
+            ],
+            "nullable": true
+          },
+          "review_note": {
+            "type": "string",
+            "nullable": true
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/ProofReviewStatus"
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reviewed_by": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "AWAITING_PROOF",
+          "UNDER_REVIEW",
+          "CONFIRMED",
+          "REJECTED",
+          "REFUNDED",
+          "FAILED"
+        ]
+      },
       "PrescriptionDto": {
         "type": "object",
         "required": [
@@ -4090,6 +4884,19 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "ProofId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
+      "ProofReviewStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "APPROVED",
+          "REJECTED"
+        ]
+      },
       "QueueStatsDto": {
         "type": "object",
         "required": [
@@ -4117,6 +4924,80 @@
           }
         }
       },
+      "ReconciliationDiscrepancy": {
+        "type": "object",
+        "required": [
+          "discrepancy_type",
+          "expected_amount",
+          "settled_amount",
+          "description"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "discrepancy_type": {
+            "type": "string"
+          },
+          "expected_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "gateway_ref": {
+            "type": "string",
+            "nullable": true
+          },
+          "payment_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentId"
+              }
+            ],
+            "nullable": true
+          },
+          "settled_amount": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "ReconciliationReportDto": {
+        "type": "object",
+        "required": [
+          "report_date",
+          "gateway",
+          "expected_total",
+          "settled_total",
+          "fee_total",
+          "unmatched_count",
+          "discrepancies"
+        ],
+        "properties": {
+          "discrepancies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReconciliationDiscrepancy"
+            }
+          },
+          "expected_total": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "fee_total": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "gateway": {
+            "type": "string"
+          },
+          "report_date": {
+            "type": "string"
+          },
+          "settled_total": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "unmatched_count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "RefreshRequest": {
         "type": "object",
         "required": [
@@ -4125,6 +5006,44 @@
         "properties": {
           "refresh_token": {
             "type": "string"
+          }
+        }
+      },
+      "RefundRequest": {
+        "type": "object",
+        "required": [
+          "amount",
+          "reason"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "RefundResult": {
+        "type": "object",
+        "required": [
+          "payment_id",
+          "refunded_amount",
+          "status"
+        ],
+        "properties": {
+          "payment_id": {
+            "$ref": "#/components/schemas/PaymentId"
+          },
+          "refund_ref": {
+            "type": "string",
+            "nullable": true
+          },
+          "refunded_amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
           }
         }
       },
@@ -4142,6 +5061,17 @@
             "type": "string",
             "nullable": true
           },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "RejectProofRequest": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
           "reason": {
             "type": "string"
           }
@@ -4845,6 +5775,10 @@
     {
       "name": "AI",
       "description": "AI gateway, intent classification, voice transcription, and confidence gating"
+    },
+    {
+      "name": "Payments",
+      "description": "Payment gateways, screenshot fraud engine, TID ledger, COD, and reconciliation"
     },
     {
       "name": "Webhooks",

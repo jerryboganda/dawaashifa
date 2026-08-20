@@ -1,69 +1,85 @@
-﻿# REVIEW BRIEF — Spec 09: Prescription Workflow & Pharmacist Approval Gate
+# Review Brief — Doc 11 (Payments, Gateways, OCR Fraud Engine, TID Ledger, COD & Reconciliation)
 
-**Branch:** `feat/09-prescription-workflow`  
-**Target:** `main`  
-**Author:** Builder Agent (Antigravity)  
-**Reviewer:** Reviewer Agent (GitHub Copilot / Grok 4.6)  
-**Spec Document:** `docs/09_PRESCRIPTION_WORKFLOW.md`  
+## Spec
+`docs/11_PAYMENTS_AND_RECONCILIATION.md`
 
----
+## What I built
+- **Multi-Gateway Integration Engine** (`crates/payments/src/gateways/mod.rs`):
+  - Pluggable `PaymentGateway` trait with `create_intent`, `verify_webhook`, `refund`, and `status`.
+  - Concrete gateway adapters: JazzCash (HMAC SHA-256 with replay checking), EasyPaisa, Raast (instant transfer with IBAN and payment ref), and Aggregator (Safepay/PayFast).
+- **Screenshot OCR & Fraud Detection Engine** (`crates/payments/src/ocr.rs`, `crates/payments/src/service.rs`):
+  - 8 specific fraud checks (duplicate TID, amount mismatch, stale timestamp >72h, timestamp prior to order creation, phone sender reuse across distinct customers, edited image EXIF tags, low OCR confidence, unknown layout).
+  - Architectural Invariant I-4 enforced: No screenshot is ever auto-approved or auto-rejected; fraud flags only assist human reviewer.
+- **TID Ledger & Manual Review Workflow** (`crates/payments/src/service.rs`):
+  - `transaction_id_ledger` recording on proof approval with idempotency and uniqueness constraints.
+  - Reviewer approval/rejection operations with RBAC permission enforcement (`payment.approve`, `payment.reject`).
+- **COD Rule Engine & Doorstep Refusal Handling** (`crates/payments/src/service.rs`):
+  - Tenant-level configurable COD ceiling (default Rs 10,000).
+  - Customer block check and doorstep refusal handler transitioning order to `FAILED` and triggering stock return.
+- **Settlement Reconciliation Engine** (`crates/payments/src/service.rs`):
+  - Daily reconciliation comparing payment ledger entries with gateway settlement reports, flagging discrepancies in both directions (`UNMATCHED_IN_SETTLEMENT`, `UNMATCHED_IN_LEDGER`, `AMOUNT_MISMATCH`).
+- **Database Migrations** (`migrations/20260821000002_payment_extensions.sql`):
+  - Forward-only migration adding `AWAITING_PROOF`, `UNDER_REVIEW`, `FAILED` to `payment_status`, `ocr_bank` to `payment_proofs`, `refund_reason` to `payments`, and creating `payment_reconciliations` with tenant-scoped RLS policies.
+- **REST Endpoints & API Contract** (`crates/api/src/routes/payments.rs`, `contracts/openapi.json`, `apps/shared/src/api/schema.d.ts`):
+  - 10 OpenAPI-annotated Axum endpoints matching Doc 11 §9.
+  - Regenerated OpenAPI schema and typed client.
 
-## 1. Executive Summary
-
-Implemented end-to-end prescription intake, VLM-based OCR extraction, drug catalog matching, and the non-negotiable **Licensed Pharmacist Approval Gate (Invariant I-3 & I-6)**. 
-
-No prescription order can ever advance to cart or order creation without an explicit, line-by-line review recorded in `pharmacist_approvals` by an authenticated pharmacist with `rx.approve` permission. Bulk approval routes do not exist.
-
----
-
-## 2. Invariants Enforced
-
-| Invariant | Implementation Detail | Verification |
+## Acceptance tests
+Spec names 19 tests. I implemented all 19 tests in `crates/payments/tests/payment_acceptance_tests.rs`.
+| Spec test name | My test | File |
 |---|---|---|
-| **I-1** (`tenant_id` on all tables) | Added `tenant_id UUID NOT NULL` to `prescriptions`, `rx_lines`, `rx_ocr_results`, `pharmacist_approvals`, `controlled_dispensing_register`, and `rx_substitutions`. | Passed (`migration_tests`) |
-| **I-2** (Row-Level Security) | RLS enabled with `FORCE ROW LEVEL SECURITY` and `tenant_isolation_policy` on all 6 tables. | Passed (`migration_tests`, `rls_with_tenant`) |
-| **I-3** (Pharmacist Approval Gate) | `PrescriptionService::approve` requires `ctx.require("rx.approve")` and iterates over every line in `rx.lines`. If any extracted line number is missing from the submitted decisions list, `RxError::IncompleteReview(line_no)` is returned. | Passed (`test_prescription_approval_gate_and_invariants`) |
-| **I-6** (AI Output Gating) | AI VLM extraction reaches `PENDING_REVIEW` queue. Raw doctor handwriting OCR text is stored immutably in `rx_lines.ocr_text` and never overwritten by human corrections. | Passed (`test_vlm_never_guesses_illegible_drug`) |
-| **Controlled Substances** | Any approved narcotic drug (`is_narcotic == true`) writes an immutable record to `controlled_dispensing_register` capturing doctor PMDC number, patient name, pharmacist ID, and quantity. | Passed (`test_prescription_approval_gate_and_invariants`) |
-| **Drug Substitutions** | Substituted drugs generate `rx_substitutions` row with `customer_informed = false` requiring explicit customer notice before order dispatch. | Passed (`test_prescription_approval_gate_and_invariants`) |
-| **Dynamic Alias Learning** | Pharmacist edits/substitutions automatically feed the catalog alias engine via `catalog_service.learn_alias` to improve future OCR matching. | Passed (`test_prescription_approval_gate_and_invariants`) |
+| 1. `webhook_rejects_invalid_signature` | `test_webhook_rejects_invalid_signature` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 2. `webhook_rejects_replayed_timestamp` | `test_webhook_rejects_replayed_timestamp` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 3. `webhook_is_idempotent_on_gateway_ref` | `test_webhook_idempotency_and_amount_mismatch` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 4. `redirect_url_alone_never_confirms_payment` | `test_redirect_url_alone_never_confirms_payment` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 5. `amount_mismatch_on_webhook_does_not_confirm` | `test_webhook_idempotency_and_amount_mismatch` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 6. `no_screenshot_auto_approval_path_exists` | `test_no_screenshot_auto_approval_path_exists` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 7. `duplicate_tid_flagged_critical` | `test_tid_ledger_lifecycle_and_duplicate_flagging` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 8. `approved_proof_writes_tid_to_ledger` | `test_tid_ledger_lifecycle_and_duplicate_flagging` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 9. `second_proof_with_same_tid_flags_duplicate` | `test_tid_ledger_lifecycle_and_duplicate_flagging` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 10. `amount_mismatch_flagged_not_rejected` | `test_amount_mismatch_flagged_not_rejected` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 11. `timestamp_before_order_flagged` | `test_timestamp_before_order_flagged` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 12. `edited_image_exif_flagged` | `test_edited_image_exif_flagged` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 13. `sender_reused_across_customers_flagged` | `test_sender_reused_across_customers_flagged` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 14. `flags_never_cause_automatic_decision` | `test_flags_never_cause_automatic_decision` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 15. `cod_limit_blocks_order_above_ceiling` | `test_cod_limit_blocks_order_above_ceiling` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 16. `cod_refusal_marks_failed_and_triggers_return` | `test_cod_refusal_marks_failed_and_triggers_return` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 17. `refund_requires_permission` | `test_refund_requires_permission` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 18. `adding_a_gateway_requires_no_orders_crate_change` | `test_adding_a_gateway_requires_no_orders_crate_change` | `crates/payments/tests/payment_acceptance_tests.rs` |
+| 19. `reconciliation_flags_unmatched_both_directions` | `test_reconciliation_flags_unmatched_both_directions` | `crates/payments/tests/payment_acceptance_tests.rs` |
 
----
+Missing: None.
 
-## 3. Database Schema Extensions
+## Out of scope
+Confirmed nothing from the Out of scope section was built:
+- No real production gateway accounts or merchant live keys used (all mock/test harnesses).
+- No production ML OCR inference model bundled; clear `PaymentOcrProvider` trait boundary with deterministic heuristics in tests.
+- No direct FBR fiscalization logic (isolated strictly in Spec 13 `shifa-tax`).
+- No direct rider cash collection handling logic (isolated in Spec 12 `shifa-fulfilment`).
 
-- **Migration**: `migrations/20260821000001_prescription_extensions.sql`
-  - Added prescription status enum values (`PARTIALLY_APPROVED`, `NEEDS_CLARIFICATION`, `PREPROCESSING`, `EXTRACTING`, `PENDING_REVIEW`, `UNDER_REVIEW`).
-  - Added `pharmacist_action` enum (`ACCEPTED`, `EDITED`, `REJECTED`, `ADDED_MANUALLY`).
-  - Created `controlled_dispensing_register` table with indexes and RLS.
-  - Created `rx_substitutions` table with indexes and RLS.
-  - Added indexes on foreign keys (`prescription_id`, `product_id`, `pharmacist_id`).
+## ASSUMPTIONS
+- Webhook signature header names follow gateway conventions (`x-jazzcash-signature`, `x-easypaisa-signature`, `x-safepay-signature`).
+- Default COD ceiling is Rs 10,000 unless overridden in tenant settings.
+- Direct deposits / screenshot payments use `PaymentMethod::DirectDeposit`.
 
----
+## Known gaps
+None.
 
-## 4. API Endpoints (`crates/api/src/routes/prescriptions.rs`)
+## Contract changes
+- Routes added:
+  - `POST /api/v1/payments/intent`
+  - `POST /api/v1/payments/webhook/{gateway}`
+  - `POST /api/v1/payments/proof`
+  - `GET /api/v1/payments/proof/queue`
+  - `GET /api/v1/payments/proof/{id}`
+  - `POST /api/v1/payments/proof/{id}/approve`
+  - `POST /api/v1/payments/proof/{id}/reject`
+  - `POST /api/v1/payments/{id}/refund`
+  - `POST /api/v1/payments/cod/refusal`
+  - `POST /api/v1/payments/reconciliation`
+- `contracts/openapi.json` regenerated: Yes
+- `apps/shared/src/api/schema.d.ts` regenerated: Yes
 
-- `POST /api/v1/prescriptions` — Intake prescription image from WhatsApp/Web.
-- `GET /api/v1/prescriptions` — List prescriptions with status filter and pagination.
-- `GET /api/v1/prescriptions/{id}` — Fetch prescription detail with extracted lines and candidates.
-- `POST /api/v1/prescriptions/{id}/extract` — Trigger / re-run VLM extraction.
-- `POST /api/v1/prescriptions/{id}/claim` — Pharmacist claims prescription for review.
-- `POST /api/v1/prescriptions/{id}/approve` — Pharmacist line-by-line approval / edit / substitute / reject.
-- `POST /api/v1/prescriptions/{id}/reject` — Outright prescription rejection.
-- `POST /api/v1/prescriptions/{id}/clarify` — Request customer clarification.
-- `GET /api/v1/prescriptions/queue/stats` — Ops queue statistics (pending, under review, oldest wait time).
-- `GET /api/v1/prescriptions/{id}/audit` — Reconstruct complete immutable audit trail.
-
----
-
-## 5. Verification Results
-
-- `cargo fmt --all --check`: Clean (0 diffs)
-- `cargo clippy --workspace --all-targets -- -D warnings`: Clean (0 warnings)
-- `cargo test -p shifa-prescription`: 3/3 passed (30.01s)
-- `cargo test -p shifa-db`: 6/6 passed (RLS + migration suite)
-- `pnpm -r check`: Clean (4/4 projects ok)
-- `pnpm -r lint`: Clean (4/4 projects ok)
-- `pnpm -r test`: Clean (4/4 projects ok)
-- `contracts/openapi.json`: Regenerated and committed.
-- `apps/shared/src/api/schema.d.ts`: Regenerated via `pnpm gen:api`.
+## Risk areas
+- In production, webhook raw payload byte buffer preservation is required for exact HMAC validation before deserialization (implemented via `axum::body::Bytes`).
+- TID ledger relies on unique indexes per `(tenant_id, gateway, transaction_id)`.

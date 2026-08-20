@@ -6,4 +6,24 @@ license.workspace = true
 
 [dependencies]
 shifa-core.workspace = true
+shifa-db.workspace = true
+shifa-orders.workspace = true
+shifa-ai.workspace = true
 
+rust_decimal.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+utoipa.workspace = true
+sha2.workspace = true
+hex.workspace = true
+axum.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }

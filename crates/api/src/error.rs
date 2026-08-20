@@ -1,4 +1,4 @@
-﻿use axum::http::StatusCode;
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde_json::json;
@@ -45,6 +45,9 @@ pub enum ApiError {
     #[error("Prescription error: {0}")]
     Rx(#[from] shifa_prescription::RxError),
 
+    #[error("Payment error: {0}")]
+    Payment(#[from] shifa_payments::PaymentError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -57,6 +60,43 @@ impl IntoResponse for ApiError {
             ApiError::NotFound => (StatusCode::NOT_FOUND, "Resource not found".to_string()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            ApiError::Payment(shifa_payments::PaymentError::InvalidSignature(msg)) => (
+                StatusCode::BAD_REQUEST,
+                format!("Invalid signature: {}", msg),
+            ),
+            ApiError::Payment(shifa_payments::PaymentError::ReplayDetected(msg)) => (
+                StatusCode::BAD_REQUEST,
+                format!("Replay detected: {}", msg),
+            ),
+            ApiError::Payment(shifa_payments::PaymentError::AmountMismatch { expected, received }) => (
+                StatusCode::BAD_REQUEST,
+                format!("Amount mismatch: expected {}, received {}", expected, received),
+            ),
+            ApiError::Payment(shifa_payments::PaymentError::DuplicateTransactionId(tid)) => (
+                StatusCode::CONFLICT,
+                format!("Duplicate transaction ID: {}", tid),
+            ),
+            ApiError::Payment(shifa_payments::PaymentError::CodLimitExceeded { current, limit }) => (
+                StatusCode::BAD_REQUEST,
+                format!("COD limit exceeded: current {}, limit {}", current, limit),
+            ),
+            ApiError::Payment(shifa_payments::PaymentError::CustomerCodBlocked) => (
+                StatusCode::FORBIDDEN,
+                "Customer is blocked from COD due to excessive refusals".to_string(),
+            ),
+            ApiError::Payment(shifa_payments::PaymentError::PaymentNotFound(_)) => (
+                StatusCode::NOT_FOUND,
+                "Payment not found".to_string(),
+            ),
+            ApiError::Payment(shifa_payments::PaymentError::ProofNotFound(_)) => (
+                StatusCode::NOT_FOUND,
+                "Payment proof not found".to_string(),
+            ),
+            ApiError::Payment(shifa_payments::PaymentError::Unauthorized(msg)) => (
+                StatusCode::FORBIDDEN,
+                msg,
+            ),
+            ApiError::Payment(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Rx(shifa_prescription::RxError::IncompleteReview(line)) => (
                 StatusCode::BAD_REQUEST,
                 format!("Incomplete review: decision missing for line {} (Invariant I-3)", line),

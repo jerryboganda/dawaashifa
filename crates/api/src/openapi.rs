@@ -1,4 +1,4 @@
-﻿use utoipa::{
+use utoipa::{
     openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
@@ -13,6 +13,7 @@ use shifa_identity::models::*;
 use shifa_inventory::models::*;
 use shifa_orders::models::*;
 use shifa_orders::state_machine::OrderStatus;
+use shifa_payments::models::*;
 use shifa_prescription::models::*;
 
 #[derive(OpenApi)]
@@ -78,6 +79,16 @@ use shifa_prescription::models::*;
         ai::health_handler,
         webhooks::verify_webhook_challenge,
         webhooks::handle_inbound_webhook,
+        payments::create_payment_intent,
+        payments::handle_gateway_webhook,
+        payments::create_payment_proof,
+        payments::list_proofs_queue,
+        payments::get_payment_proof,
+        payments::approve_payment_proof,
+        payments::reject_payment_proof,
+        payments::refund_payment,
+        payments::list_payments,
+        payments::get_reconciliation_report,
     ),
     components(
         schemas(
@@ -168,6 +179,25 @@ use shifa_prescription::models::*;
             AiTranscribeRequest,
             FeedbackEventRequest,
             AiHealthStatus,
+            PaymentId,
+            ProofId,
+            PaymentMethod,
+            PaymentStatus,
+            ProofReviewStatus,
+            FraudSeverity,
+            FraudFlagType,
+            FraudFlag,
+            IntentRequest,
+            PaymentIntent,
+            CreateProofRequest,
+            ApproveProofRequest,
+            RejectProofRequest,
+            RefundRequest,
+            PaymentDto,
+            PaymentProofDto,
+            RefundResult,
+            ReconciliationDiscrepancy,
+            ReconciliationReportDto,
         )
     ),
     modifiers(&SecurityAddon),
@@ -182,6 +212,7 @@ use shifa_prescription::models::*;
         (name = "Orders", description = "Order state machine, cart, branch routing, and COD"),
         (name = "Prescriptions", description = "Prescription intake, OCR extraction, and licensed pharmacist approval gate"),
         (name = "AI", description = "AI gateway, intent classification, voice transcription, and confidence gating"),
+        (name = "Payments", description = "Payment gateways, screenshot fraud engine, TID ledger, COD, and reconciliation"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

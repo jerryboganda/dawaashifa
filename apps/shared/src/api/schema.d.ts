@@ -532,6 +532,166 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_payments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/intent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_payment_intent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/proofs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_payment_proof"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/proofs/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_proofs_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/proofs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_payment_proof"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/proofs/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approve_payment_proof"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/proofs/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reject_payment_proof"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_reconciliation_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/webhooks/{gateway}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["handle_gateway_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["refund_payment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permissions": {
         parameters: {
             query?: never;
@@ -917,6 +1077,9 @@ export interface components {
             decisions: components["schemas"]["LineDecision"][];
             note?: string | null;
         };
+        ApproveProofRequest: {
+            note?: string | null;
+        };
         AssignBranchesRequest: {
             branch_ids: components["schemas"]["BranchId"][];
         };
@@ -1079,6 +1242,14 @@ export interface components {
             strength?: string | null;
             tp?: components["schemas"]["Money"] | null;
         };
+        CreateProofRequest: {
+            client_ip?: string | null;
+            image_object_key: string;
+            order_id: components["schemas"]["OrderId"];
+            payment_id?: components["schemas"]["PaymentId"] | null;
+            raw_exif_software?: string | null;
+            raw_sender?: string | null;
+        };
         CreateTransferRequest: {
             items: components["schemas"]["TransferItemRequest"][];
             note?: string | null;
@@ -1126,6 +1297,15 @@ export interface components {
             prompt_version: string;
             task: string;
         };
+        FraudFlag: {
+            description: string;
+            flag_type: components["schemas"]["FraudFlagType"];
+            severity: components["schemas"]["FraudSeverity"];
+        };
+        /** @enum {string} */
+        FraudFlagType: "DUPLICATE_TID" | "AMOUNT_MISMATCH" | "TIMESTAMP_BEFORE_ORDER" | "TIMESTAMP_STALE" | "EDITED_IMAGE" | "SENDER_REUSED_ACROSS_CUSTOMERS" | "LOW_OCR_CONFIDENCE" | "UNKNOWN_BANK_LAYOUT";
+        /** @enum {string} */
+        FraudSeverity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
         /**
          * Format: uuid
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
@@ -1138,6 +1318,10 @@ export interface components {
             display_name?: string | null;
             msisdn: string;
             text: string;
+        };
+        IntentRequest: {
+            method: components["schemas"]["PaymentMethod"];
+            order_id: components["schemas"]["OrderId"];
         };
         /** @enum {string} */
         IntentType: "ProductEnquiry" | "PriceEnquiry" | "AvailabilityCheck" | "PlaceOrder" | "OrderStatus" | "CancelOrder" | "PrescriptionUpload" | "DeliveryEnquiry" | "PaymentQuery" | "Complaint" | "Greeting" | "HumanRequest" | "Other";
@@ -1276,6 +1460,71 @@ export interface components {
         OverrideMessageRequest: {
             new_body: string;
         };
+        PaymentDto: {
+            amount: components["schemas"]["Money"];
+            /** Format: date-time */
+            confirmed_at?: string | null;
+            confirmed_by?: components["schemas"]["UserId"] | null;
+            /** Format: date-time */
+            created_at: string;
+            gateway?: string | null;
+            gateway_ref?: string | null;
+            id: components["schemas"]["PaymentId"];
+            method: components["schemas"]["PaymentMethod"];
+            order_id: components["schemas"]["OrderId"];
+            refund_reason?: string | null;
+            /** Format: date-time */
+            refunded_at?: string | null;
+            status: components["schemas"]["PaymentStatus"];
+            tenant_id: components["schemas"]["TenantId"];
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        PaymentId: string;
+        PaymentIntent: {
+            amount: components["schemas"]["Money"];
+            /** Format: date-time */
+            expires_at: string;
+            instructions: string;
+            method: components["schemas"]["PaymentMethod"];
+            order_id: components["schemas"]["OrderId"];
+            payment_id: components["schemas"]["PaymentId"];
+            payment_url?: string | null;
+        };
+        /** @enum {string} */
+        PaymentMethod: "COD" | "JAZZCASH" | "EASYPAISA" | "RAAST" | "DIRECT_DEPOSIT" | "SAFEPAY";
+        PaymentProofDto: {
+            /** Format: date-time */
+            created_at: string;
+            duplicate_of_proof_id?: components["schemas"]["ProofId"] | null;
+            fraud_flags: components["schemas"]["FraudFlag"][];
+            id: components["schemas"]["ProofId"];
+            image_object_key: string;
+            ocr_amount?: components["schemas"]["Money"] | null;
+            ocr_bank?: string | null;
+            /** Format: float */
+            ocr_confidence?: number | null;
+            ocr_sender?: string | null;
+            ocr_tid?: string | null;
+            /** Format: date-time */
+            ocr_timestamp?: string | null;
+            order_id: components["schemas"]["OrderId"];
+            payment_id?: components["schemas"]["PaymentId"] | null;
+            review_note?: string | null;
+            review_status: components["schemas"]["ProofReviewStatus"];
+            /** Format: date-time */
+            reviewed_at?: string | null;
+            reviewed_by?: components["schemas"]["UserId"] | null;
+            tenant_id: components["schemas"]["TenantId"];
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @enum {string} */
+        PaymentStatus: "PENDING" | "AWAITING_PROOF" | "UNDER_REVIEW" | "CONFIRMED" | "REJECTED" | "REFUNDED" | "FAILED";
         PrescriptionDto: {
             assigned_to?: components["schemas"]["UserId"] | null;
             branch_id?: components["schemas"]["BranchId"] | null;
@@ -1346,6 +1595,13 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         ProductId: string;
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        ProofId: string;
+        /** @enum {string} */
+        ProofReviewStatus: "PENDING" | "APPROVED" | "REJECTED";
         QueueStatsDto: {
             /** Format: int64 */
             oldest_waiting_seconds?: number | null;
@@ -1356,12 +1612,43 @@ export interface components {
             /** Format: int64 */
             total_under_review: number;
         };
+        ReconciliationDiscrepancy: {
+            description: string;
+            discrepancy_type: string;
+            expected_amount: components["schemas"]["Money"];
+            gateway_ref?: string | null;
+            payment_id?: components["schemas"]["PaymentId"] | null;
+            settled_amount: components["schemas"]["Money"];
+        };
+        ReconciliationReportDto: {
+            discrepancies: components["schemas"]["ReconciliationDiscrepancy"][];
+            expected_total: components["schemas"]["Money"];
+            fee_total: components["schemas"]["Money"];
+            gateway: string;
+            report_date: string;
+            settled_total: components["schemas"]["Money"];
+            /** Format: int32 */
+            unmatched_count: number;
+        };
         RefreshRequest: {
             refresh_token: string;
+        };
+        RefundRequest: {
+            amount: components["schemas"]["Money"];
+            reason: string;
+        };
+        RefundResult: {
+            payment_id: components["schemas"]["PaymentId"];
+            refund_ref?: string | null;
+            refunded_amount: components["schemas"]["Money"];
+            status: components["schemas"]["PaymentStatus"];
         };
         RejectPrescriptionRequest: {
             client_device?: string | null;
             client_ip?: string | null;
+            reason: string;
+        };
+        RejectProofRequest: {
             reason: string;
         };
         ReturnItemRequest: {
@@ -2439,6 +2726,322 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrderDto"];
                 };
+            };
+        };
+    };
+    list_payments: {
+        parameters: {
+            query?: {
+                /** @description Filter by order ID */
+                order_id?: string | null;
+                /** @description Filter by status */
+                status?: string | null;
+                /** @description Limit (default 50) */
+                limit?: number | null;
+                /** @description Offset (default 0) */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of payments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentDto"][];
+                };
+            };
+        };
+    };
+    create_payment_intent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntentRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment intent created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentIntent"];
+                };
+            };
+            /** @description Invalid request or COD limit exceeded */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_payment_proof: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProofRequest"];
+            };
+        };
+        responses: {
+            /** @description Screenshot proof submitted and queued for review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentProofDto"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_proofs_queue: {
+        parameters: {
+            query?: {
+                /** @description Filter by fraud severity (CRITICAL, HIGH, MEDIUM, LOW) */
+                severity?: string | null;
+                /** @description Limit (default 50) */
+                limit?: number | null;
+                /** @description Offset (default 0) */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of pending payment proofs in review queue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentProofDto"][];
+                };
+            };
+        };
+    };
+    get_payment_proof: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Proof ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment proof details with fraud flags and order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentProofDto"];
+                };
+            };
+            /** @description Proof not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    approve_payment_proof: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Proof ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveProofRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment proof approved, TID recorded in ledger, payment and order confirmed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentProofDto"];
+                };
+            };
+            /** @description Missing payment.approve permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reject_payment_proof: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Proof ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectProofRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment proof rejected with reason */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentProofDto"];
+                };
+            };
+            /** @description Missing payment.reject permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_reconciliation_report: {
+        parameters: {
+            query?: {
+                /** @description Date YYYY-MM-DD (default today) */
+                date?: string | null;
+                /** @description Gateway name (default JAZZCASH) */
+                gateway?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settlement reconciliation report with unmatched discrepancies */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationReportDto"];
+                };
+            };
+            /** @description Missing report.view permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    handle_gateway_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Gateway identifier (e.g. jazzcash, easypaisa, raast, safepay) */
+                gateway: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Webhook verified and payment confirmed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentDto"];
+                };
+            };
+            /** @description Invalid signature, replay, or amount mismatch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    refund_payment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Payment ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment refunded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentDto"];
+                };
+            };
+            /** @description Missing payment.refund permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
