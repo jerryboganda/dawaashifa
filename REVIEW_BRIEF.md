@@ -1,41 +1,48 @@
-﻿# REVIEW_BRIEF.md — Spec 02 (WhatsApp Channel Abstraction & Meta Cloud API)
+﻿# REVIEW_BRIEF.md — Spec 05 (Catalog, DRAP MRP Enforcement, and 4-Signal Product Matching)
 
 ## Spec Reference
-- **Spec**: `docs/02_CHANNEL_AND_CLOUD_API.md`
-- **Branch**: `feat/02-channel-cloud-api`
+- **Spec**: `docs/05_CATALOG_AND_MATCHING.md`
+- **Branch**: `feat/05-catalog-matching`
 
 ## Invariants Enforced
-- **I-10 (Transport Agnosticism)**: Business logic interacts strictly with the `ChannelAdapter` trait and never branches on transport (`Transport::CloudApi` / `Transport::Unofficial`).
-- **24-Hour Service Window Guard**: Free-form outbound messages sent outside the active 24-hour service window return `Err(ChannelError::WindowClosed)` and fail loudly rather than silently falling back to a paid template.
-- **Template Status Gating**: Templates must be in `APPROVED` status before any outbound transmission. Unapproved templates fail before making network calls.
-- **Webhook Security**: `X-Hub-Signature-256` HMAC-SHA256 signature verification rejects tampering with `403 Forbidden` without logging the payload body.
-- **Unknown Inbound Safety**: Unknown or non-standard message types are preserved as `InboundContent::Unsupported` rather than erroring or dropping messages.
-- **Idempotency & Rate Limiting**: `idempotency_key` deduplication prevents duplicate transmissions, and rate limiter enforces `Capabilities::max_send_rate_per_min`.
+- **DRAP MRP Hard Enforcement (Invariant & Regulation)**: `validate_sale_price` hard blocks any sale price above the printed MRP. Discounts below MRP are allowed; selling above MRP is impossible.
+- **Substitution Safety**: Substitution candidates are restricted to verified database matches (`generic_equivalents` and same-generic-same-strength). Every candidate unconditionally carries `requires_pharmacist_approval: true`.
+- **Dynamic Alias Learning**: `learn_alias` allows pharmacist OCR/Rx corrections to seed aliases dynamically for instant exact match on next occurrence, while guarding against short inputs (<3 chars), pure numerics, and high-weight conflicts.
+- **Urdu-Tuned Phonetics**: Custom normalization and phonetic engine supporting Pakistan-specific substitution classes (`kh ↔ x ↔ k`, `ph ↔ f`, `gh ↔ g`, `ee ↔ i ↔ y`, `oo ↔ u ↔ w`, `aa ↔ a`, `th ↔ t`, `dh ↔ d`, `ch ↔ c`, `z ↔ j`, collapsing silent trailing h and doubled consonants). Tested across 40+ real-world pharmaceutical brand misspelling variants.
+- **I-1 / I-2 (Tenant Isolation & RLS)**: Catalog queries and alias lookups are tenant-scoped.
+- **I-8 (Money Invariant)**: All prices, MRPs, and savings use exact `Decimal` precision wrapped in `Money`.
 
 ## What Was Built
-1. **Channel Adapter Trait & Capabilities**: Normalized `OutboundMessage`, `InboundMessage`, `Capabilities`, and async `ChannelAdapter`.
-2. **Cloud API Adapter**:
-   - 3-tier rich Choice rendering (Buttons <=3, Interactive List 4-10, Numbered Text >10).
-   - Confirm intent rendered as interactive reply buttons.
-   - Media size limits (Images 5MB, Audio 16MB, Documents 100MB).
-3. **Webhook Receiver**:
-   - `POST /webhooks/whatsapp/:channel_id` (HMAC verification, fast 200 OK ack).
-   - `GET /webhooks/whatsapp/:channel_id` (Meta challenge verification).
-4. **Template Registry & Status Management**: Seeded default utility templates (`order_confirmed`, `order_dispatched`, `order_delivered`, `rx_ready_for_review`, `payment_reminder`).
-5. **OpenAPI Generation & TypeScript Client**:
-   - Webhook routes registered in `crates/api`.
-   - `contracts/openapi.json` regenerated.
-   - `@shifa/shared` TypeScript SDK regenerated via `pnpm gen:api`.
+1. **Catalog Domain & Service**:
+   - Product CRUD with automatic base alias seeding.
+   - Bulk CSV import/export.
+2. **Four-Signal Matching Engine**:
+   - Signal 1: Exact alias lookup (score 1.0).
+   - Signal 2: Trigram string similarity (weight 0.40).
+   - Signal 3: Urdu-tuned phonetic equivalence (weight 0.35).
+   - Signal 4: Secondary fuzzy vector fallback (weight 0.25) + log-scaled `hit_count` boost.
+3. **Substitutions Engine**:
+   - Same-generic-same-strength lookups with automatic savings calculation.
+   - Therapeutic equivalence lookups from `generic_equivalents`.
+4. **Axum HTTP API & OpenAPI**:
+   - `/api/v1/products` (list & create).
+   - `/api/v1/products/:id` (details).
+   - `/api/v1/products/match` (multi-signal search).
+   - `/api/v1/products/:id/substitutes` (substitution candidates).
+   - Generated `contracts/openapi.json` and TypeScript client `@shifa/shared`.
 
 ## Acceptance Tests Verification
-- `cargo test --workspace` passed 25 tests with 0 failures:
+- `cargo test --workspace` passed 28 tests with 0 failures:
+  - `test_urdu_phonetics_and_normalization_table` -> ok (40+ variants verified)
+  - `test_mrp_hard_block_enforcement` -> ok (DRAP above-MRP hard block verified)
+  - `test_catalog_matching_and_substitutions_integration` -> ok (exact match, roman urdu fuzzy, learn_alias, substitutes, bulk import)
   - `test_rate_limiter_and_idempotency_prevention` -> ok
   - `test_choice_rendering_three_tiers` -> ok
   - `test_unknown_message_type_is_stored_as_unsupported` -> ok
   - `test_webhook_signature_verification` -> ok
   - `test_freeform_outside_window_fails_loudly` -> ok
   - `test_unapproved_template_fails_before_network_call` -> ok
-  - `test_cloud_api_send_success_and_error_handling` -> ok (wiremock mock)
+  - `test_cloud_api_send_success_and_error_handling` -> ok
   - `test_api_auth_and_session_lifecycle` -> ok
   - `test_database_migrations_and_rls_suite` -> ok
 - `cargo clippy --workspace --all-targets -- -D warnings` passed with 0 warnings.

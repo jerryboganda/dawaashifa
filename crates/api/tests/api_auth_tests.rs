@@ -23,7 +23,7 @@ async fn test_api_auth_and_session_lifecycle() {
 
     let jwt_secret = "super_secure_test_jwt_secret_key_32_bytes!".to_string();
     let identity_service = IdentityService::new(pool.clone(), jwt_secret.clone());
-    let app = build_app(identity_service.clone());
+    let app = build_app(pool.clone(), identity_service.clone());
 
     let tenant_id = TenantId::new();
     let user_id = UserId::new();

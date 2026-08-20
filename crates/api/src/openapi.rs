@@ -4,7 +4,9 @@
 };
 
 use crate::routes::*;
+use shifa_catalog::models::*;
 use shifa_core::id::*;
+use shifa_core::money::Money;
 use shifa_identity::models::*;
 
 #[derive(OpenApi)]
@@ -26,6 +28,11 @@ use shifa_identity::models::*;
         branches::update_branch,
         roles::list_roles,
         roles::list_permissions,
+        products::list_products,
+        products::get_product,
+        products::create_product,
+        products::match_products_handler,
+        products::get_substitutes,
         webhooks::verify_webhook_challenge,
         webhooks::handle_inbound_webhook,
     ),
@@ -35,6 +42,10 @@ use shifa_identity::models::*;
             BranchId,
             UserId,
             RoleId,
+            ProductId,
+            CategoryId,
+            GenericId,
+            Money,
             AuthTokens,
             LoginRequest,
             RefreshRequest,
@@ -49,6 +60,14 @@ use shifa_identity::models::*;
             BranchDto,
             RoleDto,
             UserProfileResponse,
+            ProductDto,
+            CreateProductRequest,
+            UpdateProductRequest,
+            MatchRequest,
+            MatchCandidate,
+            MatchMethod,
+            SubstitutionCandidate,
+            ProductAliasDto,
         )
     ),
     modifiers(&SecurityAddon),
@@ -57,6 +76,7 @@ use shifa_identity::models::*;
         (name = "Users", description = "User management and RBAC assignments"),
         (name = "Branches", description = "Branch store locations and configuration"),
         (name = "Roles", description = "Roles and permissions directory"),
+        (name = "Products", description = "Drug master, catalog, MRP enforcement, and matching"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

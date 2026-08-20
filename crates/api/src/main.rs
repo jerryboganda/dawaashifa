@@ -1,4 +1,4 @@
-use shifa_api::build_app;
+﻿use shifa_api::build_app;
 use shifa_identity::IdentityService;
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
@@ -21,8 +21,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&database_url)
         .await?;
 
-    let identity_service = IdentityService::new(pool, jwt_secret);
-    let app = build_app(identity_service);
+    let identity_service = IdentityService::new(pool.clone(), jwt_secret);
+    let app = build_app(pool, identity_service);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     info!("Starting Shifa API server on http://{}", addr);

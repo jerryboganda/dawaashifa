@@ -13,17 +13,26 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use shifa_catalog::CatalogService;
 use shifa_identity::IdentityService;
+use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(Clone)]
 pub struct AppState {
+    pub pool: PgPool,
     pub identity_service: IdentityService,
+    pub catalog_service: CatalogService,
 }
 
-pub fn build_app(identity_service: IdentityService) -> Router {
-    let state = AppState { identity_service };
+pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
+    let catalog_service = CatalogService::new(pool.clone());
+    let state = AppState {
+        pool,
+        identity_service,
+        catalog_service,
+    };
 
     let auth_routes = Router::new()
         .route("/login", post(routes::auth::login))
@@ -58,6 +67,15 @@ pub fn build_app(identity_service: IdentityService) -> Router {
         .route("/roles", get(routes::roles::list_roles))
         .route("/permissions", get(routes::roles::list_permissions));
 
+    let product_routes = Router::new()
+        .route(
+            "/",
+            get(routes::products::list_products).post(routes::products::create_product),
+        )
+        .route("/:id", get(routes::products::get_product))
+        .route("/match", post(routes::products::match_products_handler))
+        .route("/:id/substitutes", get(routes::products::get_substitutes));
+
     let webhook_routes = Router::new().route(
         "/whatsapp/:channel_id",
         get(routes::webhooks::verify_webhook_challenge)
@@ -68,6 +86,7 @@ pub fn build_app(identity_service: IdentityService) -> Router {
         .nest("/auth", auth_routes)
         .nest("/users", user_routes)
         .nest("/branches", branch_routes)
+        .nest("/products", product_routes)
         .merge(role_routes);
 
     Router::new()

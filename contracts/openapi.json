@@ -296,6 +296,228 @@
         ]
       }
     },
+    "/api/v1/products": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "list_products",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "create_product",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Product created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/products/match": {
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "match_products_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Matching candidate products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MatchCandidate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/products/{id}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "get_product",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Product ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/products/{id}/substitutes": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "get_substitutes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Product ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Substitution candidates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubstitutionCandidate"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/api/v1/roles": {
       "get": {
         "tags": [
@@ -771,6 +993,11 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "CategoryId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
       "ChangePasswordRequest": {
         "type": "object",
         "required": [
@@ -835,6 +1062,81 @@
           }
         }
       },
+      "CreateProductRequest": {
+        "type": "object",
+        "required": [
+          "brand_name",
+          "mrp",
+          "is_prescription_only",
+          "is_narcotic",
+          "is_refrigerated"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "nullable": true
+          },
+          "brand_name": {
+            "type": "string"
+          },
+          "category_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ],
+            "nullable": true
+          },
+          "cost_price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "dosage_form": {
+            "type": "string",
+            "nullable": true
+          },
+          "generic_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_narcotic": {
+            "type": "boolean"
+          },
+          "is_prescription_only": {
+            "type": "boolean"
+          },
+          "is_refrigerated": {
+            "type": "boolean"
+          },
+          "manufacturer": {
+            "type": "string",
+            "nullable": true
+          },
+          "mrp": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "pack_size": {
+            "type": "string",
+            "nullable": true
+          },
+          "strength": {
+            "type": "string",
+            "nullable": true
+          },
+          "tp": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
       "CreateUserRequest": {
         "type": "object",
         "required": [
@@ -872,6 +1174,11 @@
           }
         }
       },
+      "GenericId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
+      },
       "LoginRequest": {
         "type": "object",
         "required": [
@@ -886,6 +1193,213 @@
             "type": "string"
           }
         }
+      },
+      "MatchCandidate": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "brand_name",
+          "score",
+          "method",
+          "matched_on",
+          "is_prescription_only",
+          "mrp"
+        ],
+        "properties": {
+          "brand_name": {
+            "type": "string"
+          },
+          "is_prescription_only": {
+            "type": "boolean"
+          },
+          "matched_on": {
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/MatchMethod"
+          },
+          "mrp": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "score": {
+            "type": "number",
+            "format": "float"
+          },
+          "strength": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "MatchMethod": {
+        "type": "string",
+        "enum": [
+          "Exact",
+          "Alias",
+          "Trigram",
+          "Phonetic",
+          "Vector",
+          "Hybrid"
+        ]
+      },
+      "MatchRequest": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "branch_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "query": {
+            "type": "string"
+          }
+        }
+      },
+      "Money": {
+        "type": "string",
+        "description": "Monetary amount represented with exact precision using Decimal.\nInvariant I-8: All money is rust_decimal::Decimal. Never f64 or f32.\nSerializes over the wire as a quoted decimal string to preserve precision in frontend clients.",
+        "example": "1250.00"
+      },
+      "ProductAliasDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "product_id",
+          "alias",
+          "alias_type",
+          "script",
+          "weight",
+          "source",
+          "hit_count",
+          "created_at"
+        ],
+        "properties": {
+          "alias": {
+            "type": "string"
+          },
+          "alias_type": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hit_count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "script": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ProductDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "brand_name",
+          "mrp",
+          "is_prescription_only",
+          "is_narcotic",
+          "is_refrigerated",
+          "status"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "nullable": true
+          },
+          "brand_name": {
+            "type": "string"
+          },
+          "cost_price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "dosage_form": {
+            "type": "string",
+            "nullable": true
+          },
+          "generic_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "is_narcotic": {
+            "type": "boolean"
+          },
+          "is_prescription_only": {
+            "type": "boolean"
+          },
+          "is_refrigerated": {
+            "type": "boolean"
+          },
+          "manufacturer": {
+            "type": "string",
+            "nullable": true
+          },
+          "mrp": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "pack_size": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "strength": {
+            "type": "string",
+            "nullable": true
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "tp": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "ProductId": {
+        "type": "string",
+        "format": "uuid",
+        "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
       "RefreshRequest": {
         "type": "object",
@@ -937,6 +1451,45 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "SubstitutionCandidate": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "brand_name",
+          "generic_name",
+          "strength",
+          "mrp",
+          "savings_vs_original",
+          "equivalence_type",
+          "requires_pharmacist_approval"
+        ],
+        "properties": {
+          "brand_name": {
+            "type": "string"
+          },
+          "equivalence_type": {
+            "type": "string"
+          },
+          "generic_name": {
+            "type": "string"
+          },
+          "mrp": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "product_id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "requires_pharmacist_approval": {
+            "type": "boolean"
+          },
+          "savings_vs_original": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "strength": {
+            "type": "string"
+          }
+        }
+      },
       "TenantId": {
         "type": "string",
         "format": "uuid",
@@ -967,6 +1520,79 @@
           },
           "status": {
             "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateProductRequest": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "nullable": true
+          },
+          "brand_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "cost_price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "dosage_form": {
+            "type": "string",
+            "nullable": true
+          },
+          "generic_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_narcotic": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "is_prescription_only": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "is_refrigerated": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "manufacturer": {
+            "type": "string",
+            "nullable": true
+          },
+          "mrp": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "pack_size": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "strength": {
+            "type": "string",
+            "nullable": true
+          },
+          "tp": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
             "nullable": true
           }
         }
@@ -1099,6 +1725,10 @@
     {
       "name": "Roles",
       "description": "Roles and permissions directory"
+    },
+    {
+      "name": "Products",
+      "description": "Drug master, catalog, MRP enforcement, and matching"
     },
     {
       "name": "Webhooks",

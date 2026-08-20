@@ -1,4 +1,4 @@
-use axum::http::StatusCode;
+﻿use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde_json::json;
@@ -27,6 +27,9 @@ pub enum ApiError {
     #[error("Auth error: {0}")]
     Auth(#[from] shifa_identity::AuthError),
 
+    #[error("Catalog error: {0}")]
+    Catalog(#[from] shifa_catalog::CatalogError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -39,6 +42,17 @@ impl IntoResponse for ApiError {
             ApiError::NotFound => (StatusCode::NOT_FOUND, "Resource not found".to_string()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            ApiError::Catalog(shifa_catalog::CatalogError::ProductNotFound(_)) => {
+                (StatusCode::NOT_FOUND, "Product not found".to_string())
+            }
+            ApiError::Catalog(shifa_catalog::CatalogError::AboveMrp { mrp, attempted }) => (
+                StatusCode::BAD_REQUEST,
+                format!("Sale price {} cannot exceed MRP {}", attempted, mrp),
+            ),
+            ApiError::Catalog(shifa_catalog::CatalogError::Unauthorized(msg)) => {
+                (StatusCode::FORBIDDEN, msg)
+            }
+            ApiError::Catalog(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Auth(shifa_identity::AuthError::InvalidCredentials) => (
                 StatusCode::UNAUTHORIZED,
                 "Invalid phone/email or password".to_string(),

@@ -132,6 +132,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_products"];
+        put?: never;
+        post: operations["create_product"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["match_products_handler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_product"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{id}/substitutes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_substitutes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/roles": {
         parameters: {
             query?: never;
@@ -263,6 +327,11 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         BranchId: string;
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        CategoryId: string;
         ChangePasswordRequest: {
             current_password: string;
             new_password: string;
@@ -281,6 +350,22 @@ export interface components {
             name: string;
             pharmacist_in_charge: string;
         };
+        CreateProductRequest: {
+            barcode?: string | null;
+            brand_name: string;
+            category_id?: components["schemas"]["CategoryId"] | null;
+            cost_price?: components["schemas"]["Money"] | null;
+            dosage_form?: string | null;
+            generic_name?: string | null;
+            is_narcotic: boolean;
+            is_prescription_only: boolean;
+            is_refrigerated: boolean;
+            manufacturer?: string | null;
+            mrp: components["schemas"]["Money"];
+            pack_size?: string | null;
+            strength?: string | null;
+            tp?: components["schemas"]["Money"] | null;
+        };
         CreateUserRequest: {
             branch_ids: components["schemas"]["BranchId"][];
             email?: string | null;
@@ -289,10 +374,79 @@ export interface components {
             phone: string;
             role_names: string[];
         };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        GenericId: string;
         LoginRequest: {
             password: string;
             phone_or_email: string;
         };
+        MatchCandidate: {
+            brand_name: string;
+            is_prescription_only: boolean;
+            matched_on: string;
+            method: components["schemas"]["MatchMethod"];
+            mrp: components["schemas"]["Money"];
+            product_id: components["schemas"]["ProductId"];
+            /** Format: float */
+            score: number;
+            strength?: string | null;
+        };
+        /** @enum {string} */
+        MatchMethod: "Exact" | "Alias" | "Trigram" | "Phonetic" | "Vector" | "Hybrid";
+        MatchRequest: {
+            /** Format: uuid */
+            branch_id?: string | null;
+            limit?: number;
+            query: string;
+        };
+        /**
+         * @description Monetary amount represented with exact precision using Decimal.
+         *     Invariant I-8: All money is rust_decimal::Decimal. Never f64 or f32.
+         *     Serializes over the wire as a quoted decimal string to preserve precision in frontend clients.
+         * @example 1250.00
+         */
+        Money: string;
+        ProductAliasDto: {
+            alias: string;
+            alias_type: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: int32 */
+            hit_count: number;
+            /** Format: uuid */
+            id: string;
+            product_id: components["schemas"]["ProductId"];
+            script: string;
+            source: string;
+            /** Format: double */
+            weight: number;
+        };
+        ProductDto: {
+            barcode?: string | null;
+            brand_name: string;
+            cost_price?: components["schemas"]["Money"] | null;
+            dosage_form?: string | null;
+            generic_name?: string | null;
+            id: components["schemas"]["ProductId"];
+            is_narcotic: boolean;
+            is_prescription_only: boolean;
+            is_refrigerated: boolean;
+            manufacturer?: string | null;
+            mrp: components["schemas"]["Money"];
+            pack_size?: string | null;
+            status: string;
+            strength?: string | null;
+            tenant_id: components["schemas"]["TenantId"];
+            tp?: components["schemas"]["Money"] | null;
+        };
+        /**
+         * Format: uuid
+         * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
+         */
+        ProductId: string;
         RefreshRequest: {
             refresh_token: string;
         };
@@ -309,6 +463,16 @@ export interface components {
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
          */
         RoleId: string;
+        SubstitutionCandidate: {
+            brand_name: string;
+            equivalence_type: string;
+            generic_name: string;
+            mrp: components["schemas"]["Money"];
+            product_id: components["schemas"]["ProductId"];
+            requires_pharmacist_approval: boolean;
+            savings_vs_original: components["schemas"]["Money"];
+            strength: string;
+        };
         /**
          * Format: uuid
          * @example 018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a
@@ -321,6 +485,22 @@ export interface components {
             name?: string | null;
             pharmacist_in_charge?: string | null;
             status?: string | null;
+        };
+        UpdateProductRequest: {
+            barcode?: string | null;
+            brand_name?: string | null;
+            cost_price?: components["schemas"]["Money"] | null;
+            dosage_form?: string | null;
+            generic_name?: string | null;
+            is_narcotic?: boolean | null;
+            is_prescription_only?: boolean | null;
+            is_refrigerated?: boolean | null;
+            manufacturer?: string | null;
+            mrp?: components["schemas"]["Money"] | null;
+            pack_size?: string | null;
+            status?: string | null;
+            strength?: string | null;
+            tp?: components["schemas"]["Money"] | null;
         };
         UpdateUserRequest: {
             email?: string | null;
@@ -614,6 +794,155 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_products: {
+        parameters: {
+            query?: {
+                /** @description Search query */
+                q?: string | null;
+                /** @description Limit */
+                limit?: number | null;
+                /** @description Offset */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List products */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDto"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductRequest"];
+            };
+        };
+        responses: {
+            /** @description Product created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    match_products_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Matching candidate products */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchCandidate"][];
+                };
+            };
+        };
+    };
+    get_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Product details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDto"];
+                };
+            };
+            /** @description Product not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_substitutes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Substitution candidates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubstitutionCandidate"][];
+                };
+            };
+            /** @description Product not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

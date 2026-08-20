@@ -1,4 +1,4 @@
-﻿use hmac::{Hmac, Mac};
+use hmac::{Hmac, Mac};
 use serde_json::json;
 use sha2::Sha256;
 use shifa_channel::adapter::ChannelAdapter;
@@ -40,25 +40,57 @@ fn test_webhook_signature_verification() {
 fn test_choice_rendering_three_tiers() {
     // 2. Acceptance test: choice_three_options_renders_buttons (<= 3 options)
     let three_options = vec![
-        ChoiceOption { id: "1".into(), title: "Panadol".into(), description: None },
-        ChoiceOption { id: "2".into(), title: "Disprin".into(), description: None },
-        ChoiceOption { id: "3".into(), title: "Brufen".into(), description: None },
+        ChoiceOption {
+            id: "1".into(),
+            title: "Panadol".into(),
+            description: None,
+        },
+        ChoiceOption {
+            id: "2".into(),
+            title: "Disprin".into(),
+            description: None,
+        },
+        ChoiceOption {
+            id: "3".into(),
+            title: "Brufen".into(),
+            description: None,
+        },
     ];
     let res3 = CloudApiAdapter::render_choice("Select medicine:", &three_options);
     assert_eq!(res3["interactive"]["type"], "button");
-    assert_eq!(res3["interactive"]["action"]["buttons"].as_array().unwrap().len(), 3);
+    assert_eq!(
+        res3["interactive"]["action"]["buttons"]
+            .as_array()
+            .unwrap()
+            .len(),
+        3
+    );
 
     // 3. Acceptance test: choice_eight_options_renders_list (4..=10 options)
     let eight_options: Vec<_> = (1..=8)
-        .map(|i| ChoiceOption { id: i.to_string(), title: format!("Option {}", i), description: Some(format!("Desc {}", i)) })
+        .map(|i| ChoiceOption {
+            id: i.to_string(),
+            title: format!("Option {}", i),
+            description: Some(format!("Desc {}", i)),
+        })
         .collect();
     let res8 = CloudApiAdapter::render_choice("Select option:", &eight_options);
     assert_eq!(res8["interactive"]["type"], "list");
-    assert_eq!(res8["interactive"]["action"]["sections"][0]["rows"].as_array().unwrap().len(), 8);
+    assert_eq!(
+        res8["interactive"]["action"]["sections"][0]["rows"]
+            .as_array()
+            .unwrap()
+            .len(),
+        8
+    );
 
     // 4. Acceptance test: choice_fifteen_options_renders_numbered_text (> 10 options)
     let fifteen_options: Vec<_> = (1..=15)
-        .map(|i| ChoiceOption { id: i.to_string(), title: format!("Item {}", i), description: None })
+        .map(|i| ChoiceOption {
+            id: i.to_string(),
+            title: format!("Item {}", i),
+            description: None,
+        })
         .collect();
     let res15 = CloudApiAdapter::render_choice("Browse items:", &fifteen_options);
     assert_eq!(res15["type"], "text");
@@ -124,7 +156,9 @@ async fn test_freeform_outside_window_fails_loudly() {
         tenant_id: TenantId::new(),
         conversation_id: ConversationId::new(),
         to: "+923001234567".into(),
-        body: OutboundBody::Text { body: "Hello customer".into() },
+        body: OutboundBody::Text {
+            body: "Hello customer".into(),
+        },
         idempotency_key: Uuid::now_v7(),
         locale: "en".into(),
     };
@@ -162,7 +196,10 @@ async fn test_unapproved_template_fails_before_network_call() {
     };
 
     let result = adapter.send(msg, false).await;
-    assert!(matches!(result, Err(ChannelError::TemplateNotApproved(_, _))));
+    assert!(matches!(
+        result,
+        Err(ChannelError::TemplateNotApproved(_, _))
+    ));
 }
 
 #[tokio::test]
@@ -198,8 +235,14 @@ async fn test_cloud_api_send_success_and_error_handling() {
             name: "order_confirmed".into(),
             language: "en".into(),
             params: vec![
-                TemplateParam { name: "order_no".into(), value: "ORD-1234".into() },
-                TemplateParam { name: "total".into(), value: "Rs 1,500.00".into() },
+                TemplateParam {
+                    name: "order_no".into(),
+                    value: "ORD-1234".into(),
+                },
+                TemplateParam {
+                    name: "total".into(),
+                    value: "Rs 1,500.00".into(),
+                },
             ],
         },
         idempotency_key: Uuid::now_v7(),

@@ -1,34 +1,31 @@
-use crate::error::CoreError;
+﻿use crate::error::CoreError;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
+use utoipa::ToSchema;
 
 /// Monetary amount represented with exact precision using Decimal.
 /// Invariant I-8: All money is rust_decimal::Decimal. Never f64 or f32.
 /// Serializes over the wire as a quoted decimal string to preserve precision in frontend clients.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default, ToSchema)]
+#[schema(value_type = String, example = "1250.00")]
 pub struct Money(pub Decimal);
 
 impl Money {
-    /// Zero monetary amount constant.
     pub const ZERO: Self = Self(Decimal::ZERO);
 
-    /// Construct a zero Money amount.
     pub fn zero() -> Self {
         Self(Decimal::ZERO)
     }
 
-    /// Construct Money from an existing Decimal value.
     pub fn from_decimal(decimal: Decimal) -> Self {
         Self(decimal)
     }
 
-    /// Construct Money from a major currency integer (e.g. 500 PKR -> 500.00).
     pub fn from_major(major: i64) -> Self {
         Self(Decimal::from(major))
     }
 
-    /// Construct Money from minor units with a given scale (e.g. 125050 with scale 2 -> 1250.50).
     pub fn from_minor(minor: i64, scale: u32) -> Result<Self, CoreError> {
         let mut d = Decimal::from(minor);
         d.set_scale(scale)
@@ -36,44 +33,42 @@ impl Money {
         Ok(Self(d))
     }
 
-    /// Access the underlying Decimal value.
     pub fn amount(&self) -> Decimal {
         self.0
     }
 
-    /// Returns true if the monetary value is zero.
     pub fn is_zero(&self) -> bool {
         self.0.is_zero()
     }
 
-    /// Returns true if the monetary value is strictly positive (> 0).
     pub fn is_positive(&self) -> bool {
         self.0.is_sign_positive() && !self.0.is_zero()
     }
 
-    /// Returns true if the monetary value is negative (< 0).
     pub fn is_negative(&self) -> bool {
         self.0.is_sign_negative()
     }
 
-    /// Checked addition of two Money values.
     pub fn checked_add(self, rhs: Self) -> Option<Self> {
         self.0.checked_add(rhs.0).map(Self)
     }
 
-    /// Checked subtraction of two Money values.
     pub fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.0.checked_sub(rhs.0).map(Self)
     }
 
-    /// Checked multiplication of Money by an integer quantity.
     pub fn checked_mul_qty(self, qty: i64) -> Option<Self> {
         self.0.checked_mul(Decimal::from(qty)).map(Self)
     }
 
-    /// Format money for Pakistani Rupee customer display: e.g. "Rs 1,250.00".
     pub fn format_pkr(&self) -> String {
         format!("Rs {:.2}", self.0)
+    }
+}
+
+impl From<Decimal> for Money {
+    fn from(d: Decimal) -> Self {
+        Self(d)
     }
 }
 
