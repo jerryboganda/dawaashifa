@@ -31,7 +31,7 @@ pub async fn reserve_stock(
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
     )
     .bind(reservation_id)
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(params.order_id)
     .bind(params.branch_id.0)
     .bind(params.product_id.0)
@@ -47,13 +47,13 @@ pub async fn reserve_stock(
          VALUES ($1, $2, $3, $4, $5, 'RESERVATION', $6, $7, $8)"
     )
     .bind(Uuid::now_v7())
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(params.branch_id.0)
     .bind(params.product_id.0)
     .bind(params.batch_id.0)
     .bind(-params.qty)
     .bind(params.order_id.to_string())
-    .bind(ctx.user_id.0)
+    .bind(ctx.user_id().0)
     .execute(pool)
     .await?;
 

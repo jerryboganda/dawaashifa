@@ -29,7 +29,7 @@ pub async fn match_product(
          JOIN products p ON p.id = a.product_id AND p.tenant_id = a.tenant_id
          WHERE a.tenant_id = $1 AND lower(a.alias) = $2 AND p.status = 'ACTIVE'"
     )
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(&normalized)
     .fetch_all(pool)
     .await?;
@@ -71,7 +71,7 @@ pub async fn match_product(
          WHERE a.tenant_id = $1 AND p.status = 'ACTIVE'
          LIMIT 200"
     )
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .fetch_all(pool)
     .await?;
 

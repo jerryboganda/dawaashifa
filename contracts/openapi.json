@@ -9,6 +9,175 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/v1/ai/analyse": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "analyse_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiAnalyseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Message analysis results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/draft-reply": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "draft_reply_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiDraftReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Draft reply generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftReplyResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/feedback": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "feedback_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Feedback recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "default": null,
+                  "nullable": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/health": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "health_handler",
+        "responses": {
+          "200": {
+            "description": "Circuit breaker status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiHealthStatus"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/transcribe": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "transcribe_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiTranscribeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Audio transcribed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptionResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "tags": [
@@ -1774,6 +1943,150 @@
           }
         }
       },
+      "AiAnalyseRequest": {
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "message_id",
+          "raw_text",
+          "is_rx_context",
+          "contains_controlled_substance"
+        ],
+        "properties": {
+          "contains_controlled_substance": {
+            "type": "boolean"
+          },
+          "conversation_id": {
+            "$ref": "#/components/schemas/ConversationId"
+          },
+          "is_rx_context": {
+            "type": "boolean"
+          },
+          "message_id": {
+            "$ref": "#/components/schemas/MessageId"
+          },
+          "raw_text": {
+            "type": "string"
+          }
+        }
+      },
+      "AiDraftReplyRequest": {
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "last_inbound_text",
+          "is_rx_context"
+        ],
+        "properties": {
+          "conversation_id": {
+            "$ref": "#/components/schemas/ConversationId"
+          },
+          "customer_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_rx_context": {
+            "type": "boolean"
+          },
+          "last_inbound_text": {
+            "type": "string"
+          }
+        }
+      },
+      "AiHealthStatus": {
+        "type": "object",
+        "required": [
+          "task",
+          "state",
+          "failure_count"
+        ],
+        "properties": {
+          "failure_count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "state": {
+            "type": "string"
+          },
+          "task": {
+            "type": "string"
+          }
+        }
+      },
+      "AiTask": {
+        "type": "string",
+        "enum": [
+          "Intent",
+          "Reply",
+          "RxOcr",
+          "Stt",
+          "Embed"
+        ]
+      },
+      "AiTranscribeRequest": {
+        "type": "object",
+        "required": [
+          "message_id",
+          "audio_url",
+          "duration_seconds"
+        ],
+        "properties": {
+          "audio_url": {
+            "type": "string"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "locale_hint": {
+            "type": "string",
+            "nullable": true
+          },
+          "message_id": {
+            "$ref": "#/components/schemas/MessageId"
+          }
+        }
+      },
+      "AnalysisResult": {
+        "type": "object",
+        "required": [
+          "detected_script",
+          "normalised_text",
+          "intent",
+          "entities",
+          "confidence",
+          "escalate"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "number",
+            "format": "float"
+          },
+          "detected_script": {
+            "$ref": "#/components/schemas/CustomerScript"
+          },
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExtractedEntity"
+            }
+          },
+          "escalate": {
+            "type": "boolean"
+          },
+          "escalation_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "intent": {
+            "$ref": "#/components/schemas/IntentType"
+          },
+          "normalised_text": {
+            "type": "string"
+          }
+        }
+      },
       "AssignBranchesRequest": {
         "type": "object",
         "required": [
@@ -2347,6 +2660,117 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "CustomerScript": {
+        "type": "string",
+        "enum": [
+          "Urdu",
+          "English",
+          "RomanUrdu",
+          "CodeMixed"
+        ]
+      },
+      "DraftReplyResult": {
+        "type": "object",
+        "required": [
+          "draft_body",
+          "confidence",
+          "escalate",
+          "can_auto_send",
+          "requires_pharmacist"
+        ],
+        "properties": {
+          "can_auto_send": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "format": "float"
+          },
+          "draft_body": {
+            "type": "string"
+          },
+          "escalate": {
+            "type": "boolean"
+          },
+          "requires_pharmacist": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ExtractedEntity": {
+        "type": "object",
+        "required": [
+          "entity_type",
+          "value",
+          "confidence"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "number",
+            "format": "float"
+          },
+          "entity_type": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "FeedbackEventRequest": {
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "message_id",
+          "task",
+          "prompt_version",
+          "ai_output",
+          "human_output",
+          "intent",
+          "confidence"
+        ],
+        "properties": {
+          "ai_output": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "format": "float"
+          },
+          "conversation_id": {
+            "$ref": "#/components/schemas/ConversationId"
+          },
+          "corrected_alias": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "nullable": true
+          },
+          "human_output": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string"
+          },
+          "message_id": {
+            "$ref": "#/components/schemas/MessageId"
+          },
+          "prompt_version": {
+            "type": "string"
+          },
+          "task": {
+            "type": "string"
+          }
+        }
+      },
       "GenericId": {
         "type": "string",
         "format": "uuid",
@@ -2383,6 +2807,24 @@
             "type": "string"
           }
         }
+      },
+      "IntentType": {
+        "type": "string",
+        "enum": [
+          "ProductEnquiry",
+          "PriceEnquiry",
+          "AvailabilityCheck",
+          "PlaceOrder",
+          "OrderStatus",
+          "CancelOrder",
+          "PrescriptionUpload",
+          "DeliveryEnquiry",
+          "PaymentQuery",
+          "Complaint",
+          "Greeting",
+          "HumanRequest",
+          "Other"
+        ]
       },
       "LoginRequest": {
         "type": "object",
@@ -3124,6 +3566,39 @@
         "format": "uuid",
         "example": "018f3a9e-4c5b-7b3a-9e1a-2b3c4d5e6f7a"
       },
+      "TranscriptionResult": {
+        "type": "object",
+        "required": [
+          "transcript",
+          "normalised_transcript",
+          "confidence",
+          "duration_seconds",
+          "escalate"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "number",
+            "format": "float"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "escalate": {
+            "type": "boolean"
+          },
+          "escalation_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "normalised_transcript": {
+            "type": "string"
+          },
+          "transcript": {
+            "type": "string"
+          }
+        }
+      },
       "TransferConversationRequest": {
         "type": "object",
         "required": [
@@ -3449,6 +3924,10 @@
     {
       "name": "Orders",
       "description": "Order state machine, cart, branch routing, and COD"
+    },
+    {
+      "name": "AI",
+      "description": "AI gateway, intent classification, voice transcription, and confidence gating"
     },
     {
       "name": "Webhooks",

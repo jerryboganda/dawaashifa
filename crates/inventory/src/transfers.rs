@@ -33,7 +33,7 @@ impl TransferService {
              VALUES ($1, $2, $3, $4, 'DRAFT', $5)"
         )
         .bind(transfer_id)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(req.source_branch_id.0)
         .bind(req.target_branch_id.0)
         .bind(req.note)
@@ -46,7 +46,7 @@ impl TransferService {
                  VALUES ($1, $2, $3, $4, $5, $6)"
             )
             .bind(Uuid::now_v7())
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(transfer_id)
             .bind(item.product_id.0)
             .bind(item.batch_id.0)
@@ -57,7 +57,7 @@ impl TransferService {
 
         Ok(TransferDto {
             id: transfer_id,
-            tenant_id: ctx.tenant_id,
+            tenant_id: ctx.tenant_id(),
             source_branch_id: req.source_branch_id,
             target_branch_id: req.target_branch_id,
             status: "DRAFT".to_string(),
@@ -80,7 +80,7 @@ impl TransferService {
              FROM stock_transfers
              WHERE tenant_id = $1 AND id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(transfer_id)
         .fetch_optional(&self.pool)
         .await?;
@@ -106,7 +106,7 @@ impl TransferService {
              FROM stock_transfer_items
              WHERE tenant_id = $1 AND transfer_id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(transfer_id)
         .fetch_all(&self.pool)
         .await?;
@@ -122,13 +122,13 @@ impl TransferService {
                  VALUES ($1, $2, $3, $4, $5, 'TRANSFER_OUT', $6, $7, $8)"
             )
             .bind(Uuid::now_v7())
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(src_id)
             .bind(pid)
             .bind(bid)
             .bind(-qty)
             .bind(transfer_id.to_string())
-            .bind(ctx.user_id.0)
+            .bind(ctx.user_id().0)
             .execute(&self.pool)
             .await?;
         }
@@ -138,14 +138,14 @@ impl TransferService {
              SET status = 'IN_TRANSIT', dispatched_at = now()
              WHERE tenant_id = $1 AND id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(transfer_id)
         .execute(&self.pool)
         .await?;
 
         Ok(TransferDto {
             id: transfer_id,
-            tenant_id: ctx.tenant_id,
+            tenant_id: ctx.tenant_id(),
             source_branch_id: BranchId::from(src_id),
             target_branch_id: BranchId::from(tgt_id),
             status: "IN_TRANSIT".to_string(),
@@ -169,7 +169,7 @@ impl TransferService {
              FROM stock_transfers
              WHERE tenant_id = $1 AND id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(transfer_id)
         .fetch_optional(&self.pool)
         .await?;
@@ -195,7 +195,7 @@ impl TransferService {
              FROM stock_transfer_items
              WHERE tenant_id = $1 AND transfer_id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(transfer_id)
         .fetch_all(&self.pool)
         .await?;
@@ -224,13 +224,13 @@ impl TransferService {
                      VALUES ($1, $2, $3, $4, $5, 'TRANSFER_IN', $6, $7, $8)"
                 )
                 .bind(Uuid::now_v7())
-                .bind(ctx.tenant_id.0)
+                .bind(ctx.tenant_id().0)
                 .bind(tgt_id)
                 .bind(pid)
                 .bind(bid)
                 .bind(rec_qty)
                 .bind(transfer_id.to_string())
-                .bind(ctx.user_id.0)
+                .bind(ctx.user_id().0)
                 .execute(&self.pool)
                 .await?;
             }
@@ -248,14 +248,14 @@ impl TransferService {
              WHERE tenant_id = $2 AND id = $3",
         )
         .bind(final_status)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(transfer_id)
         .execute(&self.pool)
         .await?;
 
         Ok(TransferDto {
             id: transfer_id,
-            tenant_id: ctx.tenant_id,
+            tenant_id: ctx.tenant_id(),
             source_branch_id: BranchId::from(src_id),
             target_branch_id: BranchId::from(tgt_id),
             status: final_status.to_string(),

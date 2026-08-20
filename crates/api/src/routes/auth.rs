@@ -71,19 +71,19 @@ pub async fn logout(_ctx: TenantContext) -> Result<Json<serde_json::Value>, ApiE
 pub async fn me(ctx: TenantContext) -> Result<Json<UserProfileResponse>, ApiError> {
     let response = UserProfileResponse {
         user: shifa_identity::models::UserDto {
-            id: ctx.user_id,
-            tenant_id: ctx.tenant_id,
+            id: ctx.user_id(),
+            tenant_id: ctx.tenant_id(),
             phone: "+923000000000".to_string(),
             email: Some("user@shifa.pk".to_string()),
             full_name: "Authenticated User".to_string(),
             status: "ACTIVE".to_string(),
             locale: "en".to_string(),
-            roles: ctx.role_names,
-            branch_ids: ctx.branch_ids,
+            roles: ctx.role_names().to_vec(),
+            branch_ids: ctx.branch_ids().to_vec(),
             last_login_at: Some(chrono::Utc::now()),
             created_at: chrono::Utc::now(),
         },
-        permissions: ctx.permissions.into_iter().collect(),
+        permissions: ctx.permissions().iter().cloned().collect(),
     };
     Ok(Json(response))
 }

@@ -6,4 +6,16 @@ license.workspace = true
 
 [dependencies]
 shifa-core.workspace = true
-
+shifa-db.workspace = true
+shifa-catalog.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+sqlx.workspace = true
+utoipa.workspace = true
+uuid.workspace = true
+async-trait = "0.1"
+reqwest = { version = "0.12", features = ["json"] }

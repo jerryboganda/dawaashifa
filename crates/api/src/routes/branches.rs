@@ -42,7 +42,7 @@ pub async fn create_branch(
     ctx.require("branch.create")?;
     let new_branch = BranchDto {
         id: BranchId::new(),
-        tenant_id: ctx.tenant_id,
+        tenant_id: ctx.tenant_id(),
         name: req.name,
         code: req.code,
         drap_licence_no: req.drap_licence_no,

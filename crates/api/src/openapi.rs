@@ -4,6 +4,7 @@
 };
 
 use crate::routes::*;
+use shifa_ai::models::*;
 use shifa_catalog::models::*;
 use shifa_conversation::models::*;
 use shifa_core::id::*;
@@ -59,6 +60,11 @@ use shifa_orders::state_machine::OrderStatus;
         orders::add_item,
         orders::confirm_cart,
         orders::transition_order,
+        ai::analyse_handler,
+        ai::draft_reply_handler,
+        ai::transcribe_handler,
+        ai::feedback_handler,
+        ai::health_handler,
         webhooks::verify_webhook_challenge,
         webhooks::handle_inbound_webhook,
     ),
@@ -126,6 +132,18 @@ use shifa_orders::state_machine::OrderStatus;
             TransitionOrderRequest,
             ReturnItemRequest,
             OrderEventDto,
+            AiTask,
+            CustomerScript,
+            IntentType,
+            ExtractedEntity,
+            AnalysisResult,
+            DraftReplyResult,
+            TranscriptionResult,
+            AiAnalyseRequest,
+            AiDraftReplyRequest,
+            AiTranscribeRequest,
+            FeedbackEventRequest,
+            AiHealthStatus,
         )
     ),
     modifiers(&SecurityAddon),
@@ -138,6 +156,7 @@ use shifa_orders::state_machine::OrderStatus;
         (name = "Inventory", description = "Append-only stock ledger, batches, transfers, and cold chain"),
         (name = "Conversations", description = "WhatsApp conversations, routing, human override, and inbox"),
         (name = "Orders", description = "Order state machine, cart, branch routing, and COD"),
+        (name = "AI", description = "AI gateway, intent classification, voice transcription, and confidence gating"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

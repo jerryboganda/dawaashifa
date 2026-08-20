@@ -26,8 +26,8 @@ pub async fn claim_conversation(
          SET assigned_to = $1, status = 'ASSIGNED', updated_at = now()
          WHERE tenant_id = $2 AND id = $3 AND assigned_to IS NULL",
     )
-    .bind(ctx.user_id.0)
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.user_id().0)
+    .bind(ctx.tenant_id().0)
     .bind(conversation_id.0)
     .execute(pool)
     .await?;
@@ -36,7 +36,7 @@ pub async fn claim_conversation(
         // Find who already claimed it
         let current =
             sqlx::query("SELECT assigned_to FROM conversations WHERE tenant_id = $1 AND id = $2")
-                .bind(ctx.tenant_id.0)
+                .bind(ctx.tenant_id().0)
                 .bind(conversation_id.0)
                 .fetch_optional(pool)
                 .await?;

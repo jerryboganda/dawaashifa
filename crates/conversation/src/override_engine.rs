@@ -21,7 +21,7 @@ pub async fn override_message(
          FROM messages
          WHERE tenant_id = $1 AND id = $2",
     )
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(message_id.0)
     .fetch_optional(pool)
     .await?;
@@ -53,8 +53,8 @@ pub async fn override_message(
     )
     .bind(new_body)
     .bind(&preserved_original)
-    .bind(ctx.user_id.0)
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.user_id().0)
+    .bind(ctx.tenant_id().0)
     .bind(message_id.0)
     .execute(pool)
     .await?;
@@ -64,8 +64,8 @@ pub async fn override_message(
         "INSERT INTO audit_log (tenant_id, actor_id, actor_type, entity_type, entity_id, action, before, after, reason)
          VALUES ($1, $2, 'USER', 'MESSAGE', $3, 'OVERRIDE_REPLY', $4, $5, 'Pharmacist / agent human override training signal')"
     )
-    .bind(ctx.tenant_id.0)
-    .bind(ctx.user_id.0)
+    .bind(ctx.tenant_id().0)
+    .bind(ctx.user_id().0)
     .bind(message_id.0)
     .bind(serde_json::json!({"original": preserved_original}))
     .bind(serde_json::json!({"corrected": new_body}))
@@ -76,12 +76,12 @@ pub async fn override_message(
         id: message_id,
         conversation_id: ConversationId::from(conv_id),
         sender_type: "AGENT".into(),
-        sender_id: Some(ctx.user_id.0),
+        sender_id: Some(ctx.user_id().0),
         direction: dir,
         status,
         body: new_body.to_string(),
         original_body: Some(preserved_original),
-        overridden_by: Some(ctx.user_id),
+        overridden_by: Some(ctx.user_id()),
         created_at: chrono::Utc::now(),
     })
 }
@@ -98,7 +98,7 @@ pub async fn bulk_approve_drafts(
     // Invariant I-6: Rx-linked conversations cannot be bulk-approved
     let conv =
         sqlx::query("SELECT is_rx_linked FROM conversations WHERE tenant_id = $1 AND id = $2")
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(conversation_id.0)
             .fetch_optional(pool)
             .await?;
@@ -116,8 +116,8 @@ pub async fn bulk_approve_drafts(
          SET status = 'APPROVED', approved_by = $1, approved_at = now()
          WHERE tenant_id = $2 AND conversation_id = $3 AND status = 'PENDING_APPROVAL'",
     )
-    .bind(ctx.user_id.0)
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.user_id().0)
+    .bind(ctx.tenant_id().0)
     .bind(conversation_id.0)
     .execute(pool)
     .await?;

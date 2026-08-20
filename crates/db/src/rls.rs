@@ -27,7 +27,7 @@ pub async fn set_tenant_context(
 }
 
 /// Begin a transaction, set tenant GUC from `ctx`, run `f`, commit.
-/// This is the required RLS entry point — do not skip it for tenant queries.
+/// This is the required RLS entry point â€” do not skip it for tenant queries.
 pub async fn with_tenant<F, Fut, T>(pool: &PgPool, ctx: &TenantContext, f: F) -> Result<T, DbError>
 where
     F: FnOnce(&mut PgConnection) -> Fut,

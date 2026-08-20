@@ -1,3 +1,4 @@
+use shifa_core::context::TenantContext;
 use shifa_core::id::*;
 use shifa_db::rls::set_tenant_context;
 use shifa_db::seed::seed_database;
@@ -104,7 +105,15 @@ async fn test_database_migrations_and_rls_suite() {
     // Insert branch for tenant A
     let branch_a = BranchId::new();
     let mut tx_a = pool.begin().await.expect("begin tx_a");
-    set_tenant_context(&mut tx_a, tenant_a)
+    let ctx_a = TenantContext::from_verified_claims(
+        tenant_a,
+        UserId::new(),
+        vec![],
+        Default::default(),
+        vec![],
+        false,
+    );
+    set_tenant_context(&mut tx_a, &ctx_a)
         .await
         .expect("set tenant a context");
 

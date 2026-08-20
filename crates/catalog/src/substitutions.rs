@@ -19,7 +19,7 @@ pub async fn substitution_candidates(
          FROM products
          WHERE tenant_id = $1 AND id = $2",
     )
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(product_id.0)
     .fetch_optional(pool)
     .await?;
@@ -42,7 +42,7 @@ pub async fn substitution_candidates(
              WHERE tenant_id = $1 AND id != $2 AND generic_name = $3 AND strength = $4 AND status = 'ACTIVE'
              ORDER BY mrp ASC"
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(product_id.0)
         .bind(&generic)
         .bind(&strength)
@@ -84,7 +84,7 @@ pub async fn substitution_candidates(
          ) AND p.id != $2 AND p.status = 'ACTIVE'
          ORDER BY p.mrp ASC",
     )
-    .bind(ctx.tenant_id.0)
+    .bind(ctx.tenant_id().0)
     .bind(product_id.0)
     .fetch_all(pool)
     .await?;

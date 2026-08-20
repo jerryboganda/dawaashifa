@@ -32,7 +32,7 @@ impl OrderService {
     ) -> Result<OrderDto, OrderError> {
         let order_id = OrderId::new();
         let branch_code = "MAIN";
-        let order_no = generate_order_number(&self.pool, ctx.tenant_id.0, branch_code)
+        let order_no = generate_order_number(&self.pool, ctx.tenant_id().0, branch_code)
             .await
             .map_err(OrderError::Sqlx)?;
 
@@ -43,7 +43,7 @@ impl OrderService {
              VALUES ($1, $2, $3, $4, $5, 'Draft', 0.00, 0.00, 0.00, 0.00, 0.00, $6, 'PENDING', 'DELIVERY', false)"
         )
         .bind(order_id.0)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(&order_no)
         .bind(req.customer_id.0)
         .bind(req.branch_id.map(|b| b.0))
@@ -57,9 +57,9 @@ impl OrderService {
              VALUES ($1, $2, $3, 'Draft', $4, 'Created draft order')",
         )
         .bind(Uuid::now_v7())
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(order_id.0)
-        .bind(ctx.user_id.0)
+        .bind(ctx.user_id().0)
         .execute(&self.pool)
         .await?;
 
@@ -78,7 +78,7 @@ impl OrderService {
              FROM products
              WHERE tenant_id = $1 AND id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(req.product_id.0)
         .fetch_optional(&self.pool)
         .await?;
@@ -108,7 +108,7 @@ impl OrderService {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
         )
         .bind(item_id)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(order_id.0)
         .bind(req.product_id.0)
         .bind(req.qty)
@@ -194,7 +194,7 @@ impl OrderService {
              WHERE tenant_id = $2 AND id = $3",
         )
         .bind(target_status.to_string())
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(order_id.0)
         .execute(&mut *tx)
         .await
@@ -205,11 +205,11 @@ impl OrderService {
              VALUES ($1, $2, $3, $4, $5, $6, $7)"
         )
         .bind(Uuid::now_v7())
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(order_id.0)
         .bind(current_status.to_string())
         .bind(target_status.to_string())
-        .bind(ctx.user_id.0)
+        .bind(ctx.user_id().0)
         .bind(&req.reason)
         .execute(&mut *tx)
         .await
@@ -220,8 +220,8 @@ impl OrderService {
             "INSERT INTO audit_log (tenant_id, actor_id, actor_type, entity_type, entity_id, action, before, after, reason)
              VALUES ($1, $2, 'USER', 'ORDER', $3, 'TRANSITION_STATUS', $4, $5, $6)"
         )
-        .bind(ctx.tenant_id.0)
-        .bind(ctx.user_id.0)
+        .bind(ctx.tenant_id().0)
+        .bind(ctx.user_id().0)
         .bind(order_id.0)
         .bind(serde_json::json!({"status": current_status.to_string()}))
         .bind(serde_json::json!({"status": target_status.to_string()}))
@@ -239,7 +239,7 @@ impl OrderService {
                          WHERE tenant_id = $1 AND branch_id = $2 AND product_id = $3 AND qty >= $4
                          LIMIT 1",
                     )
-                    .bind(ctx.tenant_id.0)
+                    .bind(ctx.tenant_id().0)
                     .bind(branch_id.0)
                     .bind(item.product_id.0)
                     .bind(item.qty)
@@ -299,7 +299,7 @@ impl OrderService {
                  JOIN products p ON p.id = oi.product_id AND p.tenant_id = oi.tenant_id
                  WHERE oi.tenant_id = $1 AND oi.order_id = $2 AND oi.id = $3",
             )
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(order_id.0)
             .bind(item.item_id)
             .fetch_optional(&self.pool)
@@ -333,7 +333,7 @@ impl OrderService {
              FROM orders
              WHERE tenant_id = $1 AND id = $2"
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(id.0)
         .fetch_optional(&self.pool)
         .await?;
@@ -349,7 +349,7 @@ impl OrderService {
              JOIN products p ON p.id = oi.product_id AND p.tenant_id = oi.tenant_id
              WHERE oi.tenant_id = $1 AND oi.order_id = $2"
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(id.0)
         .fetch_all(&self.pool)
         .await?;
@@ -407,7 +407,7 @@ impl OrderService {
                AND ($3::text IS NULL OR status = $3)
              ORDER BY created_at DESC",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(branch_id.map(|b| b.0))
         .bind(status)
         .fetch_all(&self.pool)
@@ -435,7 +435,7 @@ impl OrderService {
              FROM order_items
              WHERE tenant_id = $1 AND order_id = $2",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(order_id.0)
         .fetch_one(&self.pool)
         .await?;
@@ -455,7 +455,7 @@ impl OrderService {
         .bind(delivery_fee.amount())
         .bind(total.amount())
         .bind(has_new_rx_item)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(order_id.0)
         .execute(&self.pool)
         .await?;

@@ -1,4 +1,5 @@
-﻿pub mod auth;
+﻿pub mod ai;
+pub mod auth;
 pub mod branches;
 pub mod conversations;
 pub mod inventory;

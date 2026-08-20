@@ -33,7 +33,7 @@ impl CatalogService {
                  ORDER BY brand_name ASC
                  LIMIT $3 OFFSET $4"
             )
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(q_param)
             .bind(limit)
             .bind(offset)
@@ -47,7 +47,7 @@ impl CatalogService {
                  ORDER BY brand_name ASC
                  LIMIT $2 OFFSET $3"
             )
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(limit)
             .bind(offset)
             .fetch_all(&self.pool)
@@ -58,7 +58,7 @@ impl CatalogService {
             .into_iter()
             .map(|r| ProductDto {
                 id: ProductId::from(r.get::<Uuid, _>("id")),
-                tenant_id: ctx.tenant_id,
+                tenant_id: ctx.tenant_id(),
                 brand_name: r.get("brand_name"),
                 generic_name: r.get("generic_name"),
                 strength: r.get("strength"),
@@ -93,7 +93,7 @@ impl CatalogService {
              FROM products
              WHERE tenant_id = $1 AND id = $2"
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(id.0)
         .fetch_optional(&self.pool)
         .await?;
@@ -101,7 +101,7 @@ impl CatalogService {
         match row {
             Some(r) => Ok(ProductDto {
                 id: ProductId::from(r.get::<Uuid, _>("id")),
-                tenant_id: ctx.tenant_id,
+                tenant_id: ctx.tenant_id(),
                 brand_name: r.get("brand_name"),
                 generic_name: r.get("generic_name"),
                 strength: r.get("strength"),
@@ -139,7 +139,7 @@ impl CatalogService {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'ACTIVE')"
         )
         .bind(product_id.0)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(&req.brand_name)
         .bind(&req.generic_name)
         .bind(&req.strength)
@@ -164,7 +164,7 @@ impl CatalogService {
              ON CONFLICT DO NOTHING"
         )
         .bind(Uuid::now_v7())
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(product_id.0)
         .bind(&norm_brand)
         .execute(&self.pool)
@@ -178,7 +178,7 @@ impl CatalogService {
                  ON CONFLICT DO NOTHING"
             )
             .bind(Uuid::now_v7())
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(product_id.0)
             .bind(&norm_gen)
             .execute(&self.pool)
@@ -225,7 +225,7 @@ impl CatalogService {
                  VALUES ($1, $2, $3, $4, $5, $6, 'ACTIVE')"
             )
             .bind(product_id.0)
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(&brand_name)
             .bind(&generic_name)
             .bind(mrp_dec)
@@ -240,7 +240,7 @@ impl CatalogService {
                  ON CONFLICT DO NOTHING"
             )
             .bind(Uuid::now_v7())
-            .bind(ctx.tenant_id.0)
+            .bind(ctx.tenant_id().0)
             .bind(product_id.0)
             .bind(&norm_brand)
             .execute(&self.pool)
@@ -250,5 +250,39 @@ impl CatalogService {
         }
 
         Ok(count)
+    }
+
+    pub async fn learn_alias(
+        &self,
+        ctx: &TenantContext,
+        alias: &str,
+        canonical_brand: &str,
+    ) -> Result<(), CatalogError> {
+        let product_row = sqlx::query(
+            "SELECT id FROM products
+             WHERE tenant_id = $1 AND (lower(brand_name) = lower($2) OR lower(generic_name) = lower($2))
+             LIMIT 1"
+        )
+        .bind(ctx.tenant_id().0)
+        .bind(canonical_brand)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if let Some(r) = product_row {
+            let pid: Uuid = r.get("id");
+            let norm_alias = normalize_query(alias);
+            sqlx::query(
+                "INSERT INTO product_aliases (id, tenant_id, product_id, alias, alias_type, script, weight, source, hit_count)
+                 VALUES ($1, $2, $3, $4, 'OVERRIDE', 'LATIN', 0.90, 'LEARNED', 1)
+                 ON CONFLICT DO NOTHING"
+            )
+            .bind(Uuid::now_v7())
+            .bind(ctx.tenant_id().0)
+            .bind(pid)
+            .bind(&norm_alias)
+            .execute(&self.pool)
+            .await?;
+        }
+        Ok(())
     }
 }

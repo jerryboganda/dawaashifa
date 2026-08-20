@@ -13,6 +13,7 @@ use axum::{
     routing::{get, patch, post},
     Router,
 };
+use shifa_ai::AiService;
 use shifa_catalog::CatalogService;
 use shifa_conversation::ConversationService;
 use shifa_identity::IdentityService;
@@ -32,6 +33,7 @@ pub struct AppState {
     pub cold_chain_service: ColdChainService,
     pub conversation_service: ConversationService,
     pub order_service: OrderService,
+    pub ai_service: AiService,
 }
 
 pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
@@ -41,6 +43,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
     let cold_chain_service = ColdChainService::new(pool.clone());
     let conversation_service = ConversationService::new(pool.clone());
     let order_service = OrderService::new(pool.clone());
+    let ai_service = AiService::new(pool.clone());
 
     let state = AppState {
         pool,
@@ -51,6 +54,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         cold_chain_service,
         conversation_service,
         order_service,
+        ai_service,
     };
 
     let auth_routes = Router::new()
@@ -143,6 +147,13 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .route("/:id/confirm-cart", post(routes::orders::confirm_cart))
         .route("/:id/transition", post(routes::orders::transition_order));
 
+    let ai_routes = Router::new()
+        .route("/analyse", post(routes::ai::analyse_handler))
+        .route("/draft-reply", post(routes::ai::draft_reply_handler))
+        .route("/transcribe", post(routes::ai::transcribe_handler))
+        .route("/feedback", post(routes::ai::feedback_handler))
+        .route("/health", get(routes::ai::health_handler));
+
     let webhook_routes = Router::new().route(
         "/whatsapp/:channel_id",
         get(routes::webhooks::verify_webhook_challenge)
@@ -159,6 +170,7 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/messages", message_routes)
         .nest("/canned-replies", canned_reply_routes)
         .nest("/orders", order_routes)
+        .nest("/ai", ai_routes)
         .merge(role_routes);
 
     Router::new()

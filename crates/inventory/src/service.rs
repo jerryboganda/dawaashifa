@@ -34,7 +34,7 @@ impl InventoryService {
              ON CONFLICT (tenant_id, product_id, batch_number) DO NOTHING"
         )
         .bind(batch_id.0)
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(req.product_id.0)
         .bind(&req.batch_number)
         .bind(req.expiry_date)
@@ -46,7 +46,7 @@ impl InventoryService {
             "SELECT id FROM batches
              WHERE tenant_id = $1 AND product_id = $2 AND batch_number = $3",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(req.product_id.0)
         .bind(&req.batch_number)
         .fetch_one(&self.pool)
@@ -60,12 +60,12 @@ impl InventoryService {
              VALUES ($1, $2, $3, $4, $5, 'RECEIPT', $6, $7)"
         )
         .bind(Uuid::now_v7())
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(req.branch_id.0)
         .bind(req.product_id.0)
         .bind(actual_batch_id)
         .bind(req.qty)
-        .bind(ctx.user_id.0)
+        .bind(ctx.user_id().0)
         .execute(&self.pool)
         .await?;
 
@@ -86,13 +86,13 @@ impl InventoryService {
              VALUES ($1, $2, $3, $4, $5, 'ADJUSTMENT', $6, $7, $8)"
         )
         .bind(Uuid::now_v7())
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(req.branch_id.0)
         .bind(req.product_id.0)
         .bind(req.batch_id.0)
         .bind(req.qty_delta)
         .bind(&req.reason)
-        .bind(ctx.user_id.0)
+        .bind(ctx.user_id().0)
         .execute(&self.pool)
         .await?;
 
@@ -117,13 +117,13 @@ impl InventoryService {
              VALUES ($1, $2, $3, $4, $5, 'EXPIRY_WRITEOFF', $6, $7, $8)"
         )
         .bind(Uuid::now_v7())
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(branch_id.0)
         .bind(product_id.0)
         .bind(batch_id.0)
         .bind(-qty)
         .bind(reason)
-        .bind(ctx.user_id.0)
+        .bind(ctx.user_id().0)
         .execute(&self.pool)
         .await?;
 
@@ -146,7 +146,7 @@ impl InventoryService {
                AND ($3::uuid IS NULL OR sc.product_id = $3)
              ORDER BY sc.qty DESC"
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(branch_id.map(|b| b.0))
         .bind(product_id.map(|p| p.0))
         .fetch_all(&self.pool)
@@ -186,7 +186,7 @@ impl InventoryService {
                AND b.expiry_date > CURRENT_DATE
                AND b.is_quarantined = false",
         )
-        .bind(ctx.tenant_id.0)
+        .bind(ctx.tenant_id().0)
         .bind(branch_id.0)
         .bind(product_id.0)
         .fetch_one(&self.pool)
