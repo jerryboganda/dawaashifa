@@ -72,6 +72,7 @@ async fn test_session_survives_container_restart_and_creds_encrypted_at_rest() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -258,6 +259,7 @@ async fn test_logged_out_event_marks_banned_and_failover_reassigns_queue() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await

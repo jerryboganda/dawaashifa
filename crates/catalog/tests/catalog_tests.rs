@@ -177,6 +177,7 @@ async fn test_catalog_matching_and_substitutions_integration() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await

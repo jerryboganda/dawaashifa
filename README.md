@@ -1,4 +1,4 @@
-﻿# Shifa Platform (دوا)
+# Shifa Platform (دوا)
 
 > WhatsApp-first multi-branch pharmacy and healthcare commerce platform for Pakistan.
 
@@ -69,7 +69,7 @@ cp .env.example .env
 ```
 
 ### 2. Start Local Infrastructure
-Start PostgreSQL 17 (with pgvector), Redis 7, NATS JetStream, and MinIO:
+Start PostgreSQL 18 (with pgvector), Redis 7, NATS JetStream, and MinIO:
 ```bash
 docker compose up -d
 docker compose ps
@@ -89,6 +89,17 @@ pnpm install
 pnpm lint
 pnpm test
 ```
+
+---
+
+## Production Deployment & Zero-Build Cloud CI/CD
+
+All heavy compute workloads (Rust release compilation, SvelteKit frontend bundling, Docker packaging, and test suites) are offloaded **100% to GitHub Actions**.
+
+- **Container Registry**: GitHub Container Registry (`ghcr.io/jerryboganda/dawaashifa/*`).
+- **Production VPS**: Performs **zero builds**; only pulls pre-built image layers and updates in ~5–10 seconds with 0% CPU pressure.
+- **Production URL**: `https://dawaa.polytronx.com`
+- **Full Guide**: See [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md) and [`docs/runbooks/deployment.md`](./docs/runbooks/deployment.md).
 
 ---
 

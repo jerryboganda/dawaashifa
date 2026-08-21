@@ -141,6 +141,7 @@ async fn test_rider_token_cannot_read_other_riders_deliveries() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -233,6 +234,7 @@ async fn test_rider_token_cannot_list_other_riders() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -269,6 +271,7 @@ async fn test_assignment_blocked_when_rider_over_cash_ceiling() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -381,6 +384,7 @@ async fn test_pod_photo_required_for_delivered() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -450,6 +454,7 @@ async fn test_gps_required_for_delivered() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -548,6 +553,7 @@ async fn test_controlled_order_requires_prescription_collection_and_cnic() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -668,6 +674,7 @@ async fn test_cod_delivery_accumulates_expected_amount() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -808,6 +815,7 @@ async fn test_variance_blocks_session_close_without_reason() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -885,6 +893,7 @@ async fn test_stale_session_blocks_new_cod_assignment() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -972,6 +981,7 @@ async fn test_failed_delivery_max_two_reattempts_then_returned() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -1067,6 +1077,7 @@ async fn test_duplicate_delivery_submission_idempotent() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -1142,6 +1153,7 @@ async fn test_public_tracking_link_leaks_no_pii() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await

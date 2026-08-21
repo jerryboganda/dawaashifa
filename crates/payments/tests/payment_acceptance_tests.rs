@@ -126,6 +126,7 @@ async fn test_no_screenshot_auto_approval_path_exists() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -187,6 +188,7 @@ async fn test_tid_ledger_lifecycle_and_duplicate_flagging() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -304,6 +306,7 @@ async fn test_amount_mismatch_flagged_not_rejected() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -372,6 +375,7 @@ async fn test_timestamp_before_order_flagged() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -431,6 +435,7 @@ async fn test_edited_image_exif_flagged() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -491,6 +496,7 @@ async fn test_sender_reused_across_customers_flagged() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -579,6 +585,7 @@ async fn test_flags_never_cause_automatic_decision() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -649,6 +656,7 @@ async fn test_cod_limit_blocks_order_above_ceiling() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -705,6 +713,7 @@ async fn test_cod_refusal_marks_failed_and_triggers_return() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -781,6 +790,7 @@ async fn test_refund_requires_permission() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -898,6 +908,7 @@ async fn test_webhook_idempotency_and_amount_mismatch() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -974,6 +985,7 @@ async fn test_reconciliation_flags_unmatched_both_directions() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await

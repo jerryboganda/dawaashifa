@@ -87,6 +87,7 @@ async fn test_negotiated_price_above_mrp_rejected() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -181,6 +182,7 @@ async fn test_quote_revision_creates_new_version_preserving_original() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -280,6 +282,7 @@ async fn test_expired_quote_cannot_convert() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -349,6 +352,7 @@ async fn test_discount_approval_threshold_and_limits() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -494,6 +498,7 @@ async fn test_credit_override_requires_permission_and_audits() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -542,6 +547,7 @@ async fn test_po_variance_blocks_fulfilment() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -682,6 +688,7 @@ async fn test_consignment_transfer_and_reconciliation() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -776,6 +783,7 @@ async fn test_device_serial_uniqueness_and_recall_query() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await
@@ -870,6 +878,7 @@ async fn test_b2b_order_bypasses_retail_cart_stages() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(5)
         .connect(&database_url)
         .await

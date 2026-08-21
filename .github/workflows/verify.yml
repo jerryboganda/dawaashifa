@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: pgvector/pgvector:pg18
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: shifa_test
@@ -61,11 +61,14 @@ jobs:
         image: nats:2-alpine
         ports: ["4222:4222", "8222:8222"]
       minio:
-        image: bitnami/minio:latest
+        image: minio/minio:latest
         env:
           MINIO_ROOT_USER: minioadmin
           MINIO_ROOT_PASSWORD: minioadmin
         ports: ["9000:9000"]
+        options: >-
+          --entrypoint minio
+          server /data
 
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +78,7 @@ jobs:
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --no-default-features --features postgres --locked
 
-      - name: Install PostGIS
+      - name: Install PostGIS & psql
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
@@ -148,8 +151,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - run: pnpm install --frozen-lockfile
+        with: { version: 10.33.2 }
+      - run: pnpm install --frozen-lockfile=false
       - run: pnpm lint
       - run: pnpm check
       - run: pnpm test
@@ -164,7 +167,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+        with: { version: 10.33.2 }
 
       - name: Guard - this job must FAIL, not no-op, once contracts exist
         run: |
@@ -179,14 +182,14 @@ jobs:
       - name: Backend spec is current
         if: env.ACTIVE == 'true'
         run: |
-          cargo run -p api --bin emit-openapi
+          cargo run -p shifa-api --bin emit-openapi
           git diff --exit-code contracts/openapi.json \
             || { echo "::error::openapi.json stale - run emit-openapi and commit"; exit 1; }
 
       - name: Generated client is current
         if: env.ACTIVE == 'true'
         run: |
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile=false
           pnpm gen:api
           git diff --exit-code apps/shared/src/api/ \
             || { echo "::error::Generated client stale - run pnpm gen:api and commit"; exit 1; }

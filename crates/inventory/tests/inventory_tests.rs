@@ -34,6 +34,7 @@ async fn test_inventory_ledger_and_fefo_suite() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(10)
         .connect(&database_url)
         .await
@@ -295,6 +296,7 @@ async fn test_concurrent_allocation_does_not_oversell() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(25)
         .connect(&database_url)
         .await

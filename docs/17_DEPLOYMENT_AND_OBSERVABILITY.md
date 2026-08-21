@@ -48,29 +48,36 @@ Build the deployment to work either way — but record this in the runbook so th
 
 ```yaml
 services:
-  postgres:   # 17 + pgvector + pg_trgm + pg_partman
+  postgres:   # 18 + pgvector + pg_trgm + uuidv7
   redis:      # 7, appendonly yes
   nats:       # JetStream, file storage
   minio:      # object storage, versioning on
-  api:        # Rust binary, N replicas behind Caddy
-  worker:     # NATS consumers, scheduled jobs
-  wa-sidecar: # one per unofficial number, profile-gated
+  api:        # Pre-built Rust binary image (ghcr.io/jerryboganda/dawaashifa/api)
+  worker:     # Pre-built background worker (ghcr.io/jerryboganda/dawaashifa/worker)
+  web:        # Pre-built Nginx customer portal (ghcr.io/jerryboganda/dawaashifa/web)
+  console:    # Pre-built Nginx ops console (ghcr.io/jerryboganda/dawaashifa/console)
+  rider:      # Pre-built Nginx rider PWA (ghcr.io/jerryboganda/dawaashifa/rider)
+  wa-sidecar: # Pre-built unofficial WA runner (ghcr.io/jerryboganda/dawaashifa/wa-unofficial)
   caddy:      # reverse proxy, automatic TLS
   otel-collector / grafana / loki / tempo / prometheus
 ```
 
+**Zero-Build VPS Architecture:** The production VPS performs zero in-host compilation or container builds. All compilation (Rust `--release`, SvelteKit/Node bundles) runs in parallel on GitHub Actions cloud runners. The VPS only pulls pre-built image layers from GitHub Container Registry (`ghcr.io`).
+
 Resource floors: Postgres 4 vCPU / 8GB, api 2 vCPU / 2GB per replica, everything else 1 vCPU / 1GB. Below these, expect problems under load.
 
-## 6. CI pipeline
+## 6. CI/CD & Cloud Compute Pipeline
+
+All compute-intensive jobs run in GitHub Actions:
 
 ```
 lint      → cargo fmt --check, clippy -D warnings, pnpm lint
-test      → cargo test --workspace (testcontainers), pnpm test
+test      → cargo test --workspace (ephemeral services), pnpm test
 contract  → emit-openapi, git diff --exit-code contracts/openapi.json
             pnpm gen:api, git diff --exit-code apps/shared/src/api/
 security  → cargo audit, pnpm audit, gitleaks
-build     → docker build, push to registry
-deploy    → staging on merge to main; production is manual approval
+build     → Docker Buildx (matrix parallel + GHA cache) → Push to ghcr.io
+deploy    → SSH to VPS → docker compose pull && docker compose up -d --no-build
 ```
 
 **The `contract` job is what keeps two independent agents in sync.** If Copilot changes a route without regenerating the spec, or Antigravity's client is stale, the build fails there. Do not make it optional and do not allow it to be skipped.

@@ -10,6 +10,7 @@ on:
       - 'apps/**'
       - 'deploy/**'
       - 'sidecars/**'
+      - 'migrations/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'pnpm-lock.yaml'
@@ -18,9 +19,75 @@ concurrency:
   group: production-deploy
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
+  build-and-push:
+    name: Build & Push ${{ matrix.image.name }} to GHCR
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: api
+            context: .
+            dockerfile: deploy/Dockerfile.api
+            args: ""
+          - name: worker
+            context: .
+            dockerfile: deploy/Dockerfile.worker
+            args: ""
+          - name: web
+            context: .
+            dockerfile: deploy/Dockerfile.frontend
+            args: APP_NAME=web
+          - name: console
+            context: .
+            dockerfile: deploy/Dockerfile.frontend
+            args: APP_NAME=console
+          - name: rider
+            context: .
+            dockerfile: deploy/Dockerfile.frontend
+            args: APP_NAME=rider
+          - name: wa-unofficial
+            context: ./sidecars/wa-unofficial
+            dockerfile: sidecars/wa-unofficial/Dockerfile
+            args: ""
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set lowercase repository name
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          build-args: ${{ matrix.image.args }}
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LC }}/${{ matrix.image.name }}:latest
+            ghcr.io/${{ env.REPO_LC }}/${{ matrix.image.name }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}
+
   deploy:
     name: Deploy to dawaa.polytronx.com
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -41,7 +108,7 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
             set -e
-            echo "==> Deploying Dawaa Platform to dawaa.polytronx.com..."
+            echo "==> Deploying pre-built Dawaa Platform containers to dawaa.polytronx.com..."
             
             # Navigate or clone into workspace
             if [ ! -d "/opt/dawaa" ]; then
@@ -58,8 +125,9 @@ jobs:
               cp .env.example deploy/.env
             fi
             
-            # Start / Update production containers
+            # Pull pre-built images from GHCR (Zero compilation on VPS!)
             cd deploy
-            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --no-build --remove-orphans
             
-            echo "==> Deployment Complete! Health Check: https://dawaa.polytronx.com/health"
+            echo "==> Zero-Build Deployment Complete! Health Check: https://dawaa.polytronx.com/health"

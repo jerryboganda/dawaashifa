@@ -1,9 +1,10 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 echo "======================================================================"
-echo "  🚀 Starting Shifa Platform Production Deployment"
+echo "  🚀 Starting Shifa Platform Zero-Build Production Deployment"
 echo "  Target Domain: dawaa.polytronx.com"
+echo "  Registry:      ghcr.io/jerryboganda/dawaashifa/*"
 echo "======================================================================"
 
 # 1. Check for .env file
@@ -19,22 +20,26 @@ fi
 
 # 2. Pull latest git code if in repository
 if [ -d .git ]; then
-  echo "📥 Pulling latest code from origin main..."
+  echo "📥 Pulling latest compose configs from origin main..."
   git pull origin main || true
 fi
 
-# 3. Build and launch all production containers
-echo "🏗️ Building and deploying production containers via Docker Compose..."
-docker compose -f deploy/docker-compose.prod.yml up -d --build --remove-orphans
+# 3. Pull pre-compiled images from GHCR (Zero compilation on VPS!)
+echo "📦 Pulling pre-built production container images from GHCR..."
+docker compose -f deploy/docker-compose.prod.yml pull
+
+# 4. Launch all production containers
+echo "🚀 Starting production containers (zero-build instant startup)..."
+docker compose -f deploy/docker-compose.prod.yml up -d --no-build --remove-orphans
 
 echo "⏳ Waiting for services to become healthy..."
 sleep 5
 
-# 4. Verify running services
+# 5. Verify running services
 docker compose -f deploy/docker-compose.prod.yml ps
 
 echo "======================================================================"
-echo "  ✅ Deployment Complete!"
+echo "  ✅ Zero-Build Deployment Complete! (Zero VPS CPU pressure)"
 echo "  Public Portal:        https://dawaa.polytronx.com"
 echo "  Pharmacist Console:   https://dawaa.polytronx.com/ops"
 echo "  Rider Delivery PWA:   https://dawaa.polytronx.com/rider"

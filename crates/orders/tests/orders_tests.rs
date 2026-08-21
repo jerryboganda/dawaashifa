@@ -109,6 +109,7 @@ async fn test_order_lifecycle_routing_and_reservation_suite() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(15)
         .connect(&database_url)
         .await

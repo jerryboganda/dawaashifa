@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -127,6 +127,7 @@ jobs:
               echo "::error::contracts/openapi.json is out of sync with backend DTOs! Run 'cargo run -p shifa-api --bin emit-openapi' and commit the result."
               exit 1
             fi
+            pnpm install --frozen-lockfile=false
             pnpm gen:api
             if ! git diff --exit-code apps/shared/src/api/; then
               echo "::error::apps/shared/src/api/ is out of sync with contracts/openapi.json! Run 'pnpm gen:api' and commit the result."

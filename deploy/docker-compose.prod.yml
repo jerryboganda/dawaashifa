@@ -28,7 +28,7 @@ services:
       dockerfile: deploy/Dockerfile.frontend
       args:
         APP_NAME: web
-    image: shifa-web:latest
+    image: ghcr.io/jerryboganda/dawaashifa/web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks:
       - shifa-internal
@@ -39,7 +39,7 @@ services:
       dockerfile: deploy/Dockerfile.frontend
       args:
         APP_NAME: console
-    image: shifa-console:latest
+    image: ghcr.io/jerryboganda/dawaashifa/console:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks:
       - shifa-internal
@@ -50,7 +50,7 @@ services:
       dockerfile: deploy/Dockerfile.frontend
       args:
         APP_NAME: rider
-    image: shifa-rider:latest
+    image: ghcr.io/jerryboganda/dawaashifa/rider:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks:
       - shifa-internal
@@ -59,7 +59,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile.api
-    image: shifa-api:latest
+    image: ghcr.io/jerryboganda/dawaashifa/api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-shifa}:${POSTGRES_PASSWORD:-shifa_prod_password}@postgres:5432/${POSTGRES_DB:-shifa}
@@ -96,7 +96,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile.worker
-    image: shifa-worker:latest
+    image: ghcr.io/jerryboganda/dawaashifa/worker:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-shifa}:${POSTGRES_PASSWORD:-shifa_prod_password}@postgres:5432/${POSTGRES_DB:-shifa}
@@ -121,7 +121,7 @@ services:
     build:
       context: ../sidecars/wa-unofficial
       dockerfile: Dockerfile
-    image: shifa-wa-unofficial:latest
+    image: ghcr.io/jerryboganda/dawaashifa/wa-unofficial:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       PORT: 3001

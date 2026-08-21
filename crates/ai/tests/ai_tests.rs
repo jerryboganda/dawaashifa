@@ -139,6 +139,7 @@ async fn test_ai_pipeline_voice_notes_and_feedback_integration() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://shifa:shifa_password@localhost:5432/shifa".to_string());
     let pool = match PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_millis(500))
         .max_connections(15)
         .connect(&database_url)
         .await
