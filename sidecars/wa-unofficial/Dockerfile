@@ -3,7 +3,7 @@ FROM node:22-alpine AS builder
 RUN apk add --no-cache git
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* .npmrc* ./
-RUN npm install -g pnpm && pnpm install --config.block-exotic-subdeps=false
+RUN npm install -g pnpm && pnpm config set dangerously-allow-all-builds true && pnpm install --config.block-exotic-subdeps=false
 
 COPY . .
 RUN pnpm build
@@ -14,7 +14,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package.json pnpm-lock.yaml* .npmrc* ./
-RUN npm install -g pnpm && pnpm install --prod --config.block-exotic-subdeps=false
+RUN npm install -g pnpm && pnpm config set dangerously-allow-all-builds true && pnpm install --prod --config.block-exotic-subdeps=false
 
 COPY --from=builder /app/dist ./dist
 
