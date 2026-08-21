@@ -1,0 +1,29 @@
+# Multi-stage Docker build for Shifa API server
+FROM rust:1.80-slim-bookworm AS builder
+
+WORKDIR /app
+RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+
+RUN cargo build --release -p shifa-api
+
+FROM debian:bookworm-slim AS runtime
+
+WORKDIR /app
+RUN apt-get update && apt-get install -y ca-certificates libssl3 curl && rm -rf /var/lib/apt/lists/*
+
+# Non-root user for security (Doc 17 §11)
+RUN useradd -ms /bin/bash shifa
+USER shifa
+
+COPY --from=builder /app/target/release/shifa_server /app/shifa_server
+
+EXPOSE 8080
+ENV PORT=8080
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+CMD ["/app/shifa_server"]

@@ -1,0 +1,259 @@
+# Shifa Platform Production Stack (Doc 17 §5)
+# Resource floors: Postgres 4 vCPU / 8GB, api 2 vCPU / 2GB per replica, worker/sidecars 1 vCPU / 1GB.
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: shifa-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - shifa-public
+      - shifa-internal
+    depends_on:
+      - api
+      - grafana
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    image: shifa-api:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-shifa}:${POSTGRES_PASSWORD:-shifa_prod_password}@postgres:5432/${POSTGRES_DB:-shifa}
+      REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-shifa_admin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-shifa_super_secret_s3_key}
+      S3_BUCKET: shifa-data
+      JWT_SECRET: ${JWT_SECRET:-shifa_production_jwt_signing_secret_min_32_bytes}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      RUST_LOG: info,shifa=debug
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "1.0"
+          memory: 1024M
+    networks:
+      - shifa-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.worker
+    image: shifa-worker:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-shifa}:${POSTGRES_PASSWORD:-shifa_prod_password}@postgres:5432/${POSTGRES_DB:-shifa}
+      REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-shifa_admin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-shifa_super_secret_s3_key}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      RUST_LOG: info,shifa=debug
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+    networks:
+      - shifa-internal
+    depends_on:
+      - api
+
+  wa-unofficial:
+    build:
+      context: ../sidecars/wa-unofficial
+      dockerfile: Dockerfile
+    image: shifa-wa-unofficial:latest
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      POOL_MANAGER_URL: http://api:8080/webhooks/whatsapp/unofficial
+      SESSION_DIR: /data/sessions
+    volumes:
+      - wa_sessions:/data/sessions
+    networks:
+      - shifa-internal
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: shifa-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shifa}
+      POSTGRES_USER: ${POSTGRES_USER:-shifa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shifa_prod_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backup/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8192M
+        reservations:
+          cpus: "2.0"
+          memory: 4096M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shifa} -d ${POSTGRES_DB:-shifa}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shifa-internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: shifa-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - shifa-internal
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: shifa-nats
+    restart: unless-stopped
+    command: ["-js", "-sd", "/data"]
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - shifa-internal
+
+  minio:
+    image: minio/minio:latest
+    container_name: shifa-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-shifa_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-shifa_super_secret_s3_key}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - shifa-internal
+
+  # Observability Pipeline (Doc 17 §7)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.95.0
+    container_name: shifa-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ./otel/otel-collector.yml:/etc/otel-collector.yaml:ro
+    networks:
+      - shifa-internal
+
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: shifa-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - shifa-internal
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: shifa-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+    networks:
+      - shifa-internal
+
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: shifa-tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./otel/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/tmp/tempo
+    networks:
+      - shifa-internal
+
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: shifa-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-shifa_grafana_admin_2026}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - shifa-internal
+
+networks:
+  shifa-public:
+    driver: bridge
+  shifa-internal:
+    driver: bridge
+    internal: false
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  redis_data:
+  nats_data:
+  minio_data:
+  wa_sessions:
+  prometheus_data:
+  loki_data:
+  tempo_data:
+  grafana_data:

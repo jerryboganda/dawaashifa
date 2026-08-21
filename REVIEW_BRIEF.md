@@ -1,81 +1,61 @@
-# Review Brief — Doc 16: Ops Console Specification & Design System
+# Review Brief — Spec 17: Deployment, Observability, Backup & DR
 
-## Spec
-`docs/16_OPS_CONSOLE.md`
+**Branch:** `feat/17-deployment`  
+**Spec Reference:** `docs/17_DEPLOYMENT_AND_OBSERVABILITY.md`  
+**Builder:** Antigravity  
+**Domain Configuration:** `dawaa.polytronx.com`  
 
-## What I built
-- **Shared Design Tokens & Utilities (`apps/shared/src/`)**:
-  - `tokens.ts`: Brand teal scale (50..900), surfaces, semantic status colours, severity levels, spacing scale, and radius tokens (Doc 16 §5).
-  - `money.ts`: Strict PKR money formatting (`Rs 1,250.00`) and decimal validation. Prohibits JavaScript `Number` parsing on money (Invariant I-8).
-  - `i18n.ts`: Multilingual catalogue with 3 locales (`en`, `ur` with RTL, and `ur-Latn`) covering all operations screens.
-- **Ops Console Shell & High-Volume Screens (`apps/console/src/`)**:
-  - **Unified WhatsApp Inbox (`src/routes/inbox/+page.svelte`, `state/inbox.ts`)**:
-    - Three-pane layout: virtualised conversation list, message thread, customer context sidebar (Doc 16 §6).
-    - Inline audio player with speech-to-text transcript rendering.
-    - AI Drafts with confidence badges and 3 explicit actions: **Send · Edit · Discard** (preserving original draft for training loop).
-    - SSE live reconnecting state and event replay on connection drop.
-    - Invariant I-6: Rx-linked conversations excluded from bulk messaging actions.
-    - Keyboard navigation: `j`/`k` navigation, `r` reply, `e` edit draft, `Enter` send.
-  - **Prescription Review Desk (`src/routes/rx-review/+page.svelte`, `state/rx-review.ts`)**:
-    - Split view: prescription image controls (zoom/rotate/contrast) and extracted medicine lines (Doc 16 §7).
-    - Per-line actions: **Accept · Edit · Substitute · Reject** with top alternative candidates and confidence indicators.
-    - Controlled substances warning banner.
-    - Queue depth and oldest waiting prescription in header.
-    - Invariant I-3 & Doc 16 §7: Zero bulk-approve control. Approve button is strictly disabled until all lines have an explicit decision.
-    - Full keyboard navigation flow (`1..N` select line, `A` accept, `X` reject, `Ctrl+Enter` submit approval).
-  - **Payment Proof Review (`src/routes/payments/review/+page.svelte`, `state/payments.ts`)**:
-    - Three-pane review: screenshot proof, fraud & validation flags ranked by severity, matching order summary (Doc 16 §8).
-    - `DUPLICATE_TID` full-width critical warning banner naming the earlier conflicting order.
-    - Side-by-side comparison of order total money vs proof OCR extracted amount.
-    - Invariant I-4: Zero bulk-approve control. Single-order explicit approve/reject decision.
-  - **Order Board Kanban (`src/routes/orders/+page.svelte`, `state/orders.ts`)**:
-    - Multi-column fulfillment Kanban (Confirmed, Allocated, Packed, Dispatched, Delivered).
-    - State transition validation preventing illegal drag-and-drop operations (Doc 16 §9).
-  - **Inventory & Cold Chain (`src/routes/inventory/+page.svelte`, `state/inventory.ts`)**:
-    - Expiry risk dashboard (≤30, 31-60, 61-90 days) with value at risk totals.
-    - Cold chain temperature log with excursion alerts.
-  - **B2B Medical Device Desk (`src/routes/b2b/+page.svelte`, `state/b2b.ts`)**:
-    - Hospital credit limits, current balances, and 90+ days overdue account locks.
-    - Manufacturer device recall inquiry by batch/lot ID.
-  - **Regulatory Audit Explorer (`src/routes/audit/+page.svelte`)**:
-    - DRAP compliance immutable log with state diffs and CSV export.
+---
 
-## Acceptance tests
-Spec names 14 acceptance tests. I implemented all **14** in `apps/console/src/console.test.ts` (100% green).
+## 1. Executive Summary
+Spec 17 completes the production infrastructure, observability pipeline, disaster recovery, alert matrix, health endpoints, and zero-downtime deployment automation for the Shifa Platform. Production domain routing is configured for `dawaa.polytronx.com` across the Caddy reverse proxy, ops console, backend API, and background workers.
 
-| Spec test name | My test | File |
-|---|---|---|
-| `no_hand_written_api_types` | `no_hand_written_api_types` | `apps/console/src/console.test.ts` |
-| `no_money_arithmetic_in_browser` | `no_money_arithmetic_in_browser` | `apps/console/src/console.test.ts` |
-| `rx_review_approve_disabled_until_all_lines_decided` | `rx_review_approve_disabled_until_all_lines_decided` | `apps/console/src/console.test.ts` |
-| `no_bulk_approve_control_in_rx_review` | `no_bulk_approve_control_in_rx_review` | `apps/console/src/console.test.ts` |
-| `no_bulk_approve_control_in_payment_review` | `no_bulk_approve_control_in_payment_review` | `apps/console/src/console.test.ts` |
-| `rx_linked_conversation_excluded_from_bulk_send` | `rx_linked_conversation_excluded_from_bulk_send` | `apps/console/src/console.test.ts` |
-| `duplicate_tid_renders_critical_banner` | `duplicate_tid_renders_critical_banner` | `apps/console/src/console.test.ts` |
-| `every_screen_renders_in_urdu_rtl` | `every_screen_renders_in_urdu_rtl` | `apps/console/src/console.test.ts` |
-| `status_colours_consistent_across_screens` | `status_colours_consistent_across_screens` | `apps/console/src/console.test.ts` |
-| `sse_reconnects_and_replays_after_drop` | `sse_reconnects_and_replays_after_drop` | `apps/console/src/console.test.ts` |
-| `virtualised_lists_render_10000_rows_smoothly` | `virtualised_lists_render_10000_rows_smoothly` | `apps/console/src/console.test.ts` |
-| `keyboard_flow_completes_rx_review_without_mouse` | `keyboard_flow_completes_rx_review_without_mouse` | `apps/console/src/console.test.ts` |
-| `order_board_rejects_illegal_transition_drop` | `order_board_rejects_illegal_transition_drop` | `apps/console/src/console.test.ts` |
-| `all_screens_handle_loading_empty_error` | `all_screens_handle_loading_empty_error` | `apps/console/src/console.test.ts` |
+---
 
-Missing, with reason: None. All 14 tests passing.
+## 2. Invariant Compliance Checklist
+- [x] **I-1 (Tenant Scoping):** All database interactions scoped by `tenant_id UUID NOT NULL`.
+- [x] **I-2 (Row-Level Security):** RLS enforced on all tables.
+- [x] **I-7 (Repository Isolation):** All SQL queries encapsulated in repository modules.
+- [x] **I-8 (Money Invariant):** Zero floating point arithmetic, monetary values formatted in PKR string representation.
+- [x] **I-10 (Transport Agnostic):** WhatsApp business logic decoupled from transport infrastructure.
+- [x] **Health Check Invariant (Doc 17 §13):** `/health` and `/api/v1/health` report granular statuses of Postgres, Redis, NATS, MinIO, AI Host, and FBR gateway.
+- [x] **Contract Drift Invariant (Doc 17 §6):** OpenAPI specification regenerated and committed synchronously with `@shifa/shared` types.
 
-## Out of scope
-Confirmed nothing from Out of scope was built:
-- No rider PWA code (in `apps/rider`).
-- No Astro marketing site code (in `apps/web`).
-- No backend code changes or API monkey-patching.
+---
 
-## ASSUMPTIONS
-None.
+## 3. What Was Built
+1. **Production Infrastructure (`deploy/`)**:
+   - `deploy/docker-compose.prod.yml`: Postgres 17 (pgvector, pg_trgm), Redis 7 AOF, NATS JetStream, MinIO, API, Worker, Baileys sidecar, Caddy, OTel Collector, Prometheus, Grafana, Loki, Tempo.
+   - `deploy/Caddyfile`: Reverse proxy, automated TLS, security headers, rate limiting, and domain routing for `dawaa.polytronx.com` (and `api.dawaa.polytronx.com`, `ops.dawaa.polytronx.com`, `monitoring.dawaa.polytronx.com`).
+   - `deploy/Dockerfile.api` & `deploy/Dockerfile.worker`: Multi-stage non-root hardened container builds.
+   - `deploy/prometheus/alerts.yml`: All 12 production alerts per Doc 17 §8 table.
+   - `deploy/otel/otel-collector.yml` & `deploy/otel/tempo.yaml`: Distributed telemetry tracing and log shipping.
+   - `deploy/backup/pgbackrest.conf` & `deploy/backup/restore_smoke_test.sh`: PITR configuration and automated monthly smoke test.
 
-## Known gaps
-None.
+2. **Runbooks (`docs/runbooks/`)**:
+   - `fbr-outage.md`: Provisional invoice emission and exponential retry queue recovery.
+   - `ai-host-down.md`: Circuit breaker open state and deterministic pharmacist fallback.
+   - `database-restore.md`: Point-in-time recovery procedure and verification test log.
+   - `payment-gateway-outage.md`: Dynamic failover and manual screenshot verification.
+   - `incident-template.md`: SEV1/SEV2 post-mortem template.
+   - `deployment.md`: Zero-downtime rolling deployment and additive migration rules.
+   - `number-ban-response.md`: WhatsApp cold reserve number migration.
+   - `data-migration.md`: Legacy pharmacy system ingestion and verification.
 
-## Contract changes
-- Exported design tokens, money helpers, and i18n from `@shifa/shared`.
+3. **Backend Health Probes (`crates/api/src/routes/health.rs`)**:
+   - Added `DependencyHealth` & `SystemHealthResponse` structs with `utoipa` schemas.
+   - Registered `/health` and `/api/v1/health` in Axum router and OpenAPI registry.
 
-## Risk areas
-- High prescription volume operations require pharmacist training on keyboard shortcuts (`1..N`, `A`, `X`, `Ctrl+Enter`) for optimal throughput.
+4. **Acceptance Test Suite (`crates/api/tests/deployment_acceptance_tests.rs`)**:
+   - 5 comprehensive automated tests covering health responses, security port shielding, PII prevention, runbook completeness, and alert rule coverage.
+
+---
+
+## 4. Verification Evidence
+- `cargo fmt --all --check`: **PASS** (0 formatting differences)
+- `cargo clippy --workspace --all-targets -- -D warnings`: **PASS** (0 warnings, 0 errors)
+- `cargo test --workspace`: **PASS** (100% test pass across all 15 crates)
+- `pnpm -r test`: **PASS** (all frontend suites in `apps/console` and `apps/rider` pass green)
+- `pnpm -r check`: **PASS** (0 TypeScript errors)
+- `pnpm -r lint`: **PASS** (0 lint errors)
+- `contracts/openapi.json`: Emitted and synchronized with `apps/shared/src/api/schema.d.ts`.
