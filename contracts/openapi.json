@@ -1796,6 +1796,36 @@
         }
       }
     },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "operationId": "system_health_handler",
+        "responses": {
+          "200": {
+            "description": "Comprehensive system health and dependencies status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/inventory/adjustments": {
       "post": {
         "tags": [
@@ -6169,6 +6199,27 @@
           "Returned"
         ]
       },
+      "DependencyHealth": {
+        "type": "object",
+        "required": [
+          "status",
+          "latency_ms"
+        ],
+        "properties": {
+          "latency_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
       "DeviceUnitDto": {
         "type": "object",
         "required": [
@@ -8856,6 +8907,50 @@
           }
         }
       },
+      "SystemHealthResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "timestamp",
+          "version",
+          "database",
+          "redis",
+          "nats",
+          "storage",
+          "ai_host",
+          "fbr_gateway"
+        ],
+        "properties": {
+          "ai_host": {
+            "$ref": "#/components/schemas/DependencyHealth"
+          },
+          "database": {
+            "$ref": "#/components/schemas/DependencyHealth"
+          },
+          "fbr_gateway": {
+            "$ref": "#/components/schemas/DependencyHealth"
+          },
+          "nats": {
+            "$ref": "#/components/schemas/DependencyHealth"
+          },
+          "redis": {
+            "$ref": "#/components/schemas/DependencyHealth"
+          },
+          "status": {
+            "type": "string"
+          },
+          "storage": {
+            "$ref": "#/components/schemas/DependencyHealth"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
       "TaxCategoryDto": {
         "type": "object",
         "required": [
@@ -9423,6 +9518,10 @@
     }
   },
   "tags": [
+    {
+      "name": "Health",
+      "description": "System health, dependency status, and readiness probes"
+    },
     {
       "name": "Auth",
       "description": "Authentication and session management"

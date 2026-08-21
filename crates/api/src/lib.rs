@@ -310,10 +310,12 @@ pub fn build_app(pool: PgPool, identity_service: IdentityService) -> Router {
         .nest("/fbr", fbr_routes)
         .nest("/b2b", routes::b2b::b2b_routes())
         .nest("/ai", ai_routes)
+        .route("/health", get(routes::health::system_health_handler))
         .merge(role_routes);
 
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .route("/health", get(routes::health::system_health_handler))
         .nest("/api/v1", api_v1)
         .route(
             "/api/v1/track/:token",

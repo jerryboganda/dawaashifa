@@ -132,6 +132,7 @@ use shifa_tax::models::*;
         b2b::reconcile_consignment,
         b2b::register_device,
         b2b::query_device_recall,
+        health::system_health_handler,
     ),
     components(
         schemas(
@@ -300,10 +301,13 @@ use shifa_tax::models::*;
             DeviceUnitDto,
             RegisterDeviceRequest,
             RecallQueryResponse,
+            crate::routes::health::DependencyHealth,
+            crate::routes::health::SystemHealthResponse,
         )
     ),
     modifiers(&SecurityAddon),
     tags(
+        (name = "Health", description = "System health, dependency status, and readiness probes"),
         (name = "Auth", description = "Authentication and session management"),
         (name = "Users", description = "User management and RBAC assignments"),
         (name = "Branches", description = "Branch store locations and configuration"),

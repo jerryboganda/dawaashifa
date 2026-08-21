@@ -708,6 +708,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["system_health_handler"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/inventory/adjustments": {
         parameters: {
             query?: never;
@@ -2099,6 +2115,12 @@ export interface components {
         DeliveryId: string;
         /** @enum {string} */
         DeliveryStatus: "Unassigned" | "Assigned" | "Accepted" | "PickedUp" | "InTransit" | "Delivered" | "Failed" | "Returned";
+        DependencyHealth: {
+            /** Format: int64 */
+            latency_ms: number;
+            message?: string | null;
+            status: string;
+        };
         DeviceUnitDto: {
             /** Format: uuid */
             batch_id?: string | null;
@@ -2883,6 +2905,18 @@ export interface components {
             requires_pharmacist_approval: boolean;
             savings_vs_original: components["schemas"]["Money"];
             strength: string;
+        };
+        SystemHealthResponse: {
+            ai_host: components["schemas"]["DependencyHealth"];
+            database: components["schemas"]["DependencyHealth"];
+            fbr_gateway: components["schemas"]["DependencyHealth"];
+            nats: components["schemas"]["DependencyHealth"];
+            redis: components["schemas"]["DependencyHealth"];
+            status: string;
+            storage: components["schemas"]["DependencyHealth"];
+            /** Format: date-time */
+            timestamp: string;
+            version: string;
         };
         TaxCategoryDto: {
             /** Format: date-time */
@@ -4324,6 +4358,35 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    system_health_handler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Comprehensive system health and dependencies status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemHealthResponse"];
+                };
+            };
+            /** @description Service unhealthy */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemHealthResponse"];
+                };
             };
         };
     };

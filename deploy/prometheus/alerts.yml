@@ -1,0 +1,111 @@
+# Shifa Platform Production Alert Rules (Doc 17 §8)
+groups:
+  - name: shifa_platform_alerts
+    rules:
+      - alert: WhatsAppChannelBanned
+        expr: wa_channel_health{channel=~".+"} == 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "WhatsApp channel banned: {{ $labels.channel }}"
+          description: "A WhatsApp transport channel has received a ban from Meta/Baileys. Switch to cold reserve number immediately."
+
+      - alert: RxQueueDepthHigh
+        expr: rx_queue_depth > 50
+        for: 15m
+        labels:
+          severity: high
+        annotations:
+          summary: "Prescription backlog high: {{ $value }} prescriptions waiting"
+          description: "Rx queue depth has exceeded 50 for over 15 minutes. Pharmacist review throughput bottleneck."
+
+      - alert: OldestRxWaitingExceeded
+        expr: rx_oldest_waiting_seconds > 7200
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "Prescription waiting over 2 hours"
+          description: "A patient prescription has been waiting in review queue for > 2 hours."
+
+      - alert: PaymentProofsPendingHigh
+        expr: payment_proofs_pending > 30
+        for: 10m
+        labels:
+          severity: medium
+        annotations:
+          summary: "Payment proof backlog high: {{ $value }} screenshots pending"
+          description: "More than 30 manual payment screenshots are waiting for finance review."
+
+      - alert: FbrQueueDepthHigh
+        expr: fbr_queue_depth > 100 or fbr_oldest_pending_seconds > 21600
+        for: 5m
+        labels:
+          severity: medium
+        annotations:
+          summary: "FBR submission queue depth backlog or stale item > 6h"
+          description: "FBR POS integration queue has accumulated > 100 invoices or has invoices pending > 6 hours."
+
+      - alert: AiCircuitBreakerOpen
+        expr: ai_circuit_breaker_state{state="OPEN"} == 1
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "AI circuit breaker is OPEN for {{ $labels.task }}"
+          description: "AI host is unreachable or error rate exceeded threshold. Falling back to deterministic triage."
+
+      - alert: OrderConfirmationErrorRateHigh
+        expr: (rate(order_confirmation_errors_total[10m]) / rate(order_confirmation_attempts_total[10m])) * 100 > 2
+        for: 10m
+        labels:
+          severity: high
+        annotations:
+          summary: "Order confirmation error rate > 2%"
+          description: "More than 2% of order confirmation attempts failed in the last 10 minutes."
+
+      - alert: StockAllocationFailuresHigh
+        expr: increase(stock_allocation_failures_total[1h]) > 10
+        for: 5m
+        labels:
+          severity: medium
+        annotations:
+          summary: "High stock allocation failures (> 10/hour)"
+          description: "Stock allocation failed due to concurrent reservation or stockout."
+
+      - alert: PostgresConnectionsHigh
+        expr: (pg_stat_activity_count / pg_settings_max_connections) * 100 > 80
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "Postgres connection pool > 80% saturated"
+          description: "Database connection pool is nearing exhaustion."
+
+      - alert: DiskUsageHigh
+        expr: (node_filesystem_free_bytes / node_filesystem_size_bytes) * 100 < 20
+        for: 15m
+        labels:
+          severity: high
+        annotations:
+          summary: "Disk free space < 20%"
+          description: "Host storage disk usage has exceeded 80% capacity."
+
+      - alert: BackupFailed
+        expr: backup_last_status == 0 or (time() - backup_last_success_timestamp) > 86400
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database or object storage backup failed"
+          description: "pgBackRest or MinIO backup job did not complete successfully within 24 hours."
+
+      - alert: RiderCashVarianceHigh
+        expr: rider_cash_variance_daily_pkr > 5000
+        for: 10m
+        labels:
+          severity: medium
+        annotations:
+          summary: "Rider COD cash variance exceeds PKR 5,000"
+          description: "Cash reconciliation discrepancy on rider shift closing exceeds daily tolerance."
