@@ -7,15 +7,14 @@ services:
     container_name: shifa-caddy
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8096:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - shifa-public
       - shifa-internal
+      - npm-network
     depends_on:
       - api
       - web
@@ -280,6 +279,9 @@ networks:
   shifa-internal:
     driver: bridge
     internal: false
+  npm-network:
+    external: true
+    name: nginx-proxy-manager_default
 
 volumes:
   caddy_data:

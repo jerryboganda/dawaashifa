@@ -1,26 +1,17 @@
-﻿# =================================================================================================
+# =================================================================================================
 # Shifa Platform Single Domain Architecture (Caddy Reverse Proxy)
 # Domain: dawaa.polytronx.com
-#
-# Single Cloudflare DNS Record Required:
-#   Type: A (or CNAME)
-#   Name: dawaa (or @ for root)
-#   Content: <YOUR_VPS_IP>
-#
-# Everything is multiplexed under dawaa.polytronx.com without needing ANY separate subdomains.
 # =================================================================================================
 
 {
-  email admin@polytronx.com
   admin off
 }
 
-dawaa.polytronx.com {
+:80 {
   encode gzip zstd
 
-  # Security Hardening Headers (Doc 17 Â§11)
+  # Security Hardening Headers (Doc 17 §11)
   header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     X-Content-Type-Options "nosniff"
     X-Frame-Options "SAMEORIGIN"
     Referrer-Policy "strict-origin-when-cross-origin"
@@ -83,4 +74,3 @@ dawaa.polytronx.com {
     }
   }
 }
-
