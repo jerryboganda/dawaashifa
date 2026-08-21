@@ -70,4 +70,4 @@ axum = { version = "0.7", features = ["macros"] }
 tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["trace", "cors"] }
 utoipa = { version = "4.2", features = ["axum_extras", "uuid", "chrono", "decimal"] }
-utoipa-swagger-ui = { version = "7.1", features = ["axum"] }
+utoipa-swagger-ui = { version = "7.1", features = ["axum", "reqwest"] }
