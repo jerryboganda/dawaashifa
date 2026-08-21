@@ -95,12 +95,7 @@ jobs:
 
       - name: Deploy via SSH to VPS
         uses: appleboy/ssh-action@v1.0.3
-        if: env.VPS_HOST != ''
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+        if: ${{ secrets.VPS_HOST != '' }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
