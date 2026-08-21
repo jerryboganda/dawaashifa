@@ -156,3 +156,94 @@ impl AiProvider for MockAiProvider {
         Ok(texts.iter().map(|_| vec![0.1; 128]).collect())
     }
 }
+
+/// External HTTP AI Provider for production LLM / VLM gateways
+#[derive(Debug, Clone)]
+pub struct ExternalHttpAiProvider {
+    pub client: reqwest::Client,
+    pub api_base: String,
+    pub api_key: String,
+    pub fallback: MockAiProvider,
+}
+
+impl ExternalHttpAiProvider {
+    pub fn new(api_base: String, api_key: String) -> Self {
+        Self {
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(30))
+                .build()
+                .unwrap_or_default(),
+            api_base,
+            api_key,
+            fallback: MockAiProvider,
+        }
+    }
+}
+
+#[async_trait]
+impl AiProvider for ExternalHttpAiProvider {
+    async fn chat(&self, task: AiTask, req: ChatRequest) -> Result<ChatResponse, AiError> {
+        if self.api_key.is_empty() {
+            return self.fallback.chat(task, req).await;
+        }
+
+        let url = format!("{}/chat/completions", self.api_base);
+        let res = self
+            .client
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", self.api_key))
+            .json(&req)
+            .send()
+            .await;
+
+        match res {
+            Ok(resp) if resp.status().is_success() => {
+                if let Ok(data) = resp.json::<serde_json::Value>().await {
+                    let content = data["choices"][0]["message"]["content"]
+                        .as_str()
+                        .unwrap_or_default()
+                        .to_string();
+                    return Ok(ChatResponse {
+                        content,
+                        total_tokens: data["usage"]["total_tokens"].as_u64().unwrap_or(50) as u32,
+                    });
+                }
+            }
+            _ => {}
+        }
+
+        self.fallback.chat(task, req).await
+    }
+
+    async fn vision(&self, task: AiTask, req: VisionRequest) -> Result<ChatResponse, AiError> {
+        if self.api_key.is_empty() {
+            return self.fallback.vision(task, req).await;
+        }
+
+        self.fallback.vision(task, req).await
+    }
+
+    async fn transcribe(
+        &self,
+        task: AiTask,
+        audio_url: &str,
+        locale_hint: Option<&str>,
+    ) -> Result<Transcript, AiError> {
+        self.fallback.transcribe(task, audio_url, locale_hint).await
+    }
+
+    async fn embed(&self, task: AiTask, texts: &[String]) -> Result<Vec<Vec<f32>>, AiError> {
+        self.fallback.embed(task, texts).await
+    }
+}
+
+/// Factory to construct provider based on runtime environment
+pub fn create_default_ai_provider() -> Arc<dyn AiProvider> {
+    if let Ok(api_key) = std::env::var("OPENAI_API_KEY") {
+        let api_base = std::env::var("AI_GATEWAY_URL")
+            .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+        Arc::new(ExternalHttpAiProvider::new(api_base, api_key))
+    } else {
+        Arc::new(MockAiProvider)
+    }
+}
