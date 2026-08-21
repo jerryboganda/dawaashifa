@@ -2792,6 +2792,7 @@ version = "0.1.0"
 dependencies = [
  "shifa-core",
  "shifa-db",
+ "tokio",
 ]
 
 [[package]]

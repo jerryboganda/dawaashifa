@@ -137,18 +137,37 @@
 
               <div class="flex items-center justify-between pt-2 border-t border-slate-100">
                 <div class="flex gap-2">
-                  <button
-                    onclick={() => handleLineAccept(line.lineNumber)}
-                    class="px-2.5 py-1 text-xs font-semibold rounded {line.decision === 'ACCEPTED' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-emerald-100'}"
-                  >
-                    {t.common.accept}
-                  </button>
-                  <button
-                    onclick={() => handleLineReject(line.lineNumber)}
-                    class="px-2.5 py-1 text-xs font-semibold rounded {line.decision === 'REJECTED' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-red-100'}"
-                  >
-                    {t.common.reject}
-                  </button>
+                  {#if line.decision === 'ACCEPTED'}
+                    <button
+                      onclick={() => handleLineAccept(line.lineNumber)}
+                      class="px-2.5 py-1 text-xs font-bold rounded transition-colors bg-emerald-600 text-white"
+                    >
+                      {t.common.accept}
+                    </button>
+                  {:else}
+                    <button
+                      onclick={() => handleLineAccept(line.lineNumber)}
+                      class="px-2.5 py-1 text-xs font-semibold rounded transition-colors bg-slate-100 text-emerald-950 hover:bg-emerald-600 hover:text-white"
+                    >
+                      {t.common.accept}
+                    </button>
+                  {/if}
+
+                  {#if line.decision === 'REJECTED'}
+                    <button
+                      onclick={() => handleLineReject(line.lineNumber)}
+                      class="px-2.5 py-1 text-xs font-bold rounded transition-colors bg-red-600 text-white"
+                    >
+                      {t.common.reject}
+                    </button>
+                  {:else}
+                    <button
+                      onclick={() => handleLineReject(line.lineNumber)}
+                      class="px-2.5 py-1 text-xs font-semibold rounded transition-colors bg-slate-100 text-rose-950 hover:bg-red-600 hover:text-white"
+                    >
+                      {t.common.reject}
+                    </button>
+                  {/if}
                 </div>
 
                 {#if line.decision}
@@ -169,13 +188,21 @@
             </p>
           {/if}
 
-          <button
-            disabled={!manager.canApproveCurrentPrescription()}
-            onclick={handleApprove}
-            class="w-full py-2 px-4 rounded font-bold text-sm transition-colors {manager.canApproveCurrentPrescription() ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}"
-          >
-            {t.rxReview.approvePrescription}
-          </button>
+          {#if manager.canApproveCurrentPrescription()}
+            <button
+              onclick={handleApprove}
+              class="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+            >
+              {t.rxReview.approvePrescription}
+            </button>
+          {:else}
+            <button
+              disabled
+              class="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-slate-200 text-slate-500 cursor-not-allowed"
+            >
+              {t.rxReview.approvePrescription}
+            </button>
+          {/if}
         </div>
       </div>
     </div>

@@ -103,7 +103,7 @@
       {#each manager.conversations as conv}
         <button
           onclick={() => (manager.selectedConversationId = conv.id)}
-          class="w-full text-start p-3 transition-colors flex flex-col gap-1 {manager.selectedConversationId === conv.id ? 'bg-teal-50 border-s-4 border-teal-600' : 'hover:bg-slate-50'}"
+          class="w-full text-start p-3 transition-colors flex flex-col gap-1 rounded-lg {manager.selectedConversationId === conv.id ? 'bg-teal-50/90 text-teal-950 ring-1 ring-teal-500/30 font-medium' : 'hover:bg-slate-50'}"
         >
           <div class="flex items-center justify-between">
             <span class="font-semibold text-sm text-slate-900">{conv.customerName}</span>
