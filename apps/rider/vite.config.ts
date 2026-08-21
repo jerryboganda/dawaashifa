@@ -1,10 +1,9 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  css: {
-    postcss: {},
-  },
+  base: "/rider/",
   test: {
     globals: true,
+    environment: "node",
   },
 });

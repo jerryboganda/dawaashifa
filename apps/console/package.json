@@ -14,8 +14,13 @@
     "@shifa/shared": "workspace:*"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.26",
+    "svelte": "^5.56.10",
+    "tailwindcss": "^3.4.19",
     "typescript": "^5.5.4",
-    "vite": "^5.4.2",
-    "vitest": "^2.0.5"
+    "vite": "^6.2.0",
+    "vitest": "^2.1.9"
   }
 }

@@ -1,4 +1,6 @@
+import "./style.css";
 import { formatPkr } from "@shifa/shared";
+
 
 // ------------------------------------------------------------------------------------------------
 // Sample Authenticated Drug Catalog (DRAP Compliant with MRP)

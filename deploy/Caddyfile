@@ -48,26 +48,30 @@
     reverse_proxy api:8080
   }
 
-  # 5. Operations & Pharmacist Console (SvelteKit)
-  handle /ops* {
+  # 5. Redirect root subpaths to trailing slash if needed
+  redir /ops /ops/ 308
+  redir /rider /rider/ 308
+
+  # 6. Operations & Pharmacist Console (Svelte 5)
+  handle_path /ops* {
     reverse_proxy console:80 {
       header_up Host {host}
     }
   }
 
-  # 6. Rider Delivery PWA
-  handle /rider* {
+  # 7. Rider Delivery PWA
+  handle_path /rider* {
     reverse_proxy rider:80 {
       header_up Host {host}
     }
   }
 
-  # 7. Grafana Observability Dashboard
+  # 8. Grafana Observability Dashboard
   handle /monitoring* {
     reverse_proxy grafana:3000
   }
 
-  # 8. Public Pharmacy Portal & Marketing (Astro / Public Web)
+  # 9. Public Pharmacy Portal & Marketing (Public Web)
   handle {
     reverse_proxy web:80 {
       header_up Host {host}
