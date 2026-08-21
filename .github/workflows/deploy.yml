@@ -1,0 +1,65 @@
+name: Deploy to Production VPS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'crates/**'
+      - 'apps/**'
+      - 'deploy/**'
+      - 'sidecars/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'pnpm-lock.yaml'
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to dawaa.polytronx.com
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        if: env.VPS_HOST != ''
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+            echo "==> Deploying Dawaa Platform to dawaa.polytronx.com..."
+            
+            # Navigate or clone into workspace
+            if [ ! -d "/opt/dawaa" ]; then
+              echo "Cloning repository into /opt/dawaa..."
+              git clone https://github.com/jerryboganda/dawaashifa.git /opt/dawaa
+            fi
+            
+            cd /opt/dawaa
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Setup environment if not present
+            if [ ! -f "deploy/.env" ]; then
+              cp .env.example deploy/.env
+            fi
+            
+            # Start / Update production containers
+            cd deploy
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            
+            echo "==> Deployment Complete! Health Check: https://dawaa.polytronx.com/health"
