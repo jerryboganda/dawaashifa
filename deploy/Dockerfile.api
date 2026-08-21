@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y ca-certificates libssl3 curl && rm -rf 
 RUN useradd -ms /bin/bash shifa
 USER shifa
 
-COPY --from=builder /app/target/release/shifa_server /app/shifa_server
+COPY --from=builder /app/target/release/shifa-server /app/shifa-server
 
 EXPOSE 8080
 ENV PORT=8080
@@ -26,4 +26,4 @@ ENV PORT=8080
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8080/health || exit 1
 
-CMD ["/app/shifa_server"]
+CMD ["/app/shifa-server"]
