@@ -19,6 +19,7 @@ shifa-payments.workspace = true
 shifa-fulfilment.workspace = true
 shifa-tax.workspace = true
 shifa-b2b.workspace = true
+shifa-admin.workspace = true
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true

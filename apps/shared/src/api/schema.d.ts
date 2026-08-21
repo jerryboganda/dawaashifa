@@ -4,6 +4,70 @@
  */
 
 export interface paths {
+    "/api/v1/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_audit_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["export_audit_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_reports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_settings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["update_settings"];
+        trace?: never;
+    };
     "/api/v1/ai/analyse": {
         parameters: {
             query?: never;
@@ -1727,6 +1791,39 @@ export interface components {
         AssignRolesRequest: {
             role_names: string[];
         };
+        AuditEventDto: {
+            action: string;
+            actor_id?: components["schemas"]["UserId"] | null;
+            actor_type: string;
+            after?: unknown;
+            before?: unknown;
+            /** Format: uuid */
+            entity_id: string;
+            entity_type: string;
+            /** Format: uuid */
+            id: string;
+            ip?: string | null;
+            /** Format: date-time */
+            occurred_at: string;
+            reason?: string | null;
+            tenant_id: components["schemas"]["TenantId"];
+        };
+        AuditQueryRequest: {
+            action?: string | null;
+            /** Format: uuid */
+            actor_id?: string | null;
+            /** Format: uuid */
+            entity_id?: string | null;
+            entity_type?: string | null;
+            /** Format: date-time */
+            from_date?: string | null;
+            /** Format: int64 */
+            limit?: number | null;
+            /** Format: int64 */
+            offset?: number | null;
+            /** Format: date-time */
+            to_date?: string | null;
+        };
         AuthTokens: {
             access_token: string;
             /** Format: int64 */
@@ -2338,6 +2435,21 @@ export interface components {
          * @example 1250.00
          */
         Money: string;
+        OperationalReportDto: {
+            /** Format: int64 */
+            active_riders_count: number;
+            /** Format: int64 */
+            fbr_pending_invoices: number;
+            /** Format: date-time */
+            generated_at: string;
+            /** Format: int64 */
+            pending_payments_count: number;
+            /** Format: int64 */
+            rx_queue_depth: number;
+            /** Format: int64 */
+            today_orders_count: number;
+            total_revenue_pkr: string;
+        };
         OrderDto: {
             branch_id?: components["schemas"]["BranchId"] | null;
             /** Format: date-time */
@@ -2918,6 +3030,17 @@ export interface components {
             timestamp: string;
             version: string;
         };
+        SystemSettingsDto: {
+            legal_name: string;
+            name: string;
+            ntn?: string | null;
+            settings: unknown;
+            status: string;
+            strn?: string | null;
+            tenant_id: components["schemas"]["TenantId"];
+            /** Format: date-time */
+            updated_at: string;
+        };
         TaxCategoryDto: {
             /** Format: date-time */
             created_at: string;
@@ -3026,6 +3149,12 @@ export interface components {
             strength?: string | null;
             tp?: components["schemas"]["Money"] | null;
         };
+        UpdateSystemSettingsRequest: {
+            legal_name?: string | null;
+            ntn?: string | null;
+            settings?: unknown;
+            strn?: string | null;
+        };
         UpdateUserRequest: {
             email?: string | null;
             full_name?: string | null;
@@ -3084,6 +3213,128 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_audit_events: {
+        parameters: {
+            query?: {
+                entity_type?: string | null;
+                entity_id?: string | null;
+                actor_id?: string | null;
+                action?: string | null;
+                from_date?: string | null;
+                to_date?: string | null;
+                limit?: number | null;
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List audit log events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEventDto"][];
+                };
+            };
+        };
+    };
+    export_audit_csv: {
+        parameters: {
+            query?: {
+                entity_type?: string | null;
+                entity_id?: string | null;
+                actor_id?: string | null;
+                action?: string | null;
+                from_date?: string | null;
+                to_date?: string | null;
+                limit?: number | null;
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Export audit log CSV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
+    get_reports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Get operational metrics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationalReportDto"];
+                };
+            };
+        };
+    };
+    get_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Get system settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemSettingsDto"];
+                };
+            };
+        };
+    };
+    update_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSystemSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Update system settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemSettingsDto"];
+                };
+            };
+        };
+    };
     analyse_handler: {
         parameters: {
             query?: never;

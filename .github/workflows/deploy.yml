@@ -121,8 +121,17 @@ jobs:
             fi
             
             # Pull pre-built images from GHCR (Zero compilation on VPS!)
-            cd deploy
+            cd /opt/dawaa/deploy
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --no-build --remove-orphans
+            
+            # Run database migrations
+            echo "==> Running production database migrations..."
+            sleep 5
+            cd /opt/dawaa
+            for migration_file in $(ls -1 migrations/*.sql 2>/dev/null | sort); do
+              echo "  Applying $(basename "$migration_file")..."
+              docker compose -f deploy/docker-compose.prod.yml exec -T postgres psql -U "${POSTGRES_USER:-shifa}" -d "${POSTGRES_DB:-shifa}" -f - < "$migration_file" || true
+            done
             
             echo "==> Zero-Build Deployment Complete! Health Check: https://dawaa.polytronx.com/health"

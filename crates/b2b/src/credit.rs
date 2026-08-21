@@ -105,8 +105,8 @@ impl CreditControl {
 
         // Record audit log entry (Invariant I-9)
         sqlx::query(
-            "INSERT INTO audit_logs (id, tenant_id, actor_id, entity_type, entity_id, action, reason)
-             VALUES (uuidv7(), $1, $2, 'BUSINESS_ACCOUNT', $3, 'CREDIT_OVERRIDE', $4)"
+            "INSERT INTO audit_log (id, tenant_id, actor_id, actor_type, entity_type, entity_id, action, reason)
+             VALUES (uuidv7(), $1, $2, 'USER', 'BUSINESS_ACCOUNT', $3, 'CREDIT_OVERRIDE', $4)"
         )
         .bind(ctx.tenant_id().0)
         .bind(ctx.user_id().0)

@@ -1212,8 +1212,8 @@ impl PaymentService {
         let user_id = ctx.user_id().0;
 
         sqlx::query(
-            "INSERT INTO audit_logs (id, tenant_id, actor_id, entity_type, entity_id, action, changes, ip_address)
-             VALUES ($1, $2, $3, 'PAYMENT', $4, $5, $6, '127.0.0.1')"
+            "INSERT INTO audit_log (id, tenant_id, actor_id, actor_type, entity_type, entity_id, action, after, ip)
+             VALUES ($1, $2, $3, 'USER', 'PAYMENT', $4, $5, $6, '127.0.0.1')"
         )
         .bind(audit_id)
         .bind(ctx.tenant_id().0)

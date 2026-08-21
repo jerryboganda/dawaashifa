@@ -57,6 +57,9 @@ pub enum ApiError {
     #[error("B2B error: {0}")]
     B2b(#[from] shifa_b2b::B2bError),
 
+    #[error("Admin error: {0}")]
+    Admin(#[from] shifa_admin::AdminError),
+
     #[error("Core error: {0}")]
     Core(#[from] shifa_core::error::CoreError),
 }
@@ -279,6 +282,13 @@ impl IntoResponse for ApiError {
                 (StatusCode::CONFLICT, format!("Device serial {} already exists", serial))
             }
             ApiError::B2b(err) => (StatusCode::BAD_REQUEST, err.to_string()),
+            ApiError::Admin(shifa_admin::AdminError::PermissionDenied(msg)) => {
+                (StatusCode::FORBIDDEN, msg)
+            }
+            ApiError::Admin(shifa_admin::AdminError::TenantNotFound(id)) => {
+                (StatusCode::NOT_FOUND, format!("Tenant {} not found", id))
+            }
+            ApiError::Admin(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Auth(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Core(err) => (StatusCode::BAD_REQUEST, err.to_string()),
             ApiError::Internal(err) => {

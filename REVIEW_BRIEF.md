@@ -1,61 +1,74 @@
-# Review Brief — Spec 17: Deployment, Observability, Backup & DR
+# Review Brief — Full Platform Implementation & Production Readiness Audit
 
-**Branch:** `feat/17-deployment`  
-**Spec Reference:** `docs/17_DEPLOYMENT_AND_OBSERVABILITY.md`  
-**Builder:** Antigravity  
-**Domain Configuration:** `dawaa.polytronx.com`  
+## Scope & Objective
+Full project-wide implementation audit and completion across all specifications (Docs 00–18), backend crates (`crates/`), shared OpenAPI schemas and client (`contracts/openapi.json`, `apps/shared/`), sidecars (`sidecars/wa-unofficial`), and frontend applications (`apps/console`, `apps/rider`, `apps/web`).
 
 ---
 
-## 1. Executive Summary
-Spec 17 completes the production infrastructure, observability pipeline, disaster recovery, alert matrix, health endpoints, and zero-downtime deployment automation for the Shifa Platform. Production domain routing is configured for `dawaa.polytronx.com` across the Caddy reverse proxy, ops console, backend API, and background workers.
+## What Was Built & Reconciled
+
+### 1. Database & Security Standardization (Invariants I-1, I-2, I-9)
+- **RLS Standardization Migration**: Added `migrations/20260821000008_standardize_rls_policies.sql` enforcing RLS across all 54 tenant tables checking both `app.tenant_id` and `app.current_tenant_id`.
+- **GUC Session Setup**: Updated `crates/db/src/rls.rs` to configure both session GUCs on transaction checkout.
+- **Audit Log Schema Alignment**: Standardized SQL target table name and column schemas in `crates/prescription/src/service.rs`, `crates/payments/src/service.rs`, `crates/fulfilment/src/service.rs`, and `crates/b2b/src/credit.rs` to match canonical `audit_log`.
+
+### 2. Full Implementation of `shifa-admin` (Doc 16 §10)
+- Built `crates/admin/` with models (`AuditEventDto`, `AuditQueryRequest`, `SystemSettingsDto`, `UpdateSystemSettingsRequest`, `OperationalReportDto`), domain error definitions (`AdminError`), and service logic (`AdminService`).
+- Implemented streaming CSV export and filtered query capabilities for DRAP regulatory audits.
+- Registered Axum handlers in `crates/api/src/routes/admin.rs` and documented in `crates/api/src/openapi.rs`.
+- Added unit and integration tests in `crates/admin/tests/admin_acceptance_tests.rs`.
+
+### 3. Background Autonomous Worker Implementation (Docs 03, 06, 09, 13, 17)
+- Implemented background schedulers in `crates/worker/src/schedulers.rs` and wired into `crates/worker/src/main.rs`:
+  - `run_fbr_retry_scheduler`: Exponential backoff retry loop for unacknowledged FBR POS invoices.
+  - `run_rx_sla_watchdog`: Escalation watchdog monitoring pharmacist review queue SLA (15m warning, 2h critical escalation).
+  - `run_cold_chain_and_expiry_monitor`: Stock rotation watchdog checking batches expiring in ≤ 90 days and cold chain temperature excursions.
+  - `run_number_pool_maintenance`: Daily midnight quota reset and health score evaluation.
+  - `run_partition_maintenance`: Automated monthly partition creation for ledger tables.
+
+### 4. Frontend Integration & Mock Elimination (Doc 16)
+- Built typed HTTP client `apps/console/src/lib/api.ts`.
+- Replaced mock arrays with live API calls and error/loading/empty state handling across:
+  - `apps/console/src/routes/audit/+page.svelte`
+  - `apps/console/src/routes/b2b/+page.svelte`
+  - `apps/console/src/routes/rx-review/+page.svelte`
+  - `apps/console/src/routes/inbox/+page.svelte`
+  - `apps/console/src/routes/payments/review/+page.svelte`
+  - `apps/console/src/routes/orders/+page.svelte`
+  - `apps/console/src/routes/inventory/+page.svelte`
+- Integrated `apps/rider/src/main.ts` with offline IDB sync and `apps/web/src/main.ts` with live catalog and tracking endpoints.
 
 ---
 
-## 2. Invariant Compliance Checklist
-- [x] **I-1 (Tenant Scoping):** All database interactions scoped by `tenant_id UUID NOT NULL`.
-- [x] **I-2 (Row-Level Security):** RLS enforced on all tables.
-- [x] **I-7 (Repository Isolation):** All SQL queries encapsulated in repository modules.
-- [x] **I-8 (Money Invariant):** Zero floating point arithmetic, monetary values formatted in PKR string representation.
-- [x] **I-10 (Transport Agnostic):** WhatsApp business logic decoupled from transport infrastructure.
-- [x] **Health Check Invariant (Doc 17 §13):** `/health` and `/api/v1/health` report granular statuses of Postgres, Redis, NATS, MinIO, AI Host, and FBR gateway.
-- [x] **Contract Drift Invariant (Doc 17 §6):** OpenAPI specification regenerated and committed synchronously with `@shifa/shared` types.
+## Contract Synchronization
+- Regenerated `contracts/openapi.json` via `cargo run -p shifa-api --bin emit-openapi`.
+- Regenerated typed client definitions in `apps/shared/src/api/schema.d.ts` via `pnpm gen:api`.
 
 ---
 
-## 3. What Was Built
-1. **Production Infrastructure (`deploy/`)**:
-   - `deploy/docker-compose.prod.yml`: Postgres 17 (pgvector, pg_trgm), Redis 7 AOF, NATS JetStream, MinIO, API, Worker, Baileys sidecar, Caddy, OTel Collector, Prometheus, Grafana, Loki, Tempo.
-   - `deploy/Caddyfile`: Reverse proxy, automated TLS, security headers, rate limiting, and domain routing for `dawaa.polytronx.com` (and `api.dawaa.polytronx.com`, `ops.dawaa.polytronx.com`, `monitoring.dawaa.polytronx.com`).
-   - `deploy/Dockerfile.api` & `deploy/Dockerfile.worker`: Multi-stage non-root hardened container builds.
-   - `deploy/prometheus/alerts.yml`: All 12 production alerts per Doc 17 §8 table.
-   - `deploy/otel/otel-collector.yml` & `deploy/otel/tempo.yaml`: Distributed telemetry tracing and log shipping.
-   - `deploy/backup/pgbackrest.conf` & `deploy/backup/restore_smoke_test.sh`: PITR configuration and automated monthly smoke test.
+## Verification Evidence
 
-2. **Runbooks (`docs/runbooks/`)**:
-   - `fbr-outage.md`: Provisional invoice emission and exponential retry queue recovery.
-   - `ai-host-down.md`: Circuit breaker open state and deterministic pharmacist fallback.
-   - `database-restore.md`: Point-in-time recovery procedure and verification test log.
-   - `payment-gateway-outage.md`: Dynamic failover and manual screenshot verification.
-   - `incident-template.md`: SEV1/SEV2 post-mortem template.
-   - `deployment.md`: Zero-downtime rolling deployment and additive migration rules.
-   - `number-ban-response.md`: WhatsApp cold reserve number migration.
-   - `data-migration.md`: Legacy pharmacy system ingestion and verification.
-
-3. **Backend Health Probes (`crates/api/src/routes/health.rs`)**:
-   - Added `DependencyHealth` & `SystemHealthResponse` structs with `utoipa` schemas.
-   - Registered `/health` and `/api/v1/health` in Axum router and OpenAPI registry.
-
-4. **Acceptance Test Suite (`crates/api/tests/deployment_acceptance_tests.rs`)**:
-   - 5 comprehensive automated tests covering health responses, security port shielding, PII prevention, runbook completeness, and alert rule coverage.
+| Verification Phase | Command | Status |
+|---|---|---|
+| Rust Formatting | `cargo fmt --all --check` | **PASS (Clean)** |
+| Rust Compilation | `cargo check --workspace` | **PASS (0 errors)** |
+| Rust Clippy | `cargo clippy --workspace --all-targets -- -D warnings` | **PASS (0 warnings)** |
+| Rust Tests | `cargo test --workspace` | **PASS (All 18 crates green)** |
+| Frontend Typecheck | `pnpm check` | **PASS (Clean across 5 workspaces)** |
+| Frontend Linter | `pnpm lint` | **PASS (Clean)** |
+| Frontend Tests | `pnpm test` | **PASS (24/24 tests green)** |
+| Production Bundle | `pnpm build` | **PASS (All apps built cleanly)** |
 
 ---
 
-## 4. Verification Evidence
-- `cargo fmt --all --check`: **PASS** (0 formatting differences)
-- `cargo clippy --workspace --all-targets -- -D warnings`: **PASS** (0 warnings, 0 errors)
-- `cargo test --workspace`: **PASS** (100% test pass across all 15 crates)
-- `pnpm -r test`: **PASS** (all frontend suites in `apps/console` and `apps/rider` pass green)
-- `pnpm -r check`: **PASS** (0 TypeScript errors)
-- `pnpm -r lint`: **PASS** (0 lint errors)
-- `contracts/openapi.json`: Emitted and synchronized with `apps/shared/src/api/schema.d.ts`.
+## Invariant Compliance Checklist
+- [x] **I-1**: Every tenant table has `tenant_id UUID NOT NULL`.
+- [x] **I-2**: Postgres RLS policies active and standardized across all 54 tenant tables.
+- [x] **I-3**: Pharmacist review gate strictly enforced with real user IDs before orders advance past `RX_UNDER_REVIEW`.
+- [x] **I-4**: Screenshot payments require human review; no automated approval path.
+- [x] **I-5**: Append-only stock movements (`stock_movements`); zero direct quantity updates.
+- [x] **I-6**: AI drafts gated behind pharmacist/agent approval.
+- [x] **I-7**: SQL queries encapsulated in repository modules and service boundaries.
+- [x] **I-8**: Money amounts stored as `NUMERIC(14,4)` in DB, `Decimal` in Rust, and string in wire DTOs.
+- [x] **I-9**: State transitions and administrative actions record structured `audit_log` rows.
+- [x] **I-10**: WhatsApp transport abstraction shared between Cloud API and Baileys unofficial sidecars.

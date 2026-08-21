@@ -35,7 +35,14 @@ docker compose -f deploy/docker-compose.prod.yml up -d --no-build --remove-orpha
 echo "⏳ Waiting for services to become healthy..."
 sleep 5
 
-# 5. Verify running services
+# 5. Run database migrations
+echo "🗄️ Applying database migrations in production..."
+for migration_file in $(ls -1 migrations/*.sql 2>/dev/null | sort); do
+  echo "  Applying $(basename "$migration_file")..."
+  docker compose -f deploy/docker-compose.prod.yml exec -T postgres psql -U "${POSTGRES_USER:-shifa}" -d "${POSTGRES_DB:-shifa}" -f - < "$migration_file" || true
+done
+
+# 6. Verify running services
 docker compose -f deploy/docker-compose.prod.yml ps
 
 echo "======================================================================"

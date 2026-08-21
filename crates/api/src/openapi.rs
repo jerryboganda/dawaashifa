@@ -4,6 +4,7 @@ use utoipa::{
 };
 
 use crate::routes::*;
+use shifa_admin::models::*;
 use shifa_ai::models::*;
 use shifa_b2b::models::*;
 use shifa_catalog::models::*;
@@ -132,6 +133,11 @@ use shifa_tax::models::*;
         b2b::reconcile_consignment,
         b2b::register_device,
         b2b::query_device_recall,
+        admin::list_audit_events,
+        admin::export_audit_csv,
+        admin::get_settings,
+        admin::update_settings,
+        admin::get_reports,
         health::system_health_handler,
     ),
     components(
@@ -301,6 +307,11 @@ use shifa_tax::models::*;
             DeviceUnitDto,
             RegisterDeviceRequest,
             RecallQueryResponse,
+            AuditEventDto,
+            AuditQueryRequest,
+            SystemSettingsDto,
+            UpdateSystemSettingsRequest,
+            OperationalReportDto,
             crate::routes::health::DependencyHealth,
             crate::routes::health::SystemHealthResponse,
         )
@@ -323,6 +334,7 @@ use shifa_tax::models::*;
         (name = "Invoices", description = "Fiscal invoice generation, PDF receipts, credit notes, and FBR retry queue"),
         (name = "Tax", description = "Tax categories with versioned rate periods, FBR POS reporting, and tax summaries"),
         (name = "B2B", description = "Business accounts, quotations, purchase orders, credit control, AR aging, consignment, and device traceability"),
+        (name = "Admin", description = "Administrative controls, immutable audit log explorer, and DRAP regulatory reporting"),
         (name = "Webhooks", description = "WhatsApp Meta Cloud API webhooks")
     ),
     info(

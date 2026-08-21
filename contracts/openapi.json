@@ -9,6 +9,302 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/v1/admin/audit": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "list_audit_events",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "actor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List audit log events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEventDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/audit/export": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "export_audit_csv",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "actor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export audit log CSV",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "get_reports",
+        "responses": {
+          "200": {
+            "description": "Get operational metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalReportDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/settings": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "get_settings",
+        "responses": {
+          "200": {
+            "description": "Get system settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "update_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSystemSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Update system settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/api/v1/ai/analyse": {
       "post": {
         "tags": [
@@ -4865,6 +5161,109 @@
           }
         }
       },
+      "AuditEventDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "actor_type",
+          "entity_type",
+          "entity_id",
+          "action",
+          "occurred_at"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "actor_id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "nullable": true
+          },
+          "actor_type": {
+            "type": "string"
+          },
+          "after": {
+            "nullable": true
+          },
+          "before": {
+            "nullable": true
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entity_type": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          }
+        }
+      },
+      "AuditQueryRequest": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "entity_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "from_date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "to_date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
       "AuthTokens": {
         "type": "object",
         "required": [
@@ -6975,6 +7374,47 @@
         "description": "Monetary amount represented with exact precision using Decimal.\nInvariant I-8: All money is rust_decimal::Decimal. Never f64 or f32.\nSerializes over the wire as a quoted decimal string to preserve precision in frontend clients.",
         "example": "1250.00"
       },
+      "OperationalReportDto": {
+        "type": "object",
+        "required": [
+          "today_orders_count",
+          "rx_queue_depth",
+          "pending_payments_count",
+          "active_riders_count",
+          "total_revenue_pkr",
+          "fbr_pending_invoices",
+          "generated_at"
+        ],
+        "properties": {
+          "active_riders_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fbr_pending_invoices": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pending_payments_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rx_queue_depth": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "today_orders_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_revenue_pkr": {
+            "type": "string"
+          }
+        }
+      },
       "OrderDto": {
         "type": "object",
         "required": [
@@ -8951,6 +9391,44 @@
           }
         }
       },
+      "SystemSettingsDto": {
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "name",
+          "legal_name",
+          "status",
+          "settings",
+          "updated_at"
+        ],
+        "properties": {
+          "legal_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ntn": {
+            "type": "string",
+            "nullable": true
+          },
+          "settings": {},
+          "status": {
+            "type": "string"
+          },
+          "strn": {
+            "type": "string",
+            "nullable": true
+          },
+          "tenant_id": {
+            "$ref": "#/components/schemas/TenantId"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "TaxCategoryDto": {
         "type": "object",
         "required": [
@@ -9330,6 +9808,26 @@
           }
         }
       },
+      "UpdateSystemSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "legal_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "ntn": {
+            "type": "string",
+            "nullable": true
+          },
+          "settings": {
+            "nullable": true
+          },
+          "strn": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "UpdateUserRequest": {
         "type": "object",
         "properties": {
@@ -9581,6 +10079,10 @@
     {
       "name": "B2B",
       "description": "Business accounts, quotations, purchase orders, credit control, AR aging, consignment, and device traceability"
+    },
+    {
+      "name": "Admin",
+      "description": "Administrative controls, immutable audit log explorer, and DRAP regulatory reporting"
     },
     {
       "name": "Webhooks",

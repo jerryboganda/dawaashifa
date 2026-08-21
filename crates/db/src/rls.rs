@@ -21,7 +21,7 @@ pub(crate) async fn set_tenant_context(
     conn: &mut PgConnection,
     ctx: &TenantContext,
 ) -> Result<(), DbError> {
-    sqlx::query("SELECT set_config('app.tenant_id', $1, true)")
+    sqlx::query("SELECT set_config('app.tenant_id', $1, true), set_config('app.current_tenant_id', $1, true)")
         .bind(ctx.tenant_id().0.to_string())
         .execute(&mut *conn)
         .await?;

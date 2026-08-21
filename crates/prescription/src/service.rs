@@ -698,17 +698,17 @@ impl PrescriptionService {
         Ok(list)
     }
 
-    /// Reconstruct immutable audit chain per Doc 09 Â§12 & Â§13.
+    /// Reconstruct immutable audit chain per Doc 09 §12 & §13.
     pub async fn get_audit_trail(
         &self,
         ctx: &TenantContext,
         rx_id: PrescriptionId,
     ) -> Result<Vec<RxAuditEntryDto>, RxError> {
         let rows = sqlx::query(
-            "SELECT id, action, user_id, timestamp, details
+            "SELECT id, action, actor_id, occurred_at, COALESCE(after, json_build_object('reason', reason)::jsonb) as details
              FROM audit_log
-             WHERE tenant_id = $1 AND target_id = $2
-             ORDER BY timestamp ASC",
+             WHERE tenant_id = $1 AND entity_type = 'PRESCRIPTION' AND entity_id = $2
+             ORDER BY occurred_at ASC",
         )
         .bind(ctx.tenant_id().0)
         .bind(rx_id.0)
@@ -718,12 +718,12 @@ impl PrescriptionService {
         let entries = rows
             .into_iter()
             .map(|r| {
-                let uid: Option<Uuid> = r.get("user_id");
+                let uid: Option<Uuid> = r.get("actor_id");
                 RxAuditEntryDto {
                     id: r.get("id"),
                     action: r.get("action"),
                     actor_id: uid.map(UserId::from),
-                    timestamp: r.get("timestamp"),
+                    timestamp: r.get("occurred_at"),
                     details: r.get("details"),
                 }
             })
@@ -767,14 +767,14 @@ impl PrescriptionService {
         details: serde_json::Value,
     ) -> Result<(), RxError> {
         sqlx::query(
-            "INSERT INTO audit_log (id, tenant_id, user_id, action, target_type, target_id, details)
-             VALUES ($1, $2, $3, $4, 'PRESCRIPTION', $5, $6)"
+            "INSERT INTO audit_log (id, tenant_id, actor_id, actor_type, entity_type, entity_id, action, after, reason)
+             VALUES ($1, $2, $3, 'PHARMACIST', 'PRESCRIPTION', $4, $5, $6, 'Pharmacist Prescription Action')"
         )
         .bind(Uuid::now_v7())
         .bind(ctx.tenant_id().0)
         .bind(ctx.user_id().0)
-        .bind(action)
         .bind(rx_id.0)
+        .bind(action)
         .bind(details)
         .execute(&self.pool)
         .await?;

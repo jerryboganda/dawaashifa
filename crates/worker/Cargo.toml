@@ -7,7 +7,18 @@ license.workspace = true
 [dependencies]
 shifa-core.workspace = true
 shifa-db.workspace = true
+shifa-tax.workspace = true
+shifa-prescription.workspace = true
+shifa-inventory.workspace = true
+shifa-channel.workspace = true
+sqlx.workspace = true
+rust_decimal.workspace = true
+chrono.workspace = true
+uuid.workspace = true
 tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
 
 [[bin]]
 name = "shifa-worker"

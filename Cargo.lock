@@ -2457,7 +2457,16 @@ dependencies = [
 name = "shifa-admin"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "rust_decimal",
+ "serde",
+ "serde_json",
  "shifa-core",
+ "shifa-db",
+ "sqlx",
+ "thiserror 1.0.69",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]
@@ -2489,6 +2498,7 @@ dependencies = [
  "chrono",
  "serde",
  "serde_json",
+ "shifa-admin",
  "shifa-ai",
  "shifa-b2b",
  "shifa-catalog",
@@ -2790,9 +2800,20 @@ dependencies = [
 name = "shifa-worker"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "chrono",
+ "rust_decimal",
+ "shifa-channel",
  "shifa-core",
  "shifa-db",
+ "shifa-inventory",
+ "shifa-prescription",
+ "shifa-tax",
+ "sqlx",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
