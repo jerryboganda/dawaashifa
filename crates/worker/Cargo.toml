@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "shifa-worker"
 version.workspace = true
 edition.workspace = true
@@ -7,4 +7,8 @@ license.workspace = true
 [dependencies]
 shifa-core.workspace = true
 shifa-db.workspace = true
+tokio.workspace = true
 
+[[bin]]
+name = "shifa-worker"
+path = "src/main.rs"
