@@ -18,7 +18,43 @@ services:
       - shifa-internal
     depends_on:
       - api
+      - web
+      - console
+      - rider
       - grafana
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+      args:
+        APP_NAME: web
+    image: shifa-web:latest
+    restart: unless-stopped
+    networks:
+      - shifa-internal
+
+  console:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+      args:
+        APP_NAME: console
+    image: shifa-console:latest
+    restart: unless-stopped
+    networks:
+      - shifa-internal
+
+  rider:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+      args:
+        APP_NAME: rider
+    image: shifa-rider:latest
+    restart: unless-stopped
+    networks:
+      - shifa-internal
 
   api:
     build:

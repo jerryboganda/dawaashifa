@@ -1,19 +1,24 @@
-# Caddy Production Reverse Proxy (Doc 17 §5, §11)
-# Domain: dawaa.polytronx.com on shared/dedicated VPS
-# Auto TLS (Let's Encrypt), security headers, rate limiting, and internal network shield
+﻿# =================================================================================================
+# Shifa Platform Single Domain Architecture (Caddy Reverse Proxy)
+# Domain: dawaa.polytronx.com
+#
+# Single Cloudflare DNS Record Required:
+#   Type: A (or CNAME)
+#   Name: dawaa (or @ for root)
+#   Content: <YOUR_VPS_IP>
+#
+# Everything is multiplexed under dawaa.polytronx.com without needing ANY separate subdomains.
+# =================================================================================================
 
 {
   email admin@polytronx.com
   admin off
 }
 
-# -------------------------------------------------------------------------------------------------
-# 1. Root / Unified Domain: dawaa.polytronx.com
-# -------------------------------------------------------------------------------------------------
 dawaa.polytronx.com {
   encode gzip zstd
 
-  # Security Hardening Headers (Doc 17 §11)
+  # Security Hardening Headers (Doc 17 Â§11)
   header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     X-Content-Type-Options "nosniff"
@@ -23,7 +28,7 @@ dawaa.polytronx.com {
     -Server
   }
 
-  # API Endpoints Routing
+  # 1. API Endpoints
   handle /api/* {
     reverse_proxy api:8080 {
       header_up X-Forwarded-Proto {scheme}
@@ -31,7 +36,7 @@ dawaa.polytronx.com {
     }
   }
 
-  # Webhooks Routing (WhatsApp Meta Cloud API / Sidecars)
+  # 2. WhatsApp Webhooks Ingress
   handle /webhooks/* {
     reverse_proxy api:8080 {
       header_up X-Forwarded-Proto {scheme}
@@ -39,7 +44,7 @@ dawaa.polytronx.com {
     }
   }
 
-  # Swagger UI / OpenAPI Docs
+  # 3. OpenAPI Documentation & Swagger UI
   handle /swagger-ui* {
     reverse_proxy api:8080
   }
@@ -47,57 +52,35 @@ dawaa.polytronx.com {
     reverse_proxy api:8080
   }
 
-  # Health Check Probe
+  # 4. System Health Check
   handle /health {
     reverse_proxy api:8080
   }
 
-  # Ops Console (SvelteKit)
+  # 5. Operations & Pharmacist Console (SvelteKit)
   handle /ops* {
-    reverse_proxy console:5173 {
+    reverse_proxy console:80 {
       header_up Host {host}
     }
   }
 
-  # Default / Marketing Site Root (Astro / Public Web)
+  # 6. Rider Delivery PWA
+  handle /rider* {
+    reverse_proxy rider:80 {
+      header_up Host {host}
+    }
+  }
+
+  # 7. Grafana Observability Dashboard
+  handle /monitoring* {
+    reverse_proxy grafana:3000
+  }
+
+  # 8. Public Pharmacy Portal & Marketing (Astro / Public Web)
   handle {
-    reverse_proxy web:4321 {
+    reverse_proxy web:80 {
       header_up Host {host}
     }
   }
 }
 
-# -------------------------------------------------------------------------------------------------
-# 2. Dedicated Subdomains for Scaled Traffic (Optional CNAMEs)
-# -------------------------------------------------------------------------------------------------
-api.dawaa.polytronx.com {
-  encode gzip zstd
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    X-Content-Type-Options "nosniff"
-    X-Frame-Options "DENY"
-    -Server
-  }
-
-  reverse_proxy api:8080 {
-    header_up X-Forwarded-Proto {scheme}
-    header_up X-Real-IP {remote_host}
-  }
-}
-
-ops.dawaa.polytronx.com {
-  encode gzip zstd
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains"
-    X-Content-Type-Options "nosniff"
-    X-Frame-Options "SAMEORIGIN"
-    -Server
-  }
-
-  reverse_proxy console:5173
-}
-
-monitoring.dawaa.polytronx.com {
-  # Internal VPN or authenticated access to Grafana only
-  reverse_proxy grafana:3000
-}
