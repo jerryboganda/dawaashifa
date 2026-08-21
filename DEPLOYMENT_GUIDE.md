@@ -69,3 +69,11 @@ curl -i https://dawaa.polytronx.com/health
 # View live Caddy logs
 docker logs -f shifa-caddy
 ```
+
+---
+
+## 5. Troubleshooting & Lessons Learned
+
+For detailed analysis of past deployment issues (Vite CSS bundling, Caddy subpath routing, CI test timeouts, step-level GitHub Actions secrets, and fast-fail database pools), refer to the comprehensive guide:
+- [`docs/runbooks/troubleshooting-and-lessons-learned.md`](docs/runbooks/troubleshooting-and-lessons-learned.md)
+
